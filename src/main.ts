@@ -71,7 +71,7 @@ async function bootstrap() {
       version: '1.0.0',
       port,
       nodeEnv: process.env.NODE_ENV || 'development',
-      apiPrefix: '/api/docs',
+      apiPrefix: '/api',
     },
     {
       type: 'PostgreSQL',
@@ -80,7 +80,7 @@ async function bootstrap() {
     },
   )
   const document = SwaggerModule.createDocument(app, config)
-  SwaggerModule.setup('api', app, document)
+  SwaggerModule.setup('api/docs', app, document)
 
   await app.listen(process.env.PORT ?? port)
 }
