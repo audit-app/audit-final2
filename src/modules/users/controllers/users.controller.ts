@@ -75,7 +75,7 @@ export class UsersController {
   @Get()
   @ApiOperation({ summary: 'Listar todos los usuarios' })
   @ApiResponse({ status: 200, description: 'Lista de usuarios' })
-  async findAll(findUsersDto: FindUsersDto) {
+  async findAll(@Query() findUsersDto: FindUsersDto) {
     return await this.findAllUsersUseCase.execute(findUsersDto)
   }
 

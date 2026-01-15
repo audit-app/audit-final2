@@ -114,10 +114,10 @@ import { LoginRateLimitPolicy, EmailOperationRateLimitPolicy } from './policies'
     // ========================================
     // Global Guards (registrados como APP_GUARD)
     // ========================================
-    {
+    /*     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard, // ✅ Protege TODAS las rutas por defecto (usar @Public() para excepciones)
-    },
+    }, */
   ],
 
   exports: [
