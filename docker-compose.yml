@@ -33,6 +33,16 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: atr_redisinsight
+    ports:
+      - '5540:5540'
+    networks:
+      - atr_network
+    depends_on:
+      redis:
+        condition: service_healthy
 
 volumes:
   postgres_data:

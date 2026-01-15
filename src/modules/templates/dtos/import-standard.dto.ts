@@ -8,34 +8,42 @@ import {
   Min,
 } from 'class-validator'
 import { Type } from 'class-transformer'
+import { IsNotEmptyString } from '../validators'
 
 /**
- * DTO para importar Standard desde Excel/CSV
+ * DTO para importar Standard desde Excel
  *
  * Representa un control/cláusula dentro de una plantilla
  * Soporta estructura jerárquica mediante parentCode
  */
 export class ImportStandardDto {
-  @IsString()
+  @IsString({ message: 'El código debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El código es requerido' })
   @Length(1, 50, { message: 'El código debe tener entre 1 y 50 caracteres' })
   code: string
 
-  @IsString()
+  @IsString({ message: 'El título debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El título es requerido' })
   @Length(1, 200, { message: 'El título debe tener entre 1 y 200 caracteres' })
   title: string
 
-  @IsString()
+  @IsString({ message: 'La descripción debe ser una cadena de texto' })
   @IsOptional()
   description?: string
 
   /**
    * Código del standard padre (para jerarquía)
-   * Si es null o vacío, se considera nivel raíz
+   * Si es null, undefined o vacío, se considera nivel raíz
+   * No se permiten cadenas vacías o solo espacios
    */
-  @IsString()
   @IsOptional()
+  @IsString({ message: 'El código padre debe ser una cadena de texto' })
+  @IsNotEmptyString({
+    message: 'El código padre no puede ser una cadena vacía',
+  })
+  @Length(1, 50, {
+    message: 'El código padre debe tener entre 1 y 50 caracteres',
+  })
   parentCode?: string
 
   @IsNumber()

@@ -44,7 +44,8 @@ export class Generate2FACodeUseCase {
     // 1. Buscar usuario por email o ID
     let user = await this.usersRepository.findByEmail(identifier)
 
-    if (!user) {
+    // Solo intentar buscar por ID si el identifier es un UUID válido
+    if (!user && this.isValidUUID(identifier)) {
       user = await this.usersRepository.findById(identifier)
     }
 
@@ -53,7 +54,7 @@ export class Generate2FACodeUseCase {
     }
 
     // 2. Verificar rate limiting
-    await this.emailOperationRateLimitPolicy.check2FALimit(user.id, 'generate')
+    await this.emailOperationRateLimitPolicy.check2FALimit(user.id)
 
     // 3. Generar código 2FA
     const { code, token } = await this.twoFactorTokenService.generateCode(
@@ -69,14 +70,22 @@ export class Generate2FACodeUseCase {
     })
 
     // 5. Incrementar contador
-    await this.emailOperationRateLimitPolicy.increment2FAAttempt(
-      user.id,
-      'generate',
-    )
+    await this.emailOperationRateLimitPolicy.increment2FAAttempt(user.id)
 
     return {
       token,
       message: 'Código 2FA enviado al email registrado',
     }
+  }
+
+  /**
+   * Valida si una cadena es un UUID válido
+   * @param str - Cadena a validar
+   * @returns true si es un UUID válido
+   */
+  private isValidUUID(str: string): boolean {
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    return uuidRegex.test(str)
   }
 }

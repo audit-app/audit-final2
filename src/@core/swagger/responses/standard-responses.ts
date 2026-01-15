@@ -32,8 +32,8 @@ export const VALIDATION_ERROR_RESPONSE = {
         type: 'array',
         items: { type: 'string' },
         example: [
-          'El campo nombres debe tener al menos 2 caracteres',
-          'El campo correo electrónico debe ser una dirección de correo electrónico válida',
+          'El campo debe cumplir con las reglas de validación establecidas',
+          'El valor proporcionado no es válido para este campo',
         ],
       },
       error: { type: 'string', example: 'Bad Request' },

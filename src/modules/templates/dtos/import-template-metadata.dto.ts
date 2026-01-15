@@ -4,7 +4,7 @@ import { ApiProperty } from '@nestjs/swagger'
 /**
  * DTO para los campos de metadatos de la plantilla al importar
  *
- * Estos campos se envían como form fields (no en el archivo Excel/CSV)
+ * Estos campos se envían como form fields (no en el archivo Excel)
  * El archivo solo contiene los estándares
  */
 export class ImportTemplateMetadataDto {

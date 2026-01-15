@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, BadRequestException } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { UpdateUserDto } from '../../dtos'
 import { UserEntity } from '../../entities/user.entity'
@@ -38,8 +38,14 @@ export class UpdateUserUseCase {
     // 2. Validar solo los campos que cambiaron
     const validations: Promise<void>[] = []
 
+    // SEGURIDAD: No permitir cambio de email
+    // El email es el identificador principal y cambiarlo sin verificación
+    // es una vulnerabilidad de seguridad (un atacante podría tomar control de la cuenta)
+    // Solo los administradores pueden cambiar el email (mediante otro caso de uso específico)
     if (dto.email && dto.email.toLowerCase() !== user.email) {
-      validations.push(this.validator.validateUniqueEmail(dto.email, id))
+      throw new BadRequestException(
+        'No se puede cambiar el email. Contacte al administrador si necesita actualizarlo.',
+      )
     }
 
     if (dto.username && dto.username.toLowerCase() !== user.username) {
