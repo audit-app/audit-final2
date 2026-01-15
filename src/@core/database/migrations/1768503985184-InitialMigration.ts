@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm'
 
-export class InitialMigration1768445095541 implements MigrationInterface {
-  name = 'InitialMigration1768445095541'
+export class InitialMigration1768503985184 implements MigrationInterface {
+  name = 'InitialMigration1768503985184'
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(
@@ -26,16 +26,16 @@ export class InitialMigration1768445095541 implements MigrationInterface {
       `CREATE UNIQUE INDEX "IDX_8e968e08328483ed431ecab59f" ON "templates" ("name", "version") `,
     )
     await queryRunner.query(
-      `CREATE TABLE "organizations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" character varying, "updated_by" character varying, "deletedAt" TIMESTAMP, "name" character varying(200) NOT NULL, "nit" character varying(50) NOT NULL, "description" text, "address" character varying(500), "phone" character varying(50), "email" character varying(200), "logoUrl" character varying(500), "isActive" boolean NOT NULL DEFAULT true, CONSTRAINT "UQ_9b7ca6d30b94fef571cff876884" UNIQUE ("name"), CONSTRAINT "UQ_9577eaa355490cc4f48582b8780" UNIQUE ("nit"), CONSTRAINT "PK_6b031fcd0863e3f6b44230163f9" PRIMARY KEY ("id"))`,
-    )
-    await queryRunner.query(
-      `CREATE TYPE "public"."users_status_enum" AS ENUM('active', 'inactive', 'suspended')`,
+      `CREATE TYPE "public"."users_status_enum" AS ENUM('active', 'suspended')`,
     )
     await queryRunner.query(
       `CREATE TYPE "public"."users_roles_enum" AS ENUM('admin', 'gerente', 'auditor', 'cliente')`,
     )
     await queryRunner.query(
-      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" character varying, "updated_by" character varying, "deletedAt" TIMESTAMP, "names" character varying(50) NOT NULL, "lastNames" character varying(50) NOT NULL, "email" character varying(100) NOT NULL, "username" character varying(30) NOT NULL, "ci" character varying(15) NOT NULL, "password" character varying(255) NOT NULL, "phone" character varying(20), "address" character varying(200), "image" character varying(500), "status" "public"."users_status_enum" NOT NULL DEFAULT 'inactive', "emailVerified" boolean NOT NULL DEFAULT false, "emailVerifiedAt" TIMESTAMP, "organizationId" uuid NOT NULL, "roles" "public"."users_roles_enum" array NOT NULL DEFAULT '{cliente}', CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710" UNIQUE ("username"), CONSTRAINT "UQ_eff3cf686729ac337fe991de64f" UNIQUE ("ci"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+      `CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" character varying, "updated_by" character varying, "deletedAt" TIMESTAMP, "names" character varying(50) NOT NULL, "lastNames" character varying(50) NOT NULL, "email" character varying(100) NOT NULL, "username" character varying(30) NOT NULL, "ci" character varying(15) NOT NULL, "password" character varying(255) NOT NULL, "phone" character varying(20), "address" character varying(200), "image" character varying(500), "status" "public"."users_status_enum" NOT NULL DEFAULT 'active', "emailVerified" boolean NOT NULL DEFAULT false, "emailVerifiedAt" TIMESTAMP, "organizationId" uuid NOT NULL, "roles" "public"."users_roles_enum" array NOT NULL DEFAULT '{cliente}', CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_fe0bb3f6520ee0469504521e710" UNIQUE ("username"), CONSTRAINT "UQ_eff3cf686729ac337fe991de64f" UNIQUE ("ci"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`,
+    )
+    await queryRunner.query(
+      `CREATE TABLE "organizations" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" character varying, "updated_by" character varying, "deletedAt" TIMESTAMP, "name" character varying(200) NOT NULL, "nit" character varying(50) NOT NULL, "description" text, "address" character varying(500), "phone" character varying(50), "email" character varying(200), "logoUrl" character varying(500), "isActive" boolean NOT NULL DEFAULT true, CONSTRAINT "UQ_9b7ca6d30b94fef571cff876884" UNIQUE ("name"), CONSTRAINT "UQ_9577eaa355490cc4f48582b8780" UNIQUE ("nit"), CONSTRAINT "PK_6b031fcd0863e3f6b44230163f9" PRIMARY KEY ("id"))`,
     )
     await queryRunner.query(
       `CREATE TABLE "maturity_frameworks" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "created_at" TIMESTAMP NOT NULL DEFAULT now(), "updated_at" TIMESTAMP NOT NULL DEFAULT now(), "created_by" character varying, "updated_by" character varying, "deletedAt" TIMESTAMP, "name" character varying(100) NOT NULL, "code" character varying(50) NOT NULL, "description" text, "minLevel" integer NOT NULL DEFAULT '0', "maxLevel" integer NOT NULL DEFAULT '5', "isActive" boolean NOT NULL DEFAULT true, CONSTRAINT "PK_74774d6079306c216e3d9a1bba4" PRIMARY KEY ("id"))`,
@@ -94,10 +94,10 @@ export class InitialMigration1768445095541 implements MigrationInterface {
       `DROP INDEX "public"."IDX_616304b2113f3fc4a5b67a5710"`,
     )
     await queryRunner.query(`DROP TABLE "maturity_frameworks"`)
+    await queryRunner.query(`DROP TABLE "organizations"`)
     await queryRunner.query(`DROP TABLE "users"`)
     await queryRunner.query(`DROP TYPE "public"."users_roles_enum"`)
     await queryRunner.query(`DROP TYPE "public"."users_status_enum"`)
-    await queryRunner.query(`DROP TABLE "organizations"`)
     await queryRunner.query(
       `DROP INDEX "public"."IDX_8e968e08328483ed431ecab59f"`,
     )

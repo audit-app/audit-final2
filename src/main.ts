@@ -24,12 +24,21 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
 
   // Configurar CORS
-  const corsOrigin = process.env.CORS_ORIGIN || '*'
+  const corsOriginRaw = process.env.CORS_ORIGIN || 'http://localhost:3000'
+  const corsOrigin =
+    corsOriginRaw === '*'
+      ? '*'
+      : corsOriginRaw.includes(',')
+        ? corsOriginRaw.split(',').map((origin) => origin.trim())
+        : corsOriginRaw
+
   app.enableCors({
     origin: corsOrigin,
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   })
-  logger.log(`🔓 CORS habilitado para: ${corsOrigin}`)
+  logger.log(`🔓 CORS habilitado para: ${corsOriginRaw}`)
 
   app.useGlobalPipes(
     new ValidationPipe({

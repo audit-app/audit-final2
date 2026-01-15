@@ -1,7 +1,7 @@
 import { IsString, IsNotEmpty, IsOptional, Length } from 'class-validator'
 
 /**
- * DTO para importar Template desde Excel/CSV
+ * DTO para importar Template desde Excel
  *
  * Representa la información básica de una plantilla
  */

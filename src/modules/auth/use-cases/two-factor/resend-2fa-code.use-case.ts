@@ -48,7 +48,7 @@ export class Resend2FACodeUseCase {
     }
 
     // 2. Verificar rate limiting
-    await this.emailOperationRateLimitPolicy.check2FALimit(userId, 'resend')
+    await this.emailOperationRateLimitPolicy.check2FALimit(userId)
 
     // 3. Revocar códigos anteriores
     await this.twoFactorTokenService.revokeAllUserCodes(userId)
@@ -67,10 +67,7 @@ export class Resend2FACodeUseCase {
     })
 
     // 6. Incrementar contador
-    await this.emailOperationRateLimitPolicy.increment2FAAttempt(
-      userId,
-      'resend',
-    )
+    await this.emailOperationRateLimitPolicy.increment2FAAttempt(userId)
 
     return {
       token,

@@ -60,17 +60,13 @@ export class EmailOperationRateLimitPolicy {
   }
 
   /**
-   * Verifica límite para operaciones 2FA
+   * Verifica límite para generación de códigos 2FA
    *
    * @param userId - ID del usuario
-   * @param operation - Tipo de operación (generate, resend, verify)
    * @throws TooManyAttemptsException si excede el límite
    */
-  async check2FALimit(
-    userId: string,
-    operation: 'generate' | 'resend' | 'verify',
-  ): Promise<void> {
-    const key = CACHE_KEYS.TWO_FACTOR_ATTEMPTS(userId, operation)
+  async check2FALimit(userId: string): Promise<void> {
+    const key = CACHE_KEYS.TWO_FACTOR_GENERATE_ATTEMPTS(userId)
     const config = RATE_LIMIT_CONFIG.twoFactor
     const canAttempt = await this.rateLimitService.checkLimit(
       key,
@@ -87,16 +83,12 @@ export class EmailOperationRateLimitPolicy {
   }
 
   /**
-   * Incrementa contador para operaciones 2FA
+   * Incrementa contador para generación de códigos 2FA
    *
    * @param userId - ID del usuario
-   * @param operation - Tipo de operación
    */
-  async increment2FAAttempt(
-    userId: string,
-    operation: 'generate' | 'resend' | 'verify',
-  ): Promise<void> {
-    const key = CACHE_KEYS.TWO_FACTOR_ATTEMPTS(userId, operation)
+  async increment2FAAttempt(userId: string): Promise<void> {
+    const key = CACHE_KEYS.TWO_FACTOR_GENERATE_ATTEMPTS(userId)
     const config = RATE_LIMIT_CONFIG.twoFactor
     await this.rateLimitService.incrementAttempts(key, config.windowMinutes)
   }
@@ -105,13 +97,9 @@ export class EmailOperationRateLimitPolicy {
    * Resetea contador 2FA (útil después de verificación exitosa)
    *
    * @param userId - ID del usuario
-   * @param operation - Tipo de operación
    */
-  async reset2FAAttempt(
-    userId: string,
-    operation: 'generate' | 'resend' | 'verify',
-  ): Promise<void> {
-    const key = CACHE_KEYS.TWO_FACTOR_ATTEMPTS(userId, operation)
+  async reset2FAAttempt(userId: string): Promise<void> {
+    const key = CACHE_KEYS.TWO_FACTOR_GENERATE_ATTEMPTS(userId)
     await this.rateLimitService.resetAttempts(key)
   }
 }

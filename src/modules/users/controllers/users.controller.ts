@@ -39,7 +39,7 @@ import {
   VerifyEmailUseCase,
 } from '../use-cases'
 import { CreateUserDto, UpdateUserDto } from '../dtos'
-import { UserEntity, UserStatus, Role } from '../entities/user.entity'
+import { UserStatus, Role } from '../entities/user.entity'
 import { UploadAvatar } from '@core/files'
 import { Public } from '../../auth'
 import {
