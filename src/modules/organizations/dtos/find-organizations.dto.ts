@@ -4,6 +4,27 @@ import { Transform } from 'class-transformer'
 import { ApiPropertyOptional } from '@nestjs/swagger'
 
 /**
+ * Campos por los que se puede ordenar la lista de organizaciones
+ */
+export const ORGANIZATION_SORTABLE_FIELDS = [
+  'name',
+  'nit',
+  'createdAt',
+  'isActive',
+  'email',
+]
+
+/**
+ * Campos en los que busca el parámetro 'search'
+ */
+export const ORGANIZATION_SEARCH_FIELDS = [
+  'name',
+  'nit',
+  'description',
+  'email',
+]
+
+/**
  * DTO para buscar organizaciones con filtros específicos
  *
  * Extiende PaginationDto para heredar:

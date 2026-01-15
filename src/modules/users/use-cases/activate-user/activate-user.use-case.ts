@@ -6,11 +6,11 @@ import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 
 /**
- * Caso de uso: Desactivar un usuario
+ * Caso de uso: Activar un usuario
  *
  * Responsabilidades:
  * - Verificar que el usuario existe
- * - Cambiar status a INACTIVE
+ * - Cambiar status a ACTIVE
  * - Persistir cambios
  */
 @Injectable()

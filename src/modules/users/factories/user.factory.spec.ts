@@ -142,14 +142,14 @@ describe('UserFactory', () => {
       // Arrange
       const dto: CreateUserDto = {
         ...baseDto,
-        status: UserStatus.INACTIVE,
+        status: UserStatus.SUSPENDED,
       }
 
       // Act
       const result = await factory.createFromDto(dto)
 
       // Assert
-      expect(result.status).toBe(UserStatus.INACTIVE)
+      expect(result.status).toBe(UserStatus.SUSPENDED)
     })
 
     it('should handle optional fields as null', async () => {
@@ -527,24 +527,12 @@ describe('UserFactory', () => {
         status: UserStatus.ACTIVE,
       })
 
-      const inactiveUser = await factory.createFromDto({
+      const suspendedUser = await factory.createFromDto({
         names: 'Test',
         lastNames: 'User',
         email: 'test2@test.com',
         username: 'test2',
         ci: '22222222',
-        password: 'Pass123!',
-        organizationId: 'org-1',
-        roles: [Role.CLIENTE],
-        status: UserStatus.INACTIVE,
-      })
-
-      const suspendedUser = await factory.createFromDto({
-        names: 'Test',
-        lastNames: 'User',
-        email: 'test3@test.com',
-        username: 'test3',
-        ci: '33333333',
         password: 'Pass123!',
         roles: [Role.CLIENTE],
         organizationId: 'org-1',
@@ -553,7 +541,6 @@ describe('UserFactory', () => {
 
       // Assert
       expect(activeUser.status).toBe(UserStatus.ACTIVE)
-      expect(inactiveUser.status).toBe(UserStatus.INACTIVE)
       expect(suspendedUser.status).toBe(UserStatus.SUSPENDED)
     })
 

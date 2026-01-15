@@ -354,3 +354,72 @@ export function ApiDeleteResponses(noContent = false): MethodDecorator {
     ApiStandardResponses({ exclude: [400] }), // No hay validación en DELETE
   )
 }
+
+/**
+ * Respuesta paginada genérica (200)
+ *
+ * Retorna una estructura paginada con metadatos.
+ *
+ * @param type - Tipo de dato en el array de resultados
+ * @param description - Descripción personalizada (opcional)
+ *
+ * @example
+ * @ApiPaginatedResponse(UserResponseDto)
+ * async findAll() {}
+ *
+ * @example
+ * @ApiPaginatedResponse(OrganizationResponseDto, 'Lista de organizaciones con paginación')
+ * async findAll() {}
+ */
+export function ApiPaginatedResponse<T>(
+  type: Type<T>,
+  description = 'Respuesta paginada exitosa',
+): MethodDecorator {
+  return applyDecorators(
+    ApiExtraModels(type),
+    ApiResponse({
+      status: 200,
+      description,
+      schema: {
+        type: 'object',
+        properties: {
+          data: {
+            type: 'array',
+            items: { $ref: getSchemaPath(type) },
+          },
+          meta: {
+            type: 'object',
+            properties: {
+              total: { type: 'number', example: 100 },
+              page: { type: 'number', example: 1 },
+              limit: { type: 'number', example: 10 },
+              totalPages: { type: 'number', example: 10 },
+              hasNextPage: { type: 'boolean', example: true },
+              hasPrevPage: { type: 'boolean', example: false },
+            },
+          },
+        },
+      },
+    }),
+  )
+}
+
+/**
+ * Combina respuestas para endpoints de listado paginado (GET)
+ *
+ * Incluye:
+ * - 200: Respuesta paginada
+ * - 400: Validación de parámetros de query
+ * - 401: No autenticado
+ * - 403: Sin permisos
+ * - 500: Error interno
+ *
+ * @param type - Tipo de dato en el array de resultados
+ *
+ * @example
+ * @ApiPaginatedResponses(UserResponseDto)
+ * async findAll() {}
+ */
+export function ApiPaginatedResponses<T>(type: Type<T>): MethodDecorator {
+  return applyDecorators(ApiPaginatedResponse(type), ApiStandardResponses())
+}

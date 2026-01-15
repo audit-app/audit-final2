@@ -23,10 +23,10 @@ import type { IUsersRepository } from '../../repositories'
  * - Enviar email de invitación automáticamente
  *
  * Flujo:
- * 1. Admin crea usuario → Usuario se crea con status=INACTIVE
+ * 1. Admin crea usuario → Usuario se crea con status=ACTIVE pero emailVerified=false
  * 2. Sistema envía email de invitación automáticamente
- * 3. Usuario recibe email y verifica su cuenta
- * 4. Usuario pasa a status=ACTIVE
+ * 3. Usuario recibe email y verifica su cuenta → emailVerified=true
+ * 4. Usuario puede hacer login (requiere status=ACTIVE && emailVerified=true)
  */
 @Injectable()
 export class CreateUserUseCase {
@@ -50,7 +50,7 @@ export class CreateUserUseCase {
     )
     await this.validator.validateOrganizationExists(dto.organizationId)
 
-    // 2. Crear usuario (status = INACTIVE por defecto)
+    // 2. Crear usuario (status = ACTIVE por defecto, emailVerified = false)
     const user = await this.userFactory.createFromDto(dto)
     const savedUser = await this.usersRepository.save(user)
 

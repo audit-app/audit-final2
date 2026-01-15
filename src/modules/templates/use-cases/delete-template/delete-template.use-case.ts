@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { TemplatesRepository } from '../../repositories/templates.repository'
+import { TemplateEntity } from '../../entities/template.entity'
 import {
   TemplateNotFoundException,
   TemplateNotEditableException,
@@ -24,11 +25,12 @@ export class DeleteTemplateUseCase {
    * Ejecuta la eliminación del template
    *
    * @param id - ID del template
+   * @returns Template eliminado
    * @throws {TemplateNotFoundException} Si el template no existe
    * @throws {TemplateNotEditableException} Si el template no es editable
    */
   @Transactional()
-  async execute(id: string): Promise<void> {
+  async execute(id: string): Promise<TemplateEntity> {
     const template = await this.templatesRepository.findById(id)
 
     if (!template) {
@@ -39,6 +41,10 @@ export class DeleteTemplateUseCase {
       throw new TemplateNotEditableException(id, template.status)
     }
 
+    // Guardar copia antes de eliminar para retornarla
+    const removedTemplate = { ...template }
     await this.templatesRepository.softDelete(id)
+
+    return template
   }
 }

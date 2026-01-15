@@ -29,7 +29,6 @@ export class UserFactory {
     user.roles = dto.roles
     user.status = dto.status ?? UserStatus.ACTIVE
     user.image = null
-
     return user
   }
 

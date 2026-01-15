@@ -186,20 +186,21 @@ export default class UsersSeeder implements Seeder {
       },
 
       // ========================================
-      // USUARIOS INACTIVOS - Para testing
+      // USUARIOS SIN VERIFICAR - Para testing
       // ========================================
       {
         names: 'Usuario',
-        lastNames: 'Inactivo Test',
-        email: 'inactivo@auditcorp.bo',
-        username: 'inactivo',
+        lastNames: 'Sin Verificar Test',
+        email: 'sinverificar@auditcorp.bo',
+        username: 'sinverificar',
         ci: '0123456',
         password: hashedPassword,
         phone: '+591 70000010',
         address: 'La Paz, Bolivia',
         roles: [Role.CLIENTE],
-        status: UserStatus.INACTIVE,
+        status: UserStatus.ACTIVE,
         organizationId: org1.id,
+        // emailVerified = false por defecto, no puede hacer login
       },
       {
         names: 'Usuario',

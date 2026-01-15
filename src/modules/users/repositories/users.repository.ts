@@ -225,6 +225,7 @@ export class UsersRepository
         id: user.id,
         fullName: user.fullName,
         createdAt: user.createdAt.toISOString(),
+        updateAt: user.updatedAt.toISOString(),
         email: user.email,
         username: user.username,
         status: user.status,

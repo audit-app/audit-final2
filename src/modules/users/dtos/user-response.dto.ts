@@ -19,8 +19,12 @@ export class UserResponseDto {
   @ApiProperty({ example: '2024-01-20' })
   createdAt: string
 
+  @ApiProperty({ example: '2024-06-15' })
+  updateAt: string
+
   @ApiProperty({ example: ['ADMIN', 'AUDITOR'], isArray: true })
   roles: string[]
+
   @ApiProperty({ example: 'Empresa S.A.' })
   organizationName: string
 

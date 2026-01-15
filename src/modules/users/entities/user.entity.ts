@@ -5,7 +5,6 @@ import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
 
 export enum UserStatus {
   ACTIVE = 'active',
-  INACTIVE = 'inactive',
   SUSPENDED = 'suspended',
 }
 
@@ -65,7 +64,7 @@ export class UserEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: UserStatus,
-    default: UserStatus.INACTIVE, // Inactivo hasta que verifique email
+    default: UserStatus.ACTIVE, // Activo por defecto, pero bloqueado hasta verificar email
   })
   status: UserStatus
 

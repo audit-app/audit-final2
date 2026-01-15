@@ -154,7 +154,7 @@ export class StandardsService {
     return await this.standardRepository.save(standard)
   }
 
-  async remove(id: string): Promise<void> {
+  async remove(id: string): Promise<StandardEntity> {
     const standard = await this.findOne(id)
 
     // Validar que la plantilla sea editable
@@ -167,7 +167,11 @@ export class StandardsService {
       )
     }
 
+    // Guardar copia antes de eliminar para retornarla
+    const removedStandard = { ...standard }
     await this.standardRepository.remove(standard)
+
+    return removedStandard
   }
 
   async deactivate(id: string): Promise<StandardEntity> {

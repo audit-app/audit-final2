@@ -46,6 +46,7 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
     roles: ['user'],
     organizationId: 'org-123',
     status: UserStatus.ACTIVE,
+    emailVerified: true,
     names: 'Test',
     lastNames: 'User',
     ci: '12345678',
@@ -240,15 +241,15 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       expect(tokensService.generateTokenPair).not.toHaveBeenCalled()
     })
 
-    it('should fail when user is not active', async () => {
+    it('should fail when user is suspended', async () => {
       // Arrange
-      const inactiveUser = {
+      const suspendedUser = {
         ...mockUser,
-        status: UserStatus.INACTIVE,
+        status: UserStatus.SUSPENDED,
       }
       loginRateLimitPolicy.checkLimits.mockResolvedValue(undefined)
       usersRepository.findByUsernameOrEmailWithPassword.mockResolvedValue(
-        inactiveUser,
+        suspendedUser,
       )
       passwordHashService.verify.mockResolvedValue(true)
 

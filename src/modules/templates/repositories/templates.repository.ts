@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Repository, Like } from 'typeorm'
 import { BaseRepository } from '@core/repositories'
 import { TransactionService, AuditService } from '@core/database'
 import { TemplateEntity } from '../entities/template.entity'
 import { TemplateStatus } from '../constants/template-status.enum'
-import type { ITemplatesRepository } from './interfaces/templates-repository.interface'
+import type {
+  ITemplatesRepository,
+  TemplateFilters,
+} from './interfaces/templates-repository.interface'
 
 /**
  * Templates Repository
@@ -124,5 +127,49 @@ export class TemplatesRepository
   async findLatestVersion(name: string): Promise<TemplateEntity | null> {
     const versions = await this.findVersionsByName(name)
     return versions[0] || null
+  }
+
+  /**
+   * Busca templates con filtros y paginación
+   *
+   * @param filters - Filtros de búsqueda
+   * @param page - Número de página (opcional)
+   * @param limit - Cantidad de resultados por página (opcional)
+   * @param sortBy - Campo por el cual ordenar (opcional, default: 'createdAt')
+   * @param sortOrder - Orden ASC o DESC (opcional, default: 'DESC')
+   * @returns Tupla [templates, total]
+   */
+  async findWithFilters(
+    filters: TemplateFilters,
+    page?: number,
+    limit?: number,
+    sortBy: string = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC',
+  ): Promise<[TemplateEntity[], number]> {
+    const qb = this.getRepo().createQueryBuilder('template')
+
+    // Filtro de búsqueda de texto
+    if (filters.search) {
+      qb.where(
+        '(template.name ILIKE :search OR template.description ILIKE :search OR template.version ILIKE :search)',
+        { search: `%${filters.search}%` },
+      )
+    }
+
+    // Filtro por status
+    if (filters.status) {
+      qb.andWhere('template.status = :status', { status: filters.status })
+    }
+
+    // Ordenamiento
+    qb.orderBy(`template.${sortBy}`, sortOrder)
+
+    // Paginación
+    if (page !== undefined && limit !== undefined) {
+      const skip = (page - 1) * limit
+      qb.skip(skip).take(limit)
+    }
+
+    return await qb.getManyAndCount()
   }
 }

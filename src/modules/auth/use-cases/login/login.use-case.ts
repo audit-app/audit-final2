@@ -8,6 +8,7 @@ import type { LoginDto, LoginResponseDto } from '../../dtos'
 import {
   InvalidCredentialsException,
   UserNotActiveException,
+  EmailNotVerifiedException,
 } from '../../exceptions'
 import { UserStatus } from '../../../users/entities/user.entity'
 
@@ -76,9 +77,13 @@ export class LoginUseCase {
       throw new InvalidCredentialsException()
     }
 
-    // 4. Verificar estado activo
+    // 4. Verificar estado activo y email verificado
     if (user.status !== UserStatus.ACTIVE) {
       throw new UserNotActiveException(user.status)
+    }
+
+    if (!user.emailVerified) {
+      throw new EmailNotVerifiedException()
     }
 
     // 5. Login exitoso - resetear contadores
