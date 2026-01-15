@@ -203,9 +203,9 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       usersRepository.findByUsernameOrEmailWithPassword.mockResolvedValue(null)
 
       // Act & Assert
-      await expect(
-        useCase.execute(loginDto, '127.0.0.1'),
-      ).rejects.toThrow(InvalidCredentialsException)
+      await expect(useCase.execute(loginDto, '127.0.0.1')).rejects.toThrow(
+        InvalidCredentialsException,
+      )
 
       // Verify rate limit counter was incremented
       expect(loginRateLimitPolicy.incrementAttempts).toHaveBeenCalledWith(
@@ -226,9 +226,9 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       passwordHashService.verify.mockResolvedValue(false) // Invalid password
 
       // Act & Assert
-      await expect(
-        useCase.execute(loginDto, '127.0.0.1'),
-      ).rejects.toThrow(InvalidCredentialsException)
+      await expect(useCase.execute(loginDto, '127.0.0.1')).rejects.toThrow(
+        InvalidCredentialsException,
+      )
 
       // Verify rate limit counter was incremented
       expect(loginRateLimitPolicy.incrementAttempts).toHaveBeenCalledWith(
@@ -253,9 +253,9 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       passwordHashService.verify.mockResolvedValue(true)
 
       // Act & Assert
-      await expect(
-        useCase.execute(loginDto, '127.0.0.1'),
-      ).rejects.toThrow(UserNotActiveException)
+      await expect(useCase.execute(loginDto, '127.0.0.1')).rejects.toThrow(
+        UserNotActiveException,
+      )
 
       // Verify tokens were NOT generated
       expect(tokensService.generateTokenPair).not.toHaveBeenCalled()
@@ -277,9 +277,9 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       passwordHashService.verify.mockResolvedValue(true)
 
       // Act & Assert
-      await expect(
-        useCase.execute(loginDto, '127.0.0.1'),
-      ).rejects.toThrow(UserNotActiveException)
+      await expect(useCase.execute(loginDto, '127.0.0.1')).rejects.toThrow(
+        UserNotActiveException,
+      )
     })
   })
 
@@ -290,9 +290,9 @@ describe('LoginUseCase - Unit Tests (Business Logic)', () => {
       loginRateLimitPolicy.checkLimits.mockRejectedValue(rateLimitError)
 
       // Act & Assert
-      await expect(
-        useCase.execute(loginDto, '127.0.0.1'),
-      ).rejects.toThrow(rateLimitError)
+      await expect(useCase.execute(loginDto, '127.0.0.1')).rejects.toThrow(
+        rateLimitError,
+      )
 
       // Verify NO other operations were performed
       expect(

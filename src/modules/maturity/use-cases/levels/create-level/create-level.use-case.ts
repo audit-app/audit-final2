@@ -39,19 +39,17 @@ export class CreateLevelUseCase {
   @Transactional()
   async execute(dto: CreateMaturityLevelDto): Promise<MaturityLevelEntity> {
     // 1. Verificar que el framework existe
-    const framework =
-      await this.frameworksRepository.findById(dto.frameworkId)
+    const framework = await this.frameworksRepository.findById(dto.frameworkId)
 
     if (!framework) {
       throw new MaturityFrameworkNotFoundException(dto.frameworkId)
     }
 
     // 2. Verificar que no exista ese nivel en el framework
-    const existingLevel =
-      await this.levelsRepository.findByFrameworkAndLevel(
-        dto.frameworkId,
-        dto.level,
-      )
+    const existingLevel = await this.levelsRepository.findByFrameworkAndLevel(
+      dto.frameworkId,
+      dto.level,
+    )
 
     if (existingLevel) {
       throw new MaturityLevelAlreadyExistsException(dto.frameworkId, dto.level)

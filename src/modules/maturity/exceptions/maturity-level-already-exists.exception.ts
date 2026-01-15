@@ -5,8 +5,6 @@ import { ConflictException } from '@nestjs/common'
  */
 export class MaturityLevelAlreadyExistsException extends ConflictException {
   constructor(frameworkId: string, level: number) {
-    super(
-      `Ya existe el nivel ${level} en el framework con ID "${frameworkId}"`,
-    )
+    super(`Ya existe el nivel ${level} en el framework con ID "${frameworkId}"`)
   }
 }

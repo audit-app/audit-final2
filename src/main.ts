@@ -50,6 +50,7 @@ async function bootstrap() {
     )
     .setVersion('1.0')
     .addTag('Auth', 'Autenticación JWT con refresh tokens')
+    .addTag('organizations', 'Gestión de organizaciones')
     .addTag('users', 'Gestión de usuarios')
     .addTag('notifications', 'Sistema de notificaciones')
     .addTag('templates', 'Gestión de plantillas (ISO 27001, ISO 9001, etc.)')

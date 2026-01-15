@@ -26,9 +26,14 @@ export class ActivateFrameworkUseCase {
    * @throws {MaturityFrameworkNotFoundException} Si el framework no existe
    */
   @Transactional()
-  async execute(id: string, isActive: boolean): Promise<MaturityFrameworkEntity> {
-    const framework =
-      await this.frameworksRepository.updateActiveStatus(id, isActive)
+  async execute(
+    id: string,
+    isActive: boolean,
+  ): Promise<MaturityFrameworkEntity> {
+    const framework = await this.frameworksRepository.updateActiveStatus(
+      id,
+      isActive,
+    )
 
     if (!framework) {
       throw new MaturityFrameworkNotFoundException(id)

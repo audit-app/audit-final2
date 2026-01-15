@@ -8,7 +8,7 @@ import { IUsersRepository } from './users-repository.interface'
 import { PaginatedResponse } from '@core/dtos'
 import { FindUsersDto } from '../dtos/find-users.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
-
+import { ArrayContains } from 'typeorm'
 @Injectable()
 export class UsersRepository
   extends BaseRepository<UserEntity>
@@ -23,18 +23,109 @@ export class UsersRepository
     super(repository, transactionService, auditService)
   }
 
+  /**
+   * Busca un usuario por su email incluyendo si está eliminado
+   * @param email
+   * @returns Usuario o null si no existe
+   */
   async findByEmail(email: string): Promise<UserEntity | null> {
     return await this.getRepo().findOne({
       where: { email: email.toLowerCase() },
-      relations: ['organization'],
+      relations: { organization: true },
+      withDeleted: true,
     })
   }
 
+  /**
+   * Busca un usuario por su email incluyendo si está eliminado
+   * @param email
+   * @returns Usuario o null si no existe
+   */
   async findByUsername(username: string): Promise<UserEntity | null> {
     return await this.getRepo().findOne({
       where: { username: username.toLowerCase() },
-      relations: ['organization'],
+      relations: { organization: true },
+      withDeleted: true,
     })
+  }
+
+  /**
+   * Busca un usuario por su CI incluyendo si está eliminado
+   * @param ci
+   * @returns Usuario o null si no existe
+   */
+  async findByCI(ci: string): Promise<UserEntity | null> {
+    return await this.getRepo().findOne({
+      where: { ci },
+      relations: { organization: true },
+      withDeleted: true,
+    })
+  }
+
+  /**
+   * Valida si existe un usuario con el email dado
+   * @param email - Email a validar
+   * @param excludeId - ID del usuario a excluir de la validación (para updates)
+   * @returns true si existe, false si no existe
+   */
+  async existsByEmail(email: string, excludeId?: string): Promise<boolean> {
+    const query = this.getRepo()
+      .createQueryBuilder('user')
+      .where('user.email = :email', {
+        email: email.toLowerCase(),
+      })
+      .withDeleted()
+
+    if (excludeId) {
+      query.andWhere('user.id != :id', { id: excludeId })
+    }
+
+    const count = await query.getCount()
+    return count > 0
+  }
+
+  /**
+   * Valida si existe un usuario con el username dado
+   * @param username - Username a validar
+   * @param excludeId - ID del usuario a excluir de la validación (para updates)
+   * @returns true si existe, false si no existe
+   */
+  async existsByUsername(
+    username: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const query = this.getRepo()
+      .createQueryBuilder('user')
+      .where('user.username = :username', {
+        username: username.toLowerCase(),
+      })
+      .withDeleted()
+
+    if (excludeId) {
+      query.andWhere('user.id != :id', { id: excludeId })
+    }
+
+    const count = await query.getCount()
+    return count > 0
+  }
+
+  /**
+   * Valida si existe un usuario con el CI dado
+   * @param ci - CI a validar
+   * @param excludeId - ID del usuario a excluir de la validación (para updates)
+   * @returns true si existe, false si no existe
+   */
+  async existsByCI(ci: string, excludeId?: string): Promise<boolean> {
+    const query = this.getRepo()
+      .createQueryBuilder('user')
+      .where('user.ci = :ci', { ci })
+      .withDeleted()
+    if (excludeId) {
+      query.andWhere('user.id != :id', { id: excludeId })
+    }
+
+    const count = await query.getCount()
+    return count > 0
   }
 
   /**
@@ -51,19 +142,17 @@ export class UsersRepository
 
     return await this.getRepo()
       .createQueryBuilder('user')
-      .addSelect('user.password') // Incluir password explícitamente
+      .addSelect('user.password')
       .where('LOWER(user.email) = :identifier', { identifier: normalized })
       .orWhere('LOWER(user.username) = :identifier', { identifier: normalized })
       .getOne()
   }
 
-  async findByCI(ci: string): Promise<UserEntity | null> {
-    return await this.getRepo().findOne({
-      where: { ci },
-      relations: ['organization'],
-    })
-  }
-
+  /**
+   * Busca todos los usuarios de una organización
+   * @param organizationId - ID de la organización
+   * @returns Lista de usuarios
+   */
   async findByOrganization(organizationId: string): Promise<UserEntity[]> {
     return await this.getRepo().find({
       where: { organizationId },
@@ -72,53 +161,11 @@ export class UsersRepository
     })
   }
 
-  // Validaciones de unicidad
-  async existsByEmail(email: string, excludeId?: string): Promise<boolean> {
-    const query = this.getRepo()
-      .createQueryBuilder('user')
-      .where('user.email = :email', {
-        email: email.toLowerCase(),
-      })
-
-    if (excludeId) {
-      query.andWhere('user.id != :id', { id: excludeId })
-    }
-
-    const count = await query.getCount()
-    return count > 0
-  }
-
-  async existsByUsername(
-    username: string,
-    excludeId?: string,
-  ): Promise<boolean> {
-    const query = this.getRepo()
-      .createQueryBuilder('user')
-      .where('user.username = :username', {
-        username: username.toLowerCase(),
-      })
-
-    if (excludeId) {
-      query.andWhere('user.id != :id', { id: excludeId })
-    }
-
-    const count = await query.getCount()
-    return count > 0
-  }
-
-  async existsByCI(ci: string, excludeId?: string): Promise<boolean> {
-    const query = this.getRepo()
-      .createQueryBuilder('user')
-      .where('user.ci = :ci', { ci })
-
-    if (excludeId) {
-      query.andWhere('user.id != :id', { id: excludeId })
-    }
-
-    const count = await query.getCount()
-    return count > 0
-  }
-
+  /**
+   * Cuenta la cantidad de usuarios en una organización
+   * @param organizationId - ID de la organización
+   * @returns Cantidad de usuarios
+   */
   async countUsersByOrganization(organizationId: string): Promise<number> {
     return await this.getRepo().count({
       where: { organizationId },
@@ -133,17 +180,13 @@ export class UsersRepository
    * - status: estado del usuario (active, inactive, suspended) - opcional
    * - organizationId: filtrar por organización
    *
-   * NOTA: El filtro por 'role' requiere QueryBuilder ya que roles es un array.
-   * Si necesitas filtrar por rol, usa el método findByOrganization y filtra en memoria,
-   * o crea un método específico con QueryBuilder.
-   *
    * @param query - DTO con filtros y opciones de paginación
    * @returns Datos paginados con UserResponseDto
    */
   async paginateUsers(
     query: FindUsersDto,
   ): Promise<PaginatedResponse<UserResponseDto>> {
-    const { search, status, organizationId } = query
+    const { search, status, organizationId, role } = query
 
     // 1. Definimos los filtros fijos (AND)
     const baseFilter: FindOptionsWhere<UserEntity> = {}
@@ -171,6 +214,9 @@ export class UsersRepository
         ...baseFilter,
         [field]: searchTerm,
       }))
+    }
+    if (role) {
+      baseFilter.roles = ArrayContains([role])
     }
 
     return this.paginateWithMapper<UserResponseDto>(

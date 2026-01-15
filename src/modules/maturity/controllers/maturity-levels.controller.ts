@@ -87,10 +87,7 @@ export class MaturityLevelsController {
     status: 409,
     description: 'Nivel con ese número ya existe en el framework',
   })
-  async update(
-    @Param('id') id: string,
-    @Body() dto: UpdateMaturityLevelDto,
-  ) {
+  async update(@Param('id') id: string, @Body() dto: UpdateMaturityLevelDto) {
     return await this.updateLevelUseCase.execute(id, dto)
   }
 

@@ -38,8 +38,7 @@ export class VerifyEmailUseCase {
   @Transactional()
   async execute(tokenId: string): Promise<UserEntity> {
     // 1. Consumir token (busca, valida y revoca automáticamente)
-    const tokenData =
-      await this.emailVerificationService.consumeToken(tokenId)
+    const tokenData = await this.emailVerificationService.consumeToken(tokenId)
 
     if (!tokenData) {
       throw new BadRequestException(
@@ -69,4 +68,3 @@ export class VerifyEmailUseCase {
     return await this.usersRepository.save(user)
   }
 }
-

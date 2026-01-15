@@ -20,7 +20,9 @@ import {
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiStandardResponses,
+  ApiDeleteResponses,
 } from '@core/swagger'
+import { UuidParamDto } from '@core/dtos'
 
 import {
   CreateUserUseCase,
@@ -39,6 +41,7 @@ import { UserEntity } from '../entities/user.entity'
 import { UploadAvatar } from '@core/files'
 import { Public } from '../../auth'
 import { FindUsersDto } from '../dtos/find-users.dto'
+import { UserResponseDto } from '../dtos/user-response.dto'
 
 @ApiTags('users')
 @Controller('users')
@@ -73,17 +76,41 @@ export class UsersController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Listar todos los usuarios' })
-  @ApiResponse({ status: 200, description: 'Lista de usuarios' })
+  @ApiOperation({
+    summary: 'Listar todos los usuarios',
+    description: `
+Obtiene una lista paginada de usuarios con capacidades de búsqueda y filtrado.
+
+**Parámetros de paginación:**
+- \`page\`: Número de página (default: 1)
+- \`limit\`: Cantidad de resultados por página (default: 10)
+- \`sortBy\`: Campo por el cual ordenar (default: createdAt)
+- \`sortOrder\`: Orden ascendente (ASC) o descendente (DESC) (default: DESC)
+
+**Parámetros de filtrado:**
+- \`search\`: Búsqueda de texto libre en names, lastNames, email, username, ci
+- \`status\`: Filtrar por estado (active, inactive, suspended)
+- \`role\`: Filtrar por rol (admin, gerente, auditor, cliente)
+- \`organizationId\`: Filtrar por ID de organización
+
+**Campos ordenables:** lastNames, email, createdAt, organizationId, status, ci, phone, names
+    `.trim(),
+  })
+  @ApiReadResponses(UserResponseDto, true)
   async findAll(@Query() findUsersDto: FindUsersDto) {
     return await this.findAllUsersUseCase.execute(findUsersDto)
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener un usuario por ID' })
-  @ApiResponse({ status: 200, description: 'Usuario encontrado' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async findOne(@Param('id') id: string) {
+  @ApiOperation({
+    summary: 'Obtener un usuario por ID',
+    description:
+      'Retorna los datos completos de un usuario específico mediante su ID único.',
+  })
+  @ApiOkResponse(UserResponseDto, 'Usuario encontrado exitosamente')
+  @ApiNotFoundResponse('Usuario no encontrado')
+  @ApiStandardResponses()
+  async findOne(@Param() { id }: UuidParamDto) {
     return await this.findUserByIdUseCase.execute(id)
   }
 
@@ -91,15 +118,13 @@ export class UsersController {
   @ApiOperation({
     summary: 'Actualizar un usuario',
     description:
-      'Actualiza los datos de un usuario. NO actualiza la contraseña (usar endpoint de autenticación).',
+      'Actualiza los datos de un usuario y retorna la entidad actualizada. NO actualiza la contraseña (usar endpoint de autenticación).',
   })
-  @ApiResponse({ status: 200, description: 'Usuario actualizado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  @ApiResponse({
-    status: 409,
-    description: 'Email, username o CI ya están en uso',
-  })
-  async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+  @ApiUpdateResponses(UserResponseDto, true)
+  async update(
+    @Param() { id }: UuidParamDto,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
     return await this.updateUserUseCase.execute(id, updateUserDto)
   }
 
@@ -111,13 +136,13 @@ export class UsersController {
   @ApiOperation({
     summary: 'Subir imagen de perfil del usuario',
     description:
-      'Sube o reemplaza la imagen de perfil. Formatos: JPG, PNG, WebP. Tamaño máximo: 2MB. Dimensiones: 512x512px.',
+      'Sube o reemplaza la imagen de perfil y retorna el usuario actualizado. Formatos: JPG, PNG, WebP. Tamaño máximo: 2MB. Dimensiones: 512x512px.',
   })
-  @ApiResponse({ status: 200, description: 'Imagen subida exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  @ApiResponse({ status: 400, description: 'Archivo inválido o muy grande' })
+  @ApiOkResponse(UserResponseDto, 'Imagen subida exitosamente')
+  @ApiNotFoundResponse('Usuario no encontrado')
+  @ApiStandardResponses()
   async uploadProfileImage(
-    @Param('id') id: string,
+    @Param() { id }: UuidParamDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
@@ -131,11 +156,12 @@ export class UsersController {
   @ApiOperation({
     summary: 'Eliminar imagen de perfil del usuario',
     description:
-      'Elimina la imagen de perfil del usuario y la remueve del storage.',
+      'Elimina la imagen de perfil del usuario, la remueve del storage y retorna el usuario actualizado.',
   })
-  @ApiResponse({ status: 200, description: 'Imagen eliminada exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async deleteProfileImage(@Param('id') id: string) {
+  @ApiOkResponse(UserResponseDto, 'Imagen eliminada exitosamente')
+  @ApiNotFoundResponse('Usuario no encontrado')
+  @ApiStandardResponses()
+  async deleteProfileImage(@Param() { id }: UuidParamDto) {
     return await this.deleteProfileImageUseCase.execute(id)
   }
 
@@ -143,11 +169,11 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Desactivar un usuario',
-    description: 'Cambia el estado del usuario a INACTIVE',
+    description:
+      'Cambia el estado del usuario a INACTIVE y retorna el usuario actualizado.',
   })
-  @ApiResponse({ status: 200, description: 'Usuario desactivado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async deactivate(@Param('id') id: string) {
+  @ApiUpdateResponses(UserResponseDto)
+  async deactivate(@Param() { id }: UuidParamDto) {
     return await this.deactivateUserUseCase.execute(id)
   }
 
@@ -155,11 +181,11 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Activar un usuario',
-    description: 'Cambia el estado del usuario a ACTIVE',
+    description:
+      'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
   })
-  @ApiResponse({ status: 200, description: 'Usuario desactivado exitosamente' })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async activate(@Param('id') id: string) {
+  @ApiUpdateResponses(UserResponseDto)
+  async activate(@Param() { id }: UuidParamDto) {
     return await this.activateUserUseCase.execute(id)
   }
 
@@ -191,14 +217,10 @@ export class UsersController {
   @ApiOperation({
     summary: 'Eliminar un usuario (soft delete)',
     description:
-      'Marca el usuario como eliminado sin borrar sus datos de la base de datos',
+      'Marca el usuario como eliminado sin borrar sus datos de la base de datos. No retorna contenido.',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Usuario eliminado exitosamente',
-  })
-  @ApiResponse({ status: 404, description: 'Usuario no encontrado' })
-  async remove(@Param('id') id: string) {
+  @ApiDeleteResponses(true)
+  async remove(@Param() { id }: UuidParamDto) {
     await this.removeUserUseCase.execute(id)
   }
 }
