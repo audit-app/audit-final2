@@ -16,7 +16,7 @@ import { OrganizationEntity } from '../../../modules/organizations/entities/orga
  */
 export default class UsersSeeder implements Seeder {
   private readonly SALT_ROUNDS = 10
-  private readonly DEFAULT_PASSWORD = 'password123'
+  private readonly DEFAULT_PASSWORD = 'Password123!'
 
   async run(dataSource: DataSource): Promise<void> {
     const userRepository = dataSource.getRepository(UserEntity)
@@ -54,7 +54,7 @@ export default class UsersSeeder implements Seeder {
       {
         names: 'Carlos',
         lastNames: 'Administrador',
-        email: 'admin@auditcorp.bo',
+        email: 'admin@gmail.com',
         username: 'admin',
         ci: '1234567',
         password: hashedPassword,
