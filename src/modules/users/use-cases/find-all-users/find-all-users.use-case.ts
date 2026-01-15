@@ -2,8 +2,8 @@ import { Injectable, Inject } from '@nestjs/common'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { FindUsersDto } from '../../dtos/find-users.dto'
-import { UserResponseDto } from '../../dtos/user-response.dto'
 import { PaginatedResponse } from '@core/dtos'
+import { UserEntity } from '../../entities'
 
 /**
  * Caso de uso: Obtener todos los usuarios
@@ -17,7 +17,7 @@ export class FindAllUsersUseCase {
 
   async execute(
     findUsersDto: FindUsersDto,
-  ): Promise<PaginatedResponse<UserResponseDto>> {
+  ): Promise<PaginatedResponse<UserEntity>> {
     return await this.usersRepository.paginateUsers(findUsersDto)
   }
 }
