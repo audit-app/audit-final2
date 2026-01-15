@@ -10,7 +10,7 @@ import type { IUsersRepository } from '../../repositories'
  *
  * Responsabilidades:
  * - Verificar que el usuario existe
- * - Cambiar status a INACTIVE
+ * - Cambiar status a SUSPENDED
  * - Persistir cambios
  */
 @Injectable()
@@ -28,8 +28,8 @@ export class DeactivateUserUseCase {
       throw new UserNotFoundException(id)
     }
 
-    // 2. Cambiar status a INACTIVE
-    user.status = UserStatus.INACTIVE
+    // 2. Cambiar status a SUSPENDED
+    user.status = UserStatus.SUSPENDED
 
     // 3. Persistir cambios
     return await this.usersRepository.save(user)

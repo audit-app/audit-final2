@@ -12,12 +12,27 @@ import {
   BadRequestException,
   Query,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger'
+import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import { UploadLogo } from '@core/files'
+import {
+  ApiCreate,
+  ApiList,
+  ApiFindOne,
+  ApiUpdate,
+  ApiRemove,
+  ApiCustom,
+  ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiStandardResponses,
+} from '@core/swagger'
+import { UuidParamDto } from '@core/dtos'
 import {
   CreateOrganizationDto,
   UpdateOrganizationDto,
   FindOrganizationsDto,
+  OrganizationResponseDto,
+  ORGANIZATION_SORTABLE_FIELDS,
+  ORGANIZATION_SEARCH_FIELDS,
 } from '../dtos'
 import {
   CreateOrganizationUseCase,
@@ -47,141 +62,63 @@ export class OrganizationsController {
   ) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
+  @ApiCreate(OrganizationResponseDto, {
     summary: 'Crear una nueva organización',
-    description: 'Crea una nueva organización con sus datos básicos',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Organización creada exitosamente',
-  })
-  @ApiResponse({
-    status: 409,
-    description: 'Ya existe una organización con ese nombre o NIT',
+    description:
+      'Crea una nueva organización con sus datos básicos. El NIT y nombre deben ser únicos.',
+    conflictMessage: 'Ya existe una organización con ese nombre o NIT',
   })
   async create(@Body() createOrganizationDto: CreateOrganizationDto) {
     return await this.createOrganizationUseCase.execute(createOrganizationDto)
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Obtener organizaciones con paginación y filtros',
-    description:
-      'Retorna organizaciones con soporte para paginación, búsqueda y filtros',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: 'Número de página (default: 1)',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: 'Registros por página (default: 10, max: 100)',
-    example: 10,
-  })
-  @ApiQuery({
-    name: 'all',
-    required: false,
-    description: 'Devolver todos los registros sin paginación',
-    example: false,
-  })
-  @ApiQuery({
-    name: 'sortBy',
-    required: false,
-    description: 'Campo para ordenar (ej: createdAt, name)',
-    example: 'createdAt',
-  })
-  @ApiQuery({
-    name: 'sortOrder',
-    required: false,
-    description: 'Orden ASC o DESC',
-    example: 'DESC',
-  })
-  @ApiQuery({
-    name: 'search',
-    required: false,
-    description: 'Búsqueda de texto libre (nombre, NIT, descripción, email)',
-    example: 'coca cola',
-  })
-  @ApiQuery({
-    name: 'isActive',
-    required: false,
-    description: 'Filtrar por estado activo/inactivo',
-    example: true,
-  })
-  @ApiQuery({
-    name: 'hasLogo',
-    required: false,
-    description: 'Filtrar organizaciones con/sin logo',
-    example: true,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Respuesta paginada con organizaciones',
-    schema: {
-      example: {
-        data: [
-          {
-            id: '123e4567-e89b-12d3-a456-426614174000',
-            name: 'Coca Cola Bolivia',
-            nit: '1234567890',
-            description: 'Empresa de bebidas',
-            address: 'Av. Siempre Viva 123',
-            phone: '12345678',
-            email: 'info@cocacola.bo',
-            logoUrl: '/uploads/organizations/logos/org-123.png',
-            isActive: true,
-            createdAt: '2024-01-15T10:30:00Z',
-            updatedAt: '2024-01-15T10:30:00Z',
-          },
-        ],
-        meta: {
-          total: 100,
-          page: 1,
-          limit: 10,
-          totalPages: 10,
-          hasNextPage: true,
-          hasPrevPage: false,
-        },
+  @ApiList(OrganizationResponseDto, {
+    summary: 'Listar organizaciones con paginación y filtros',
+    searchFields: ORGANIZATION_SEARCH_FIELDS,
+    sortableFields: ORGANIZATION_SORTABLE_FIELDS,
+    defaultSortBy: 'createdAt',
+    filterFields: [
+      {
+        name: 'isActive',
+        description: 'Filtrar por estado activo/inactivo',
+        type: 'boolean',
+        example: 'true',
       },
-    },
+      {
+        name: 'hasLogo',
+        description: 'Filtrar organizaciones con/sin logo',
+        type: 'boolean',
+        example: 'true',
+      },
+    ],
   })
   async findAll(@Query() query: FindOrganizationsDto) {
     return await this.findOrganizationsWithFiltersUseCase.execute(query)
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener una organización por ID' })
-  @ApiResponse({ status: 200, description: 'Organización encontrada' })
-  @ApiResponse({ status: 404, description: 'Organización no encontrada' })
-  async findOne(@Param('id') id: string) {
+  @ApiFindOne(OrganizationResponseDto)
+  async findOne(@Param() { id }: UuidParamDto) {
     return await this.findOrganizationByIdUseCase.execute(id)
   }
 
   @Get('nit/:nit')
-  @ApiOperation({ summary: 'Obtener una organización por NIT' })
-  @ApiResponse({ status: 200, description: 'Organización encontrada' })
-  @ApiResponse({ status: 404, description: 'Organización no encontrada' })
+  @ApiCustom(OrganizationResponseDto, {
+    summary: 'Obtener una organización por NIT',
+    description:
+      'Retorna los datos completos de una organización específica mediante su NIT.',
+  })
   async findByNit(@Param('nit') nit: string) {
     return await this.findOrganizationByNitUseCase.execute(nit)
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar una organización' })
-  @ApiResponse({
-    status: 200,
-    description: 'Organización actualizada exitosamente',
-  })
-  @ApiResponse({ status: 404, description: 'Organización no encontrada' })
-  @ApiResponse({
-    status: 409,
-    description: 'Ya existe una organización con ese nombre o NIT',
+  @ApiUpdate(OrganizationResponseDto, {
+    conflictMessage: 'Ya existe una organización con ese nombre o NIT',
   })
   async update(
-    @Param('id') id: string,
+    @Param() { id }: UuidParamDto,
     @Body() updateOrganizationDto: UpdateOrganizationDto,
   ) {
     return await this.updateOrganizationUseCase.execute(
@@ -194,25 +131,17 @@ export class OrganizationsController {
   @HttpCode(HttpStatus.OK)
   @UploadLogo({
     maxSize: 5 * 1024 * 1024, // 5MB
-    description:
-      'Subir logo de la organización (JPG, PNG, WebP, SVG). Tamaño máximo: 5MB',
   })
   @ApiOperation({
     summary: 'Subir logo de la organización',
     description:
-      'Sube una imagen como logo de la organización. La imagen se redimensionará automáticamente si excede 1024x1024px.',
+      'Sube o reemplaza el logo de la organización y retorna la organización actualizada. Formatos: JPG, PNG, WebP, SVG. Tamaño máximo: 5MB. Se redimensiona automáticamente si excede 1024x1024px.',
   })
-  @ApiResponse({
-    status: 200,
-    description: 'Logo subido exitosamente',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Formato de archivo no válido o archivo demasiado grande',
-  })
-  @ApiResponse({ status: 404, description: 'Organización no encontrada' })
+  @ApiOkResponse(OrganizationResponseDto, 'Logo subido exitosamente')
+  @ApiNotFoundResponse('Organización no encontrada')
+  @ApiStandardResponses()
   async uploadLogo(
-    @Param('id') id: string,
+    @Param() { id }: UuidParamDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
     if (!file) {
@@ -223,22 +152,13 @@ export class OrganizationsController {
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: 'Desactivar una organización',
+  @ApiRemove(OrganizationResponseDto, {
+    summary: 'Desactivar una organización (soft delete)',
     description:
-      'Desactiva una organización (soft delete). No se puede desactivar si tiene usuarios activos.',
+      'Desactiva una organización sin eliminarla de la base de datos. No se puede desactivar si tiene usuarios activos. Retorna la organización desactivada para confirmación.',
+    conflictMessage: 'La organización tiene usuarios activos',
   })
-  @ApiResponse({
-    status: 204,
-    description: 'Organización desactivada exitosamente',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'La organización tiene usuarios activos',
-  })
-  @ApiResponse({ status: 404, description: 'Organización no encontrada' })
-  async remove(@Param('id') id: string) {
-    await this.removeOrganizationUseCase.execute(id)
+  async remove(@Param() { id }: UuidParamDto) {
+    return await this.removeOrganizationUseCase.execute(id)
   }
 }

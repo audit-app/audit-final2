@@ -1,5 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
+import { OrganizationEntity } from '../../entities/organization.entity'
 import {
   OrganizationNotFoundException,
   OrganizationHasActiveUsersException,
@@ -14,6 +15,7 @@ import type { IOrganizationRepository } from '../../repositories'
  * - Verificar que la organización existe
  * - Verificar que no tiene usuarios activos
  * - Marcar como inactiva (soft delete)
+ * - Retornar la organización desactivada
  */
 @Injectable()
 export class RemoveOrganizationUseCase {
@@ -23,7 +25,7 @@ export class RemoveOrganizationUseCase {
   ) {}
 
   @Transactional()
-  async execute(id: string): Promise<void> {
+  async execute(id: string): Promise<OrganizationEntity> {
     // 1. Verificar que la organización existe y está activa
     const organization = await this.organizationRepository.findActiveById(id)
     if (!organization) {
@@ -38,8 +40,12 @@ export class RemoveOrganizationUseCase {
       throw new OrganizationHasActiveUsersException()
     }
 
-    // 3. Marcar como inactiva
+    // 3. Marcar como inactiva y persistir
     organization.isActive = false
-    await this.organizationRepository.save(organization)
+    const updatedOrganization =
+      await this.organizationRepository.save(organization)
+
+    // 4. Retornar la organización desactivada (para confirmación en frontend)
+    return updatedOrganization
   }
 }

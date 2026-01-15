@@ -42,10 +42,10 @@ export class DeactivateOrganizationWithUsersUseCase {
     // 2. Obtener TODOS los usuarios de la organización (activos e inactivos)
     const users = await this.usersRepository.findByOrganization(organizationId)
 
-    // 3. Desactivar todos los usuarios
+    // 3. Suspender todos los usuarios activos
     for (const user of users) {
-      if (user.status !== UserStatus.INACTIVE) {
-        user.status = UserStatus.INACTIVE
+      if (user.status !== UserStatus.SUSPENDED) {
+        user.status = UserStatus.SUSPENDED
         await this.usersRepository.save(user)
       }
     }

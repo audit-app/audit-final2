@@ -14,13 +14,15 @@ import {
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import {
-  ApiCreateResponses,
-  ApiReadResponses,
-  ApiUpdateResponses,
+  ApiCreate,
+  ApiList,
+  ApiFindOne,
+  ApiUpdate,
+  ApiRemove,
+  ApiCustom,
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiStandardResponses,
-  ApiDeleteResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 
@@ -37,10 +39,14 @@ import {
   VerifyEmailUseCase,
 } from '../use-cases'
 import { CreateUserDto, UpdateUserDto } from '../dtos'
-import { UserEntity } from '../entities/user.entity'
+import { UserEntity, UserStatus, Role } from '../entities/user.entity'
 import { UploadAvatar } from '@core/files'
 import { Public } from '../../auth'
-import { FindUsersDto } from '../dtos/find-users.dto'
+import {
+  FindUsersDto,
+  USER_SORTABLE_FIELDS,
+  USER_SEARCH_FIELDS,
+} from '../dtos/find-users.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
 
 @ApiTags('users')
@@ -61,66 +67,56 @@ export class UsersController {
 
   @Public()
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
+  @ApiCreate(UserResponseDto, {
     summary: 'Crear un nuevo usuario',
     description:
       'Crea un nuevo usuario con sus datos básicos. La contraseña se hashea automáticamente con bcrypt.',
+    conflictMessage: 'Ya existe un usuario con ese email, username o CI',
   })
-  @ApiCreateResponses(
-    UserEntity,
-    'Ya existe un usuario con ese email, username o CI',
-  )
   async create(@Body() createUserDto: CreateUserDto) {
     return await this.createUserUseCase.execute(createUserDto)
   }
 
   @Get()
-  @ApiOperation({
+  @ApiList(UserResponseDto, {
     summary: 'Listar todos los usuarios',
-    description: `
-Obtiene una lista paginada de usuarios con capacidades de búsqueda y filtrado.
-
-**Parámetros de paginación:**
-- \`page\`: Número de página (default: 1)
-- \`limit\`: Cantidad de resultados por página (default: 10)
-- \`sortBy\`: Campo por el cual ordenar (default: createdAt)
-- \`sortOrder\`: Orden ascendente (ASC) o descendente (DESC) (default: DESC)
-
-**Parámetros de filtrado:**
-- \`search\`: Búsqueda de texto libre en names, lastNames, email, username, ci
-- \`status\`: Filtrar por estado (active, inactive, suspended)
-- \`role\`: Filtrar por rol (admin, gerente, auditor, cliente)
-- \`organizationId\`: Filtrar por ID de organización
-
-**Campos ordenables:** lastNames, email, createdAt, organizationId, status, ci, phone, names
-    `.trim(),
+    searchFields: USER_SEARCH_FIELDS,
+    sortableFields: USER_SORTABLE_FIELDS.map(String),
+    defaultSortBy: 'createdAt',
+    filterFields: [
+      {
+        name: 'status',
+        description: 'Filtrar por estado del usuario',
+        type: `enum: ${Object.values(UserStatus).join(', ')}`,
+      },
+      {
+        name: 'role',
+        description: 'Filtrar por rol',
+        type: `enum: ${Object.values(Role).join(', ')}`,
+      },
+      {
+        name: 'organizationId',
+        description: 'Filtrar por ID de organización',
+        type: 'UUID',
+      },
+    ],
   })
-  @ApiReadResponses(UserResponseDto, true)
   async findAll(@Query() findUsersDto: FindUsersDto) {
     return await this.findAllUsersUseCase.execute(findUsersDto)
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Obtener un usuario por ID',
-    description:
-      'Retorna los datos completos de un usuario específico mediante su ID único.',
-  })
-  @ApiOkResponse(UserResponseDto, 'Usuario encontrado exitosamente')
-  @ApiNotFoundResponse('Usuario no encontrado')
-  @ApiStandardResponses()
+  @ApiFindOne(UserResponseDto)
   async findOne(@Param() { id }: UuidParamDto) {
     return await this.findUserByIdUseCase.execute(id)
   }
 
   @Patch(':id')
-  @ApiOperation({
-    summary: 'Actualizar un usuario',
+  @ApiUpdate(UserResponseDto, {
     description:
       'Actualiza los datos de un usuario y retorna la entidad actualizada. NO actualiza la contraseña (usar endpoint de autenticación).',
+    conflictMessage: 'Ya existe un usuario con ese email, username o CI',
   })
-  @ApiUpdateResponses(UserResponseDto, true)
   async update(
     @Param() { id }: UuidParamDto,
     @Body() updateUserDto: UpdateUserDto,
@@ -166,25 +162,21 @@ Obtiene una lista paginada de usuarios con capacidades de búsqueda y filtrado.
   }
 
   @Patch(':id/deactivate')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
+  @ApiCustom(UserResponseDto, {
     summary: 'Desactivar un usuario',
     description:
-      'Cambia el estado del usuario a INACTIVE y retorna el usuario actualizado.',
+      'Cambia el estado del usuario a SUSPENDED y retorna el usuario actualizado.',
   })
-  @ApiUpdateResponses(UserResponseDto)
   async deactivate(@Param() { id }: UuidParamDto) {
     return await this.deactivateUserUseCase.execute(id)
   }
 
   @Patch(':id/activate')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
+  @ApiCustom(UserResponseDto, {
     summary: 'Activar un usuario',
     description:
       'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
   })
-  @ApiUpdateResponses(UserResponseDto)
   async activate(@Param() { id }: UuidParamDto) {
     return await this.activateUserUseCase.execute(id)
   }
@@ -213,14 +205,12 @@ Obtiene una lista paginada de usuarios con capacidades de búsqueda y filtrado.
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
+  @ApiRemove(UserResponseDto, {
     summary: 'Eliminar un usuario (soft delete)',
     description:
-      'Marca el usuario como eliminado sin borrar sus datos de la base de datos. No retorna contenido.',
+      'Marca el usuario como eliminado sin borrar sus datos de la base de datos. Retorna el usuario eliminado para confirmación.',
   })
-  @ApiDeleteResponses(true)
   async remove(@Param() { id }: UuidParamDto) {
-    await this.removeUserUseCase.execute(id)
+    return await this.removeUserUseCase.execute(id)
   }
 }

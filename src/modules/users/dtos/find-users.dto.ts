@@ -3,7 +3,10 @@ import { PaginationDto } from '@core/dtos'
 import { UserStatus, Role, UserEntity } from '../entities/user.entity'
 import { IsIn } from '@core/i18n'
 
-const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
+/**
+ * Campos por los que se puede ordenar la lista de usuarios
+ */
+export const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
   'lastNames',
   'email',
   'createdAt',
@@ -13,6 +16,18 @@ const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
   'phone',
   'names',
 ]
+
+/**
+ * Campos en los que busca el parámetro 'search'
+ */
+export const USER_SEARCH_FIELDS = [
+  'names',
+  'lastNames',
+  'email',
+  'username',
+  'ci',
+]
+
 export class FindUsersDto extends PaginationDto {
   /**
    * Búsqueda de texto libre

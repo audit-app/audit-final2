@@ -71,19 +71,20 @@ export const TEST_USERS = {
     deletedAt: undefined,
   } as UserEntity,
 
-  INACTIVE: {
-    id: 'user-inactive',
-    names: 'Inactive',
+  UNVERIFIED: {
+    id: 'user-unverified',
+    names: 'Unverified',
     lastNames: 'User',
-    email: 'inactive@test.com',
-    username: 'inactiveuser',
+    email: 'unverified@test.com',
+    username: 'unverifieduser',
     ci: '99999999',
-    password: bcrypt.hashSync('InactivePass123!', 10),
+    password: bcrypt.hashSync('UnverifiedPass123!', 10),
     phone: null,
     address: null,
     organizationId: 'org-1', // ✅ Ahora es requerido
     roles: [Role.CLIENTE],
-    status: UserStatus.INACTIVE,
+    status: UserStatus.ACTIVE,
+    emailVerified: false, // Usuario sin verificar email
     image: null,
     createdAt: new Date('2024-01-04'),
     updatedAt: new Date('2024-01-04'),
@@ -153,8 +154,14 @@ export class UserBuilder {
     return this
   }
 
-  inactive(): this {
-    this.user.status = UserStatus.INACTIVE
+  unverified(): this {
+    this.user.status = UserStatus.ACTIVE
+    this.user.emailVerified = false
+    return this
+  }
+
+  suspended(): this {
+    this.user.status = UserStatus.SUSPENDED
     return this
   }
 

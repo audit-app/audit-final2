@@ -15,6 +15,7 @@ import { UpdateTemplateUseCase } from './use-cases/update-template/update-templa
 import { DeleteTemplateUseCase } from './use-cases/delete-template/delete-template.use-case'
 import { FindTemplateUseCase } from './use-cases/find-template/find-template.use-case'
 import { FindTemplatesUseCase } from './use-cases/find-templates/find-templates.use-case'
+import { FindTemplatesWithFiltersUseCase } from './use-cases/find-templates-with-filters/find-templates-with-filters.use-case'
 import { PublishTemplateUseCase } from './use-cases/publish-template/publish-template.use-case'
 import { ArchiveTemplateUseCase } from './use-cases/archive-template/archive-template.use-case'
 import { CloneTemplateUseCase } from './use-cases/clone-template/clone-template.use-case'
@@ -52,6 +53,7 @@ import { StandardsService } from './services/standards.service'
     DeleteTemplateUseCase,
     FindTemplateUseCase,
     FindTemplatesUseCase,
+    FindTemplatesWithFiltersUseCase,
     PublishTemplateUseCase,
     ArchiveTemplateUseCase,
     CloneTemplateUseCase,
@@ -71,6 +73,7 @@ import { StandardsService } from './services/standards.service'
     // Use Cases (por si otros módulos los necesitan)
     FindTemplateUseCase,
     FindTemplatesUseCase,
+    FindTemplatesWithFiltersUseCase,
     FindStandardsByTemplateUseCase,
     FindStandardsTreeUseCase,
   ],

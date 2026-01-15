@@ -3,6 +3,14 @@ import type { TemplateEntity } from '../../entities/template.entity'
 import type { TemplateStatus } from '../../constants/template-status.enum'
 
 /**
+ * Filtros para búsqueda de templates
+ */
+export interface TemplateFilters {
+  search?: string
+  status?: TemplateStatus
+}
+
+/**
  * Templates Repository Interface
  *
  * Define los métodos personalizados para el repositorio de templates
@@ -48,4 +56,22 @@ export interface ITemplatesRepository extends IBaseRepository<TemplateEntity> {
    * Obtiene la última versión de un template
    */
   findLatestVersion(name: string): Promise<TemplateEntity | null>
+
+  /**
+   * Busca templates con filtros y paginación
+   *
+   * @param filters - Filtros de búsqueda
+   * @param page - Número de página (opcional)
+   * @param limit - Cantidad de resultados por página (opcional)
+   * @param sortBy - Campo por el cual ordenar (opcional)
+   * @param sortOrder - Orden ASC o DESC (opcional)
+   * @returns Tupla [templates, total]
+   */
+  findWithFilters(
+    filters: TemplateFilters,
+    page?: number,
+    limit?: number,
+    sortBy?: string,
+    sortOrder?: 'ASC' | 'DESC',
+  ): Promise<[TemplateEntity[], number]>
 }
