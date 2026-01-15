@@ -12,7 +12,7 @@ import { LOGIN_CONSTRAINTS } from '../constants'
 export class LoginDto {
   @ApiProperty({
     description: 'Email o username del usuario',
-    example: 'usuario@example.com',
+    example: 'admin@gmail.com',
     maxLength: LOGIN_CONSTRAINTS.USERNAME_OR_EMAIL.MAX,
   })
   @IsString()
