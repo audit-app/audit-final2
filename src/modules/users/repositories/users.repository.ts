@@ -7,7 +7,6 @@ import { UserEntity } from '../entities/user.entity'
 import { IUsersRepository } from './users-repository.interface'
 import { PaginatedResponse } from '@core/dtos'
 import { FindUsersDto } from '../dtos/find-users.dto'
-import { UserResponseDto } from '../dtos/user-response.dto'
 import { ArrayContains } from 'typeorm'
 @Injectable()
 export class UsersRepository
@@ -185,7 +184,7 @@ export class UsersRepository
    */
   async paginateUsers(
     query: FindUsersDto,
-  ): Promise<PaginatedResponse<UserResponseDto>> {
+  ): Promise<PaginatedResponse<UserEntity>> {
     const { search, status, organizationId, role } = query
 
     // 1. Definimos los filtros fijos (AND)
@@ -219,24 +218,9 @@ export class UsersRepository
       baseFilter.roles = ArrayContains([role])
     }
 
-    return this.paginateWithMapper<UserResponseDto>(
-      query,
-      (user) => ({
-        id: user.id,
-        fullName: user.fullName,
-        createdAt: user.createdAt.toISOString(),
-        updateAt: user.updatedAt.toISOString(),
-        email: user.email,
-        username: user.username,
-        status: user.status,
-        roles: user.roles,
-        organizationName: user.organization?.name ?? 'Sin Organización',
-        imageUrl: user.image,
-      }),
-      {
-        where,
-        relations: { organization: true },
-      },
-    )
+    return this.paginateWithOptions(query, {
+      where,
+      relations: { organization: true },
+    })
   }
 }
