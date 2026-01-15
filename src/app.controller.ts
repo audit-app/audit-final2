@@ -7,7 +7,9 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { AppService } from './app.service'
+import { Public } from './modules/auth'
 
+@Public()
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

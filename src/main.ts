@@ -21,6 +21,7 @@ async function bootstrap() {
   })
   logger.log(`📁 Archivos estáticos servidos desde: ${uploadsDir}`)
   logger.log(`🌐 URL de acceso: http://localhost:${port}/uploads/`)
+  app.setGlobalPrefix('api')
 
   // Configurar CORS
   const corsOrigin = process.env.CORS_ORIGIN || '*'

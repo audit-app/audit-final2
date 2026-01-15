@@ -27,7 +27,9 @@ lerna-debug.log*
 *.launch
 .settings/
 *.sublime-workspace
-
+./claude 
+CLAUDE.*
+./src/@core/database/migrations/.*
 # IDE - VSCode
 .vscode/*
 !.vscode/settings.json
