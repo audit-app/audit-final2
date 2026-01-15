@@ -133,6 +133,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
+    // Error de base de datos (TypeORM QueryFailedError)
+    if (this.isDatabaseError(exception)) {
+      return this.parseDatabaseError(exception as Error & { code?: string })
+    }
+
     // Error estándar de JavaScript
     if (exception instanceof Error) {
       return {
@@ -154,6 +159,96 @@ export class HttpExceptionFilter implements ExceptionFilter {
       message: 'Internal server error',
       error: 'UnknownError',
       details: process.env.NODE_ENV !== 'production' ? exception : undefined,
+    }
+  }
+
+  /**
+   * Verifica si el error es un QueryFailedError de TypeORM
+   */
+  private isDatabaseError(exception: unknown): boolean {
+    return (
+      exception instanceof Error &&
+      exception.name === 'QueryFailedError' &&
+      'code' in exception
+    )
+  }
+
+  /**
+   * Parsea errores de base de datos y los convierte en respuestas HTTP apropiadas
+   */
+  private parseDatabaseError(exception: Error & { code?: string }): {
+    statusCode: number
+    message: string
+    error: string
+    details?: unknown
+  } {
+    const code = exception.code
+
+    // Error de constraint única (duplicate key)
+    // PostgreSQL code: 23505
+    if (code === '23505') {
+      return {
+        statusCode: HttpStatus.CONFLICT,
+        message:
+          'Ya existe un registro con los datos proporcionados. Por favor, verifica email, username o CI.',
+        error: 'Conflict',
+        details:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                originalError: exception.message,
+                code,
+              }
+            : undefined,
+      }
+    }
+
+    // Error de foreign key constraint
+    // PostgreSQL code: 23503
+    if (code === '23503') {
+      return {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'El recurso referenciado no existe',
+        error: 'ForeignKeyViolation',
+        details:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                originalError: exception.message,
+                code,
+              }
+            : undefined,
+      }
+    }
+
+    // Error de violación de constraint NOT NULL
+    // PostgreSQL code: 23502
+    if (code === '23502') {
+      return {
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: 'Faltan datos requeridos',
+        error: 'NotNullViolation',
+        details:
+          process.env.NODE_ENV !== 'production'
+            ? {
+                originalError: exception.message,
+                code,
+              }
+            : undefined,
+      }
+    }
+
+    // Otros errores de base de datos
+    return {
+      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+      message: 'Error de base de datos',
+      error: 'DatabaseError',
+      details:
+        process.env.NODE_ENV !== 'production'
+          ? {
+              originalError: exception.message,
+              code,
+              stack: exception.stack,
+            }
+          : undefined,
     }
   }
 }

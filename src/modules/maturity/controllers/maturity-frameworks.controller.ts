@@ -45,7 +45,10 @@ export class MaturityFrameworksController {
     description: 'Framework creado exitosamente',
   })
   @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({ status: 409, description: 'Framework con ese código ya existe' })
+  @ApiResponse({
+    status: 409,
+    description: 'Framework con ese código ya existe',
+  })
   async create(@Body() dto: CreateMaturityFrameworkDto) {
     return await this.createFrameworkUseCase.execute(dto)
   }

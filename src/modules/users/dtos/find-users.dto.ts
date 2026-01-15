@@ -4,7 +4,6 @@ import { UserStatus, Role, UserEntity } from '../entities/user.entity'
 import { IsIn } from '@core/i18n'
 
 const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
-  'image',
   'lastNames',
   'email',
   'createdAt',

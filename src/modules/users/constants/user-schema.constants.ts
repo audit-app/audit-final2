@@ -7,9 +7,6 @@
  * - DTOs (class-validator decorators con @core/i18n)
  * - Swagger documentation (ApiProperty)
  *
- * Los mensajes de validación se generan automáticamente por el sistema i18n.
- * No es necesario definir mensajes manualmente.
- *
  * Ejemplo:
  *   @MinLength(USER_CONSTRAINTS.NAMES.MIN)
  *   names: string

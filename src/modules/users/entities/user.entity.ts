@@ -86,7 +86,10 @@ export class UserEntity extends BaseEntity {
   organization: OrganizationEntity
 
   @Column({
-    type: 'simple-array',
+    type: 'enum',
+    enum: Role,
+    array: true,
+    default: [Role.CLIENTE],
   })
   roles: Role[]
 

@@ -12,16 +12,14 @@ export interface IUsersRepository extends IBaseRepository<UserEntity> {
     usernameOrEmail: string,
   ): Promise<UserEntity | null>
   findByCI(ci: string): Promise<UserEntity | null>
-  findByOrganization(organizationId: string): Promise<UserEntity[]>
-
   // Validaciones de unicidad
   existsByEmail(email: string, excludeId?: string): Promise<boolean>
   existsByUsername(username: string, excludeId?: string): Promise<boolean>
   existsByCI(ci: string, excludeId?: string): Promise<boolean>
-
-  // Contadores
+  // Validaciones de organización
+  findByOrganization(organizationId: string): Promise<UserEntity[]>
   countUsersByOrganization(organizationId: string): Promise<number>
-  //
+  // Búsquedas avanzadas
   paginateUsers(
     query: FindUsersDto,
   ): Promise<PaginatedResponse<UserResponseDto>>

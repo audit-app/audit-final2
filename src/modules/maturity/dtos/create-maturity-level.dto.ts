@@ -73,8 +73,7 @@ export class CreateMaturityLevelDto {
   })
   @IsString()
   @Matches(/^#[0-9A-Fa-f]{6}$/, {
-    message:
-      'El color debe estar en formato hexadecimal válido (ej: #F59E0B)',
+    message: 'El color debe estar en formato hexadecimal válido (ej: #F59E0B)',
   })
   color: string
 

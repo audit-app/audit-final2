@@ -35,16 +35,14 @@ export class BulkCreateLevelsUseCase {
    * @throws {MaturityFrameworkNotFoundException} Si el framework no existe
    */
   @Transactional()
-  async execute(dto: BulkCreateMaturityLevelsDto): Promise<MaturityLevelEntity[]> {
+  async execute(
+    dto: BulkCreateMaturityLevelsDto,
+  ): Promise<MaturityLevelEntity[]> {
     // 1. Verificar que todos los niveles pertenecen al mismo framework
-    const frameworkIds = new Set(
-      dto.levels.map((level) => level.frameworkId),
-    )
+    const frameworkIds = new Set(dto.levels.map((level) => level.frameworkId))
 
     if (frameworkIds.size !== 1) {
-      throw new Error(
-        'Todos los niveles deben pertenecer al mismo framework',
-      )
+      throw new Error('Todos los niveles deben pertenecer al mismo framework')
     }
 
     const frameworkId = Array.from(frameworkIds)[0]

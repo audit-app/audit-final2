@@ -56,9 +56,7 @@ export class MaturityFrameworksRepository
    * @param id - ID del framework
    * @returns Framework con niveles ordenados o null
    */
-  async findOneWithLevels(
-    id: string,
-  ): Promise<MaturityFrameworkEntity | null> {
+  async findOneWithLevels(id: string): Promise<MaturityFrameworkEntity | null> {
     return await this.getRepo().findOne({
       where: { id },
       relations: ['levels'],

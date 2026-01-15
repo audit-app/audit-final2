@@ -237,10 +237,9 @@ describe('TokensService - Unit Tests (Token Management)', () => {
       await newService.generateTokenPair(mockUser)
 
       // Assert - Access token expiry
-      expect(jwtService.sign).toHaveBeenCalledWith(
-        expect.any(Object),
-        { expiresIn: '30m' },
-      )
+      expect(jwtService.sign).toHaveBeenCalledWith(expect.any(Object), {
+        expiresIn: '30m',
+      })
 
       // Assert - Refresh token expiry
       expect(jwtTokenHelper.generateSignedToken).toHaveBeenCalledWith(
@@ -406,7 +405,7 @@ describe('TokensService - Unit Tests (Token Management)', () => {
 
       // Assert - TTL should be approximately 15 minutes (900 seconds)
       const ttlCall = tokenStorage.storeSimple.mock.calls[0]
-      const ttl = ttlCall[2] as number
+      const ttl = ttlCall[2]
       expect(ttl).toBeGreaterThan(890) // Allow some variance
       expect(ttl).toBeLessThanOrEqual(900)
     })

@@ -37,8 +37,9 @@ export class CreateFrameworkUseCase {
     dto: CreateMaturityFrameworkDto,
   ): Promise<MaturityFrameworkEntity> {
     // 1. Verificar que no exista un framework con ese código
-    const existingFramework =
-      await this.frameworksRepository.findByCode(dto.code)
+    const existingFramework = await this.frameworksRepository.findByCode(
+      dto.code,
+    )
 
     if (existingFramework) {
       throw new MaturityFrameworkAlreadyExistsException(dto.code)
