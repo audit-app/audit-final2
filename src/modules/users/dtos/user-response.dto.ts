@@ -1,33 +1,124 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { UserStatus, Role } from '../entities/user.entity'
 
+/**
+ * DTO de respuesta para usuario
+ * Incluye todos los campos seguros (sin password ni datos de auditoría)
+ */
 export class UserResponseDto {
-  @ApiProperty({ example: '123e4567-e89b-12d3-a456-426614174000' })
+  @ApiProperty({
+    description: 'ID único del usuario',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   id: string
 
-  @ApiProperty({ example: 'Juan Pérez' })
-  fullName: string
+  @ApiProperty({
+    description: 'Nombres del usuario',
+    example: 'Juan Carlos',
+  })
+  names: string
 
-  @ApiProperty({ example: 'juan.perez@example.com' })
+  @ApiProperty({
+    description: 'Apellidos del usuario',
+    example: 'Pérez García',
+  })
+  lastNames: string
+
+  @ApiProperty({
+    description: 'Email del usuario',
+    example: 'juan.perez@example.com',
+  })
   email: string
 
-  @ApiProperty({ example: 'jperez' })
+  @ApiProperty({
+    description: 'Nombre de usuario único',
+    example: 'juan_perez',
+  })
   username: string
 
-  @ApiProperty({ example: 'ACTIVE' })
-  status: string
+  @ApiProperty({
+    description: 'Cédula de identidad',
+    example: '1234567-8',
+  })
+  ci: string
 
-  @ApiProperty({ example: '2024-01-20' })
-  createdAt: string
+  @ApiPropertyOptional({
+    description: 'Teléfono de contacto',
+    example: '+591 2 234 5678',
+    nullable: true,
+  })
+  phone: string | null
 
-  @ApiProperty({ example: '2024-06-15' })
-  updateAt: string
+  @ApiPropertyOptional({
+    description: 'Dirección del usuario',
+    example: 'Av. 6 de Agosto #123',
+    nullable: true,
+  })
+  address: string | null
 
-  @ApiProperty({ example: ['ADMIN', 'AUDITOR'], isArray: true })
-  roles: string[]
+  @ApiPropertyOptional({
+    description: 'URL de la imagen de perfil',
+    example: 'https://example.com/images/profile.jpg',
+    nullable: true,
+  })
+  image: string | null
 
-  @ApiProperty({ example: 'Empresa S.A.' })
-  organizationName: string
+  @ApiProperty({
+    enum: UserStatus,
+    description: 'Estado del usuario',
+    example: UserStatus.ACTIVE,
+  })
+  status: UserStatus
 
-  @ApiProperty({ required: false, nullable: true })
-  imageUrl: string | null
+  @ApiProperty({
+    description: 'Indica si el email fue verificado',
+    example: true,
+  })
+  emailVerified: boolean
+
+  @ApiPropertyOptional({
+    description: 'Fecha y hora de verificación del email',
+    example: '2024-01-15T10:30:00.000Z',
+    nullable: true,
+  })
+  emailVerifiedAt: Date | null
+
+  @ApiProperty({
+    description: 'Indica si el usuario tiene 2FA habilitado',
+    example: false,
+  })
+  isTwoFactorEnabled: boolean
+
+  @ApiPropertyOptional({
+    description: 'Fecha de activación del usuario',
+    example: '2024-01-15T10:30:00.000Z',
+    nullable: true,
+  })
+  activedAt: Date | null
+
+  @ApiProperty({
+    enum: Role,
+    isArray: true,
+    description: 'Roles asignados al usuario',
+    example: [Role.AUDITOR],
+  })
+  roles: Role[]
+
+  @ApiProperty({
+    description: 'ID de la organización a la que pertenece',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  organizationId: string
+
+  @ApiProperty({
+    description: 'Fecha de creación del usuario',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  createdAt: Date
+
+  @ApiProperty({
+    description: 'Fecha de última actualización',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  updatedAt: Date
 }

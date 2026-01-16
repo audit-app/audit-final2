@@ -39,7 +39,7 @@ export class UploadProfileImageUseCase {
       overwrite: true,
       validationOptions: {
         fileType: FileType.IMAGE,
-        maxSize: 2 * 1024 * 1024, // 2MB
+        maxSize: 2 * 1024 * 1024,
         maxWidth: 800,
         maxHeight: 800,
       },

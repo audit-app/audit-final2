@@ -37,9 +37,10 @@ import {
   RemoveUserUseCase,
   ActivateUserUseCase,
   VerifyEmailUseCase,
+  ResendInvitationUseCase,
 } from '../use-cases'
-import { CreateUserDto, UpdateUserDto } from '../dtos'
-import { UserStatus, Role } from '../entities/user.entity'
+import { CreateUserDto, UpdateUserDto, VerifyEmailDto } from '../dtos'
+import { UserStatus, Role, UserEntity } from '../entities/user.entity'
 import { UploadAvatar } from '@core/files'
 import { Public } from '../../auth'
 import {
@@ -63,6 +64,7 @@ export class UsersController {
     private readonly activateUserUseCase: ActivateUserUseCase,
     private readonly deactivateUserUseCase: DeactivateUserUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
+    private readonly resendInvitationUseCase: ResendInvitationUseCase,
   ) {}
 
   @Public()
@@ -78,7 +80,7 @@ export class UsersController {
   }
 
   @Get()
-  @ApiList(UserResponseDto, {
+  @ApiList(UserEntity, {
     summary: 'Listar todos los usuarios',
     searchFields: USER_SEARCH_FIELDS,
     sortableFields: USER_SORTABLE_FIELDS.map(String),
@@ -185,23 +187,46 @@ export class UsersController {
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Verificar email de usuario',
+    summary: 'Verificar email y establecer contraseña inicial',
     description:
-      'Verifica el email del usuario usando el token enviado por correo. Marca el email como verificado y activa la cuenta.',
+      'Verifica el email del usuario usando el token enviado por correo y establece su contraseña inicial. Marca el email como verificado y activa la cuenta.',
   })
   @ApiResponse({
     status: 200,
-    description: 'Email verificado exitosamente y cuenta activada',
+    description:
+      'Email verificado exitosamente, contraseña establecida y cuenta activada',
+    type: UserResponseDto,
   })
   @ApiResponse({
     status: 400,
-    description: 'Token inválido o expirado',
+    description:
+      'Token inválido/expirado o contraseña no cumple requisitos de seguridad',
   })
-  async verifyEmail(@Query('token') token: string) {
-    if (!token) {
-      throw new BadRequestException('Token de verificación requerido')
-    }
-    return await this.verifyEmailUseCase.execute(token)
+  async verifyEmail(@Body() dto: VerifyEmailDto) {
+    return await this.verifyEmailUseCase.execute(dto)
+  }
+
+  @Post(':id/resend-invitation')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Re-enviar invitación de verificación',
+    description:
+      'Re-envía el email de invitación con un nuevo token de verificación. Solo disponible para usuarios con email no verificado.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Invitación enviada exitosamente',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'El email ya fue verificado',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Usuario no encontrado',
+  })
+  async resendInvitation(@Param() { id }: UuidParamDto) {
+    return await this.resendInvitationUseCase.execute(id)
   }
 
   @Delete(':id')

@@ -1,13 +1,14 @@
-import { Entity, Column, OneToMany } from 'typeorm'
+import { Entity, Column, OneToMany, Index } from 'typeorm'
 import { BaseEntity } from '@core/entities'
 import { UserEntity } from '../../users/entities/user.entity'
-
+@Index(['nit'], { unique: true, where: '"deletedAt" IS NULL' })
+@Index(['name'], { unique: true, where: '"deletedAt" IS NULL' })
 @Entity('organizations')
 export class OrganizationEntity extends BaseEntity {
-  @Column({ type: 'varchar', length: 200, unique: true })
+  @Column({ type: 'varchar', length: 200 })
   name: string
 
-  @Column({ type: 'varchar', length: 50, unique: true })
+  @Column({ type: 'varchar', length: 50 })
   nit: string
 
   @Column({ type: 'text', nullable: true })
@@ -28,7 +29,6 @@ export class OrganizationEntity extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   isActive: boolean
 
-  // Relación inversa: Una organización tiene muchos usuarios
   @OneToMany(() => UserEntity, (user) => user.organization)
   users: UserEntity[]
 }

@@ -1,22 +1,26 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common'
 import { Transactional } from '@core/database'
+import { PasswordHashService } from '@core/security'
 import { UserEntity, UserStatus } from '../../entities/user.entity'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { EmailVerificationService } from '../../services'
+import { VerifyEmailDto } from '../../dtos/verify-email.dto'
 
 /**
- * Caso de uso: Verificar email de usuario
+ * Caso de uso: Verificar email de usuario y establecer contraseña inicial
  *
  * Responsabilidades:
  * - Validar token de verificación
+ * - Establecer contraseña inicial del usuario (actualmente null)
  * - Marcar email como verificado
  * - Activar usuario (cambiar status a ACTIVE)
  *
  * Flujo:
  * 1. Usuario recibe email de invitación con link: /verify-email?token=<tokenId>
- * 2. Usuario hace clic y llega a este endpoint
- * 3. Validamos token, activamos usuario
+ * 2. Frontend muestra formulario donde el usuario ingresa su contraseña
+ * 3. Frontend hace POST /users/verify-email con {token, password}
+ * 4. Validamos token, hasheamos password, marcamos verificado y activamos
  *
  * IMPORTANTE: El token se revoca automáticamente al consumirlo (one-time use)
  */
@@ -26,19 +30,20 @@ export class VerifyEmailUseCase {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly emailVerificationService: EmailVerificationService,
+    private readonly passwordHashService: PasswordHashService,
   ) {}
 
   /**
-   * Verifica el email de un usuario usando un token de invitación
+   * Verifica el email de un usuario y establece su contraseña inicial
    *
-   * @param tokenId - Token UUID enviado por email
-   * @returns Usuario verificado y activado
-   * @throws {BadRequestException} Si el token es inválido o expiró
+   * @param dto - Token y contraseña inicial
+   * @returns Usuario verificado, con contraseña y activado
+   * @throws {BadRequestException} Si el token es inválido, expiró o el email ya fue verificado
    */
   @Transactional()
-  async execute(tokenId: string): Promise<UserEntity> {
+  async execute(dto: VerifyEmailDto): Promise<UserEntity> {
     // 1. Consumir token (busca, valida y revoca automáticamente)
-    const tokenData = await this.emailVerificationService.consumeToken(tokenId)
+    const tokenData = await this.emailVerificationService.consumeToken(dto.token)
 
     if (!tokenData) {
       throw new BadRequestException(
@@ -56,15 +61,20 @@ export class VerifyEmailUseCase {
 
     // 3. Verificar si ya está verificado (evitar doble procesamiento)
     if (user.emailVerified) {
-      return user // Ya estaba verificado
+      throw new BadRequestException(
+        'El email ya fue verificado anteriormente. Si olvidó su contraseña, use la opción de recuperación.',
+      )
     }
 
-    // 4. Marcar como verificado y activar
+    // 4. NUEVO: Hashear y establecer la contraseña inicial
+    user.password = await this.passwordHashService.hash(dto.password)
+
+    // 5. Marcar como verificado y activar
     user.emailVerified = true
     user.emailVerifiedAt = new Date()
     user.status = UserStatus.ACTIVE
 
-    // 5. Guardar cambios
+    // 6. Guardar cambios
     return await this.usersRepository.save(user)
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common'
+import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { UpdateUserDto } from '../../dtos'
 import { UserEntity } from '../../entities/user.entity'
@@ -29,23 +29,15 @@ export class UpdateUserUseCase {
 
   @Transactional()
   async execute(id: string, dto: UpdateUserDto): Promise<UserEntity> {
-    // 1. Verificar que el usuario existe
     const user = await this.usersRepository.findById(id)
     if (!user) {
       throw new UserNotFoundException(id)
     }
 
-    // 2. Validar solo los campos que cambiaron
     const validations: Promise<void>[] = []
 
-    // SEGURIDAD: No permitir cambio de email
-    // El email es el identificador principal y cambiarlo sin verificación
-    // es una vulnerabilidad de seguridad (un atacante podría tomar control de la cuenta)
-    // Solo los administradores pueden cambiar el email (mediante otro caso de uso específico)
     if (dto.email && dto.email.toLowerCase() !== user.email) {
-      throw new BadRequestException(
-        'No se puede cambiar el email. Contacte al administrador si necesita actualizarlo.',
-      )
+      validations.push(this.validator.validateUniqueEmail(dto.email, id))
     }
 
     if (dto.username && dto.username.toLowerCase() !== user.username) {
@@ -57,21 +49,17 @@ export class UpdateUserUseCase {
     }
 
     if (dto.roles) {
-      // Validar que los roles sean válidos y cumplan reglas básicas
       this.validator.validateRoles(dto.roles)
 
-      // Validar transición de roles (CLIENTE no puede cambiar a otro rol)
       this.validator.validateRoleTransition(user, dto.roles)
     }
-    // Ejecutar validaciones en paralelo
+
     if (validations.length > 0) {
       await Promise.all(validations)
     }
 
-    // 3. Actualizar usuario usando factory (normaliza datos)
     const updatedUser = this.userFactory.updateFromDto(user, dto)
 
-    // 4. Persistir cambios
     return await this.usersRepository.save(updatedUser)
   }
 }

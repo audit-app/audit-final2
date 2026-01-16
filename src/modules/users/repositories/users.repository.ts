@@ -31,7 +31,6 @@ export class UsersRepository
     return await this.getRepo().findOne({
       where: { email: email.toLowerCase() },
       relations: { organization: true },
-      withDeleted: true,
     })
   }
 
@@ -44,7 +43,6 @@ export class UsersRepository
     return await this.getRepo().findOne({
       where: { username: username.toLowerCase() },
       relations: { organization: true },
-      withDeleted: true,
     })
   }
 
@@ -57,7 +55,6 @@ export class UsersRepository
     return await this.getRepo().findOne({
       where: { ci },
       relations: { organization: true },
-      withDeleted: true,
     })
   }
 
@@ -73,8 +70,6 @@ export class UsersRepository
       .where('user.email = :email', {
         email: email.toLowerCase(),
       })
-      .withDeleted()
-
     if (excludeId) {
       query.andWhere('user.id != :id', { id: excludeId })
     }
@@ -98,7 +93,6 @@ export class UsersRepository
       .where('user.username = :username', {
         username: username.toLowerCase(),
       })
-      .withDeleted()
 
     if (excludeId) {
       query.andWhere('user.id != :id', { id: excludeId })
@@ -118,7 +112,7 @@ export class UsersRepository
     const query = this.getRepo()
       .createQueryBuilder('user')
       .where('user.ci = :ci', { ci })
-      .withDeleted()
+
     if (excludeId) {
       query.andWhere('user.id != :id', { id: excludeId })
     }

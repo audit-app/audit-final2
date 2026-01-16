@@ -87,6 +87,7 @@
     "typeorm": "^0.3.28",
     "typeorm-adapter": "^1.8.0",
     "typeorm-extension": "^3.7.3",
+    "ua-parser-js": "^2.0.8",
     "uuid": "^13.0.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0",

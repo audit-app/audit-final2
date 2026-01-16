@@ -1,4 +1,4 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm'
 import { BaseEntity } from '@core/entities/base.entity'
 import { OrganizationEntity } from '../../organizations/entities/organization.entity'
 import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
@@ -6,6 +6,7 @@ import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
 export enum UserStatus {
   ACTIVE = 'active',
   SUSPENDED = 'suspended',
+  PENDING = 'pending',
 }
 
 export enum Role {
@@ -14,7 +15,9 @@ export enum Role {
   AUDITOR = 'auditor',
   CLIENTE = 'cliente',
 }
-
+@Index(['email'], { unique: true, where: '"deletedAt" IS NULL' })
+@Index(['username'], { unique: true, where: '"deletedAt" IS NULL' })
+@Index(['ci'], { unique: true, where: '"deletedAt" IS NULL' })
 @Entity('users')
 export class UserEntity extends BaseEntity {
   @Column({ type: 'varchar', length: USER_CONSTRAINTS.NAMES.MAX })
@@ -23,22 +26,29 @@ export class UserEntity extends BaseEntity {
   @Column({ type: 'varchar', length: USER_CONSTRAINTS.LAST_NAMES.MAX })
   lastNames: string
 
-  @Column({ type: 'varchar', length: USER_CONSTRAINTS.EMAIL.MAX, unique: true })
+  @Column({ type: 'varchar', length: USER_CONSTRAINTS.EMAIL.MAX })
   email: string
 
   @Column({
     type: 'varchar',
     length: USER_CONSTRAINTS.USERNAME.MAX,
-    unique: true,
   })
   username: string
 
-  @Column({ type: 'varchar', length: USER_CONSTRAINTS.CI.MAX, unique: true })
+  @Column({ type: 'varchar', length: USER_CONSTRAINTS.CI.MAX })
   ci: string
 
-  // Password hashada (bcrypt genera ~60 chars, usamos 255 para seguridad)
-  @Column({ type: 'varchar', length: 255, select: false })
-  password: string
+  @Column({ type: 'varchar', length: 255, select: false, nullable: true })
+  password: string | null
+
+  @Column({ type: 'boolean', default: false })
+  emailVerified: boolean
+
+  @Column({ type: 'timestamp', nullable: true })
+  emailVerifiedAt: Date | null
+
+  @Column({ type: 'boolean', default: false })
+  isTwoFactorEnabled: boolean
 
   @Column({
     type: 'varchar',
@@ -64,16 +74,12 @@ export class UserEntity extends BaseEntity {
   @Column({
     type: 'enum',
     enum: UserStatus,
-    default: UserStatus.ACTIVE, // Activo por defecto, pero bloqueado hasta verificar email
+    default: UserStatus.PENDING,
   })
   status: UserStatus
 
-  // Verificación de email
-  @Column({ type: 'boolean', default: false })
-  emailVerified: boolean
-
   @Column({ type: 'timestamp', nullable: true })
-  emailVerifiedAt: Date | null
+  activedAt: Date | null
 
   @Column({ type: 'uuid', nullable: false })
   organizationId: string

@@ -1,56 +1,26 @@
-import { Injectable, Inject } from '@nestjs/common'
-import type Redis from 'ioredis'
-import { REDIS_CLIENT } from '@core/cache'
+import { Injectable } from '@nestjs/common'
+import { CacheService } from '@core/cache' // Solo importamos tu servicio
 
-/**
- * Rate Limit Service
- *
- * Servicio genérico para implementar rate limiting usando Redis
- * Útil para prevenir ataques de fuerza bruta en:
- * - Login attempts
- * - Password reset attempts
- * - 2FA code validation
- * - API endpoints
- *
- * Implementa ventanas deslizantes con TTL automático
- */
 @Injectable()
 export class RateLimitService {
   constructor(
-    @Inject(REDIS_CLIENT)
-    private readonly redis: Redis,
+    // ELIMINADO: @Inject(REDIS_CLIENT) private readonly redis: Redis
+    // AHORA: Solo inyectamos tu wrapper estandarizado
+    private readonly cacheService: CacheService,
   ) {}
 
   /**
    * Verifica si se puede realizar un intento más
-   *
-   * @param key - Clave única para el rate limit (ej: "login:ip:192.168.1.1")
-   * @param maxAttempts - Número máximo de intentos permitidos
-   * @param windowMinutes - Ventana de tiempo en minutos
-   * @returns true si puede intentar, false si excedió el límite
-   *
-   * @example
-   * ```typescript
-   * const canAttempt = await rateLimitService.checkLimit(
-   *   'login:ip:192.168.1.1',
-   *   5,  // máximo 5 intentos
-   *   15  // en 15 minutos
-   * )
-   * ```
+   * (La lógica se mantiene igual, pero usa internamente los métodos actualizados)
    */
-  async checkLimit(
-    key: string,
-    maxAttempts: number,
-    windowMinutes: number,
-  ): Promise<boolean> {
+  async checkLimit(key: string, maxAttempts: number): Promise<boolean> {
     const attempts = await this.getAttempts(key)
 
     if (attempts >= maxAttempts) {
-      // Verificar si la ventana ya expiró
       const ttl = await this.getTimeUntilReset(key)
 
+      // Si el TTL expiró o no existe, reseteamos para permitir el intento
       if (ttl <= 0) {
-        // Ventana expiró, resetear contador
         await this.resetAttempts(key)
         return true
       }
@@ -63,41 +33,33 @@ export class RateLimitService {
 
   /**
    * Incrementa el contador de intentos
-   *
-   * @param key - Clave única para el rate limit
-   * @param windowMinutes - Ventana de tiempo en minutos
-   * @returns Número de intentos actuales
-   *
-   * @example
-   * ```typescript
-   * const attempts = await rateLimitService.incrementAttempts(
-   *   'login:user:john@example.com',
-   *   15
-   * )
-   * console.log(`Intento ${attempts} de 5`)
-   * ```
+   * CAMBIO CLAVE: Usamos .incr() para atomicidad
    */
   async incrementAttempts(key: string, windowMinutes: number): Promise<number> {
     const prefixedKey = this.getPrefixedKey(key)
-    const currentAttempts = await this.getAttempts(key)
-    const newAttempts = currentAttempts + 1
-
-    // Guardar con TTL en segundos
     const ttlSeconds = windowMinutes * 60
-    await this.redis.setex(prefixedKey, ttlSeconds, newAttempts.toString())
+
+    // 1. Incremento ATÓMICO (CacheService.incr)
+    // Redis maneja la suma internamente. No hay "race conditions".
+    const newAttempts = await this.cacheService.incr(prefixedKey)
+
+    // 2. Si es el primer intento (1), establecemos cuándo debe expirar.
+    // Si ya existía (es 2, 3, etc.), mantenemos el TTL original para que la ventana de tiempo no se reinicie.
+    if (newAttempts === 1) {
+      await this.cacheService.expire(prefixedKey, ttlSeconds)
+    }
 
     return newAttempts
   }
 
   /**
    * Obtiene el número de intentos actuales
-   *
-   * @param key - Clave única para el rate limit
-   * @returns Número de intentos (0 si no existe)
    */
   async getAttempts(key: string): Promise<number> {
     const prefixedKey = this.getPrefixedKey(key)
-    const value = await this.redis.get(prefixedKey)
+
+    // Usamos CacheService.get()
+    const value = await this.cacheService.get(prefixedKey)
 
     if (!value) {
       return 0
@@ -108,37 +70,14 @@ export class RateLimitService {
 
   /**
    * Resetea el contador de intentos
-   *
-   * Útil después de un intento exitoso
-   *
-   * @param key - Clave única para el rate limit
-   *
-   * @example
-   * ```typescript
-   * // Login exitoso, resetear intentos
-   * await rateLimitService.resetAttempts('login:user:john@example.com')
-   * ```
    */
   async resetAttempts(key: string): Promise<void> {
     const prefixedKey = this.getPrefixedKey(key)
-    await this.redis.del(prefixedKey)
+    await this.cacheService.del(prefixedKey)
   }
 
   /**
    * Obtiene los intentos restantes
-   *
-   * @param key - Clave única para el rate limit
-   * @param maxAttempts - Número máximo de intentos permitidos
-   * @returns Número de intentos restantes
-   *
-   * @example
-   * ```typescript
-   * const remaining = await rateLimitService.getRemainingAttempts(
-   *   'login:user:john@example.com',
-   *   5
-   * )
-   * console.log(`Te quedan ${remaining} intentos`)
-   * ```
    */
   async getRemainingAttempts(
     key: string,
@@ -150,28 +89,16 @@ export class RateLimitService {
 
   /**
    * Obtiene el tiempo restante hasta que expire el bloqueo
-   *
-   * @param key - Clave única para el rate limit
-   * @returns Segundos restantes (0 si no hay bloqueo)
-   *
-   * @example
-   * ```typescript
-   * const ttl = await rateLimitService.getTimeUntilReset('login:user:john@example.com')
-   * console.log(`Bloqueado por ${ttl} segundos`)
-   * ```
    */
   async getTimeUntilReset(key: string): Promise<number> {
     const prefixedKey = this.getPrefixedKey(key)
-    const ttl = await this.redis.ttl(prefixedKey)
+    // Usamos CacheService.ttl()
+    const ttl = await this.cacheService.ttl(prefixedKey)
 
-    // ttl retorna -2 si la clave no existe, -1 si no tiene expiración
+    // Normalizamos la respuesta de Redis (-1 o -2 significan 0 para nosotros en lógica de negocio)
     return Math.max(0, ttl)
   }
 
-  /**
-   * Agrega prefijo "rate-limit:" a la clave
-   * Previene colisiones con otras claves en Redis
-   */
   private getPrefixedKey(key: string): string {
     return `rate-limit:${key}`
   }

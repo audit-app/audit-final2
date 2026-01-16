@@ -13,8 +13,8 @@ import {
   PermissionRequirement,
 } from '../decorators/require-permission.decorator'
 import { CHECK_PERMISSIONS_KEY } from '../decorators/check-permissions.decorator'
-import { IS_PUBLIC_KEY } from '../../auth/decorators/public.decorator'
-import type { JwtPayload } from '../../auth/interfaces'
+import { IS_PUBLIC_KEY } from '../../auth/shared/decorators/public.decorator'
+import type { JwtPayload } from '../../auth/shared/interfaces'
 
 /**
  * Permissions Guard

@@ -10,7 +10,7 @@ import {
   Matches,
 } from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Role, UserStatus } from '../entities/user.entity'
+import { Role } from '../entities/user.entity'
 import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
 
 export class CreateUserDto {
@@ -69,17 +69,6 @@ export class CreateUserDto {
   @Matches(USER_CONSTRAINTS.CI.PATTERN)
   ci: string
 
-  @ApiProperty({
-    description: 'Contraseña del usuario',
-    example: 'SecurePassword123',
-    minLength: USER_CONSTRAINTS.PASSWORD.MIN,
-    maxLength: USER_CONSTRAINTS.PASSWORD.MAX,
-  })
-  @IsString()
-  @MinLength(USER_CONSTRAINTS.PASSWORD.MIN)
-  @MaxLength(USER_CONSTRAINTS.PASSWORD.MAX)
-  password: string
-
   @ApiPropertyOptional({
     description: 'Teléfono de contacto',
     example: '+591 2 234 5678',
@@ -117,13 +106,4 @@ export class CreateUserDto {
   @IsArray()
   @IsEnum(Role, { each: true })
   roles: Role[]
-
-  @ApiPropertyOptional({
-    description: 'Estado del usuario',
-    enum: UserStatus,
-    default: UserStatus.ACTIVE,
-  })
-  @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus
 }

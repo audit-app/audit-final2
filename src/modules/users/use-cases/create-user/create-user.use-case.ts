@@ -41,7 +41,6 @@ export class CreateUserUseCase {
 
   @Transactional()
   async execute(dto: CreateUserDto): Promise<UserEntity> {
-    // 1. Validaciones
     this.validator.validateRoles(dto.roles)
     await this.validator.validateUniqueConstraints(
       dto.email,
@@ -50,11 +49,9 @@ export class CreateUserUseCase {
     )
     await this.validator.validateOrganizationExists(dto.organizationId)
 
-    // 2. Crear usuario (status = ACTIVE por defecto, emailVerified = false)
-    const user = await this.userFactory.createFromDto(dto)
+    const user = this.userFactory.createFromDto(dto)
     const savedUser = await this.usersRepository.save(user)
 
-    // 3. Enviar email de invitación automáticamente
     try {
       await this.emailVerificationService.generateAndSendInvitation(
         savedUser.id,
