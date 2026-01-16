@@ -43,7 +43,6 @@ export class OrganizationRepository
   async findActiveById(id: string): Promise<OrganizationEntity | null> {
     return await this.getRepo().findOne({
       where: { id, isActive: true },
-      relations: ['users'],
     })
   }
 

@@ -4,30 +4,55 @@ import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { APP_GUARD } from '@nestjs/core'
 import type * as ms from 'ms'
+
+// ========================================
+// LOGIN CONTEXT
+// ========================================
 import {
   AuthController,
-  PasswordResetController,
-  TwoFactorController,
-} from './controllers'
-import {
   TokensService,
-  ResetPasswordTokenService,
-  TwoFactorTokenService,
-} from './services'
-import {
   LoginUseCase,
   RefreshTokenUseCase,
   LogoutUseCase,
-  RequestResetPasswordUseCase,
-  ResetPasswordUseCase,
+  LoginRateLimitPolicy,
+} from './login'
+
+// ========================================
+// TWO-FACTOR CONTEXT
+// ========================================
+import {
+  TwoFactorController,
+  TwoFactorTokenService,
   Generate2FACodeUseCase,
   Verify2FACodeUseCase,
   Resend2FACodeUseCase,
-} from './use-cases'
-import { JwtStrategy, JwtRefreshStrategy } from './strategies'
-import { JwtAuthGuard } from './guards'
-import { JwtTokenHelper } from './helpers'
-import { LoginRateLimitPolicy, EmailOperationRateLimitPolicy } from './policies'
+} from './two-factor'
+
+// ========================================
+// PASSWORD RESET CONTEXT
+// ========================================
+import {
+  PasswordResetController,
+  ResetPasswordTokenService,
+  RequestResetPasswordUseCase,
+  ResetPasswordUseCase,
+} from './password-reset'
+
+// ========================================
+// TRUSTED DEVICES CONTEXT
+// ========================================
+import { TrustedDeviceService } from './trusted-devices'
+
+// ========================================
+// SHARED INFRASTRUCTURE
+// ========================================
+import {
+  JwtStrategy,
+  JwtRefreshStrategy,
+  JwtAuthGuard,
+  JwtTokenHelper,
+  EmailOperationRateLimitPolicy,
+} from './shared'
 
 @Module({
   imports: [
@@ -79,6 +104,7 @@ import { LoginRateLimitPolicy, EmailOperationRateLimitPolicy } from './policies'
     TokensService,
     ResetPasswordTokenService,
     TwoFactorTokenService,
+    TrustedDeviceService,
 
     ConfigService,
 
@@ -127,6 +153,7 @@ import { LoginRateLimitPolicy, EmailOperationRateLimitPolicy } from './policies'
     TokensService,
     ResetPasswordTokenService,
     TwoFactorTokenService,
+    TrustedDeviceService,
     // Exportar guards para uso manual si es necesario
     JwtAuthGuard,
   ],

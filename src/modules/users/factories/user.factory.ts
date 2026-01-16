@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common'
-import { PasswordHashService } from '@core/security'
 import { UserEntity, UserStatus } from '../entities/user.entity'
 import { CreateUserDto, UpdateUserDto } from '../dtos'
 
 @Injectable()
 export class UserFactory {
-  constructor(private readonly passwordHashService: PasswordHashService) {}
-
   /**
    * Crea una nueva entidad UserEntity desde un CreateUserDto
    * Hashea la contraseña automáticamente usando PasswordHashService
@@ -14,20 +11,18 @@ export class UserFactory {
    * @param dto - Datos del usuario a crear
    * @returns Promise con nueva instancia de UserEntity (sin persistir)
    */
-  async createFromDto(dto: CreateUserDto): Promise<UserEntity> {
+  createFromDto(dto: CreateUserDto): UserEntity {
     const user = new UserEntity()
-
     user.names = dto.names
     user.lastNames = dto.lastNames
     user.email = dto.email.toLowerCase()
     user.username = dto.username.toLowerCase()
     user.ci = dto.ci
-    user.password = await this.passwordHashService.hash(dto.password)
     user.phone = dto.phone ?? null
     user.address = dto.address ?? null
     user.organizationId = dto.organizationId
     user.roles = dto.roles
-    user.status = dto.status ?? UserStatus.ACTIVE
+    user.status = UserStatus.PENDING
     user.image = null
     return user
   }
@@ -49,8 +44,6 @@ export class UserFactory {
     if (dto.phone !== undefined) user.phone = dto.phone
     if (dto.address !== undefined) user.address = dto.address
     if (dto.roles !== undefined) user.roles = dto.roles
-    if (dto.status !== undefined) user.status = dto.status
-
     return user
   }
 }

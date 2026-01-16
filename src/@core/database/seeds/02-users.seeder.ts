@@ -218,7 +218,7 @@ export default class UsersSeeder implements Seeder {
     ]
 
     for (const userData of users) {
-      const user = userRepository.create({ ...userData, emailVerified: true })
+      const user = userRepository.create({ ...userData })
       await userRepository.save(user)
       console.log(
         `  ✓ Created user: ${userData.email} (${userData.roles.join(', ')}) - Status: ${userData.status}`,

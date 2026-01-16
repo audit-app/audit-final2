@@ -1,17 +1,27 @@
+/**
+ * Auth Module - Barrel Export
+ *
+ * Exporta todos los contextos de autenticación:
+ * - login: Autenticación básica (login, logout, refresh)
+ * - two-factor: Autenticación de dos factores (2FA)
+ * - password-reset: Recuperación de contraseña
+ * - trusted-devices: Gestión de dispositivos confiables
+ * - shared: Infraestructura compartida (guards, strategies, decorators, etc.)
+ */
+
 // Module
 export * from './auth.module'
 
-// Guards
-export * from './guards'
+// ========================================
+// CONTEXTS
+// ========================================
+export * from './login'
+export * from './two-factor'
+export * from './password-reset'
+export * from './trusted-devices'
 
-// Decorators
-export * from './decorators'
-
-// Interfaces
-export * from './interfaces'
-
-// Exceptions
-export * from './exceptions'
-
-// DTOs (para documentación Swagger)
-export * from './dtos'
+// ========================================
+// SHARED INFRASTRUCTURE
+// ========================================
+// Re-exportar shared para acceso directo a guards, decorators, etc.
+export * from './shared'

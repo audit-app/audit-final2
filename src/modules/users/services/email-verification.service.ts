@@ -5,10 +5,13 @@ import {
   Inject,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { TokenStorageService, REDIS_PREFIXES } from '@core/cache'
+import { TokenStorageService } from '@core/cache'
 import { EmailService } from '@core/email'
 import { USERS_REPOSITORY } from '../tokens'
 import type { IUsersRepository } from '../repositories'
+
+// Constante local para el prefijo de verificación de email
+const EMAIL_VERIFICATION_PREFIX = 'auth:verify-email'
 
 /**
  * Servicio de Verificación de Email (Simplificado)
@@ -67,7 +70,7 @@ export class EmailVerificationService {
     // 3. Revocar TODOS los tokens anteriores del usuario
     await this.tokenStorage.revokeAllUserTokens(
       userId,
-      REDIS_PREFIXES.EMAIL_VERIFICATION,
+      EMAIL_VERIFICATION_PREFIX,
     )
 
     // 4. Generar nuevo token
@@ -82,7 +85,7 @@ export class EmailVerificationService {
         fullName: user.fullName,
       },
       {
-        prefix: REDIS_PREFIXES.EMAIL_VERIFICATION,
+        prefix: EMAIL_VERIFICATION_PREFIX,
         ttlSeconds: this.VERIFICATION_TTL,
       },
     )
@@ -131,7 +134,7 @@ export class EmailVerificationService {
     const tokenData = await this.tokenStorage.getTokenData(
       userId,
       tokenId,
-      REDIS_PREFIXES.EMAIL_VERIFICATION,
+      EMAIL_VERIFICATION_PREFIX,
     )
 
     if (!tokenData || !tokenData.metadata) {
@@ -160,7 +163,7 @@ export class EmailVerificationService {
     await this.tokenStorage.revokeToken(
       userId,
       tokenId,
-      REDIS_PREFIXES.EMAIL_VERIFICATION,
+      EMAIL_VERIFICATION_PREFIX,
     )
 
     // Revocar mapping inverso
