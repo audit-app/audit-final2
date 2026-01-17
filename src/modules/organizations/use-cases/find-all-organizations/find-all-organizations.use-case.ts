@@ -14,6 +14,6 @@ export class FindAllOrganizationsUseCase {
   ) {}
 
   async execute(): Promise<OrganizationEntity[]> {
-    return await this.organizationRepository.findAllActive()
+    return await this.organizationRepository.findAll()
   }
 }

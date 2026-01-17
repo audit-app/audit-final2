@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsBoolean } from 'class-validator'
+import { IsOptional, IsString, IsBoolean, IsIn } from 'class-validator'
 import { PaginationDto } from '@core/dtos'
 import { Transform } from 'class-transformer'
 import { ApiPropertyOptional } from '@nestjs/swagger'
@@ -62,7 +62,7 @@ export class FindOrganizationsDto extends PaginationDto {
    */
   @ApiPropertyOptional({
     description: 'Filtrar por estado activo/inactivo',
-    example: true,
+    example: false,
   })
   @IsOptional()
   @Transform(({ value }) => {
@@ -88,4 +88,8 @@ export class FindOrganizationsDto extends PaginationDto {
   })
   @IsBoolean()
   hasLogo?: boolean
+
+  @IsOptional()
+  @IsIn(ORGANIZATION_SORTABLE_FIELDS)
+  sortBy?: string = 'createdAt'
 }

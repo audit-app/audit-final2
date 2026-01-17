@@ -34,7 +34,7 @@ export class DeactivateOrganizationWithUsersUseCase {
   async execute(organizationId: string): Promise<void> {
     // 1. Verificar que la organización existe
     const organization =
-      await this.organizationRepository.findActiveById(organizationId)
+      await this.organizationRepository.findById(organizationId)
     if (!organization) {
       throw new OrganizationNotFoundException(organizationId)
     }

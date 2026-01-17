@@ -12,7 +12,7 @@ export class ActivateOrganizationUseCase {
 
   async execute(organizationId: string): Promise<void> {
     const organization =
-      await this.organizationRepository.findActiveById(organizationId)
+      await this.organizationRepository.findById(organizationId)
     if (!organization) {
       throw new OrganizationNotFoundException(organizationId)
     }

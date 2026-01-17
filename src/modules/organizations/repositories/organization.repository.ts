@@ -32,42 +32,10 @@ export class OrganizationRepository
     })
   }
 
-  async findAllActive(): Promise<OrganizationEntity[]> {
-    return await this.getRepo().find({
-      where: { isActive: true },
-      relations: ['users'],
-      order: { createdAt: 'DESC' },
-    })
-  }
-
-  async findActiveById(id: string): Promise<OrganizationEntity | null> {
-    return await this.getRepo().findOne({
-      where: { id, isActive: true },
-    })
-  }
-
-  async findActiveByNit(nit: string): Promise<OrganizationEntity | null> {
-    return await this.getRepo().findOne({
-      where: { nit, isActive: true },
-      relations: ['users'],
-    })
-  }
-
-  /**
-   * Verifica si existe una organización activa con el ID dado
-   * Útil para validaciones sin necesidad de cargar la entidad completa
-   */
-  async existsActiveById(id: string): Promise<boolean> {
-    const count = await this.getRepo().count({
-      where: { id, isActive: true },
-    })
-    return count > 0
-  }
-
   async countActiveUsers(organizationId: string): Promise<number> {
     return await this.getRepo()
       .createQueryBuilder('org')
-      .leftJoin('org.users', 'user')
+      .leftJoin('org.users', 'users')
       .where('org.id = :id', { id: organizationId })
       .andWhere('user.isActive = :isActive', { isActive: true })
       .getCount()
