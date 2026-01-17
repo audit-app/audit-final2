@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsString, IsNotEmpty, MaxLength } from 'class-validator'
-import { TWO_FACTOR_CONSTRAINTS } from '../../shared/constants'
 
 /**
  * DTO para generar un código 2FA
@@ -16,10 +15,10 @@ export class Generate2FACodeDto {
   @ApiProperty({
     description: 'ID del usuario o email',
     example: 'usuario@example.com',
-    maxLength: TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX,
+    maxLength: 255,
   })
   @IsString({ message: 'El identificador debe ser una cadena de texto' })
-  @IsNotEmpty({ message: TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MESSAGE })
-  @MaxLength(TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX)
+  @IsNotEmpty({ message: 'El email o ID de usuario es requerido' })
+  @MaxLength(255)
   identifier: string
 }

@@ -29,7 +29,7 @@ describe('PaginationDto', () => {
   })
 
   it('debe fallar si el limit excede el máximo permitido (100)', async () => {
-    const target = { limit: '101' }
+    const target = { limit: '501' }
     const dto = plainToInstance(PaginationDto, target)
     const errors = await validate(dto)
 

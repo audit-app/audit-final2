@@ -1,25 +1,30 @@
 import { Injectable } from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { ConfigService } from '@nestjs/config'
-import { UAParser } from 'ua-parser-js'
+import {
+  JwtService,
+  JsonWebTokenError,
+  TokenExpiredError,
+  NotBeforeError,
+} from '@nestjs/jwt'
 import ms from 'ms'
-import { JwtTokenHelper } from '../../shared/helpers'
+import { ConnectionMetadataService } from '@core/common'
+import type { ConnectionMetadata } from '@core/common'
+import { LoggerService } from '@core/logger'
 import { TokenStorageRepository } from './token-storage.repository'
 import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
+import { InvalidTokenException } from '../exceptions'
+import { TimeUtil } from '@core/utils'
 
 @Injectable()
 export class TokensService {
-  // Variables cacheadas para performance y seguridad
   private readonly accessTokenExpires: string
   private readonly refreshTokenExpires: string
   private readonly refreshTokenSecret: string
-
   constructor(
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    private readonly jwtTokenHelper: JwtTokenHelper,
     private readonly tokenStorage: TokenStorageRepository,
+    private readonly connectionMetadataService: ConnectionMetadataService,
+    private readonly logger: LoggerService,
   ) {
     this.accessTokenExpires = this.configService.get('JWT_EXPIRES_IN', '15m')
     this.refreshTokenExpires = this.configService.getOrThrow(
@@ -31,8 +36,7 @@ export class TokensService {
 
   async generateTokenPair(
     user: UserEntity,
-    ip: string,
-    userAgent: string,
+    connection: ConnectionMetadata,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenId = this.tokenStorage.generateTokenId()
 
@@ -64,13 +68,18 @@ export class TokensService {
       }),
     ])
 
-    // Metadata
-    const ttlSeconds = this.jwtTokenHelper.getExpirySeconds(
-      this.refreshTokenExpires,
-    )
-    const metadata = this.parseUserAgent(userAgent, ip)
+    // Parsear metadata de conexión usando el servicio centralizado
+    const ttlSeconds = TimeUtil.toSeconds(this.refreshTokenExpires)
+    const parsedMetadata = this.connectionMetadataService.parse(connection)
 
-    await this.tokenStorage.save(user.id, tokenId, ttlSeconds, metadata)
+    // Guardar en Redis (adaptamos ParsedConnectionMetadata a SessionMetadata)
+    await this.tokenStorage.save(user.id, tokenId, ttlSeconds, {
+      ip: parsedMetadata.ip,
+      userAgent: parsedMetadata.userAgent,
+      browser: parsedMetadata.browser,
+      os: parsedMetadata.os,
+      device: parsedMetadata.device,
+    })
 
     return { accessToken, refreshToken }
   }
@@ -97,22 +106,6 @@ export class TokensService {
     await this.tokenStorage.delete(userId, tokenId)
   }
 
-  // ... (validateRefreshToken, isTokenBlacklisted, revokeAllUserTokens siguen igual) ...
-
-  // Helpers privados
-  private parseUserAgent(userAgent: string, ip: string) {
-    const parser = new UAParser(userAgent)
-    const result = parser.getResult()
-    return {
-      ip,
-      userAgent,
-      browser:
-        `${result.browser.name || 'Unknown'} ${result.browser.version || ''}`.trim(),
-      os: `${result.os.name || 'Unknown'} ${result.os.version || ''}`.trim(),
-      device: result.device.type || 'Desktop',
-    }
-  }
-
   // Helpers públicos
   async validateRefreshToken(
     userId: string,
@@ -127,5 +120,84 @@ export class TokensService {
 
   async isTokenBlacklisted(token: string): Promise<boolean> {
     return this.tokenStorage.isBlacklisted(token)
+  }
+
+  //METODOS JWT RAW
+
+  decodeRefreshToken(refreshToken: string): JwtRefreshPayload {
+    return this.jwtService.decode(refreshToken)
+  }
+
+  // --- VERIFICACIÓN CENTRALIZADA DE TOKENS ---
+
+  /**
+   * Verifica un Refresh Token centralizando el manejo de errores y logs
+   *
+   * @param token - Refresh token a verificar
+   * @returns Payload decodificado del token
+   * @throws InvalidTokenException si el token es inválido o expirado
+   */
+  verifyRefreshToken(token: string): JwtRefreshPayload {
+    try {
+      return this.jwtService.verify<JwtRefreshPayload>(token, {
+        secret: this.refreshTokenSecret,
+      })
+    } catch (error) {
+      this.handleJwtError(error, 'TokensService.verifyRefreshToken')
+      throw new InvalidTokenException('Refresh token inválido o expirado')
+    }
+  }
+
+  /**
+   * Verifica un Access Token (útil para logout, validaciones manuales)
+   *
+   * @param token - Access token a verificar
+   * @returns Payload decodificado del token
+   * @throws InvalidTokenException si el token es inválido o expirado
+   */
+  verifyAccessToken(token: string): JwtPayload {
+    try {
+      return this.jwtService.verify<JwtPayload>(token, {
+        secret: this.configService.get('JWT_SECRET'),
+      })
+    } catch (error) {
+      this.handleJwtError(error, 'TokensService.verifyAccessToken')
+      throw new InvalidTokenException('Access token inválido o expirado')
+    }
+  }
+
+  // --- MANEJO CENTRALIZADO DE ERRORES JWT ---
+
+  /**
+   * Helper privado para manejar errores de JWT de forma consistente
+   * Centraliza los logs para no repetir la lógica en cada método
+   *
+   * @param error - Error capturado de jwtService.verify
+   * @param context - Contexto para los logs (método que llamó)
+   */
+  private handleJwtError(error: unknown, context: string): void {
+    if (error instanceof TokenExpiredError) {
+      // Token expirado (caso normal, nivel WARN)
+      this.logger.warn(
+        `Token expirado: ${error.expiredAt.toISOString()}`,
+        context,
+      )
+    } else if (error instanceof JsonWebTokenError) {
+      // Firma inválida o token malformado (caso raro, nivel ERROR)
+      this.logger.error(error, undefined, `${context}.InvalidSignature`)
+    } else if (error instanceof NotBeforeError) {
+      // Token del futuro - relojes desincronizados (nivel WARN)
+      this.logger.warn(
+        `Token not active yet (nbf: ${error.date.toISOString()})`,
+        context,
+      )
+    } else {
+      // Error desconocido
+      this.logger.error(
+        error instanceof Error ? error : new Error(String(error)),
+        undefined,
+        `${context}.Unknown`,
+      )
+    }
   }
 }

@@ -11,17 +11,20 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import type { Request, Response } from 'express'
-import { RealIp } from '@core/decorators/real-ip.decorator'
 import { CookieService } from '@core/http/services/cookie.service'
+import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
 import { LoginDto, LoginResponseDto } from '../dtos'
-import { Public, GetUser } from '../../shared/decorators'
+import { Public, GetUser, GetToken } from '../../shared/decorators'
 import type { JwtPayload } from '../../shared/interfaces'
 import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
 import { TrustedDeviceService } from '../../trusted-devices'
+import { JwtAuthGuard } from '../../shared'
 
+@UseGuards(JwtAuthGuard)
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
@@ -35,11 +38,10 @@ export class AuthController {
 
   /**
    * POST /auth/login
-   *
    * Autentica un usuario con username/email y password
    *
    * @param loginDto - Credenciales de login
-   * @param ip - Dirección IP del usuario (para rate limiting)
+   * @param connection - Metadata de conexión (IP, User-Agent)
    * @param res - Express response para setear cookies
    * @returns Access token y datos del usuario
    *
@@ -71,12 +73,12 @@ export class AuthController {
   })
   async login(
     @Body() loginDto: LoginDto,
-    @RealIp() ip: string,
+    @ConnectionInfo() connection: ConnectionMetadata,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDto> {
     const { response, refreshToken } = await this.loginUseCase.execute(
       loginDto,
-      ip,
+      connection,
     )
 
     // Configurar refresh token en HTTP-only cookie (solo si existe)
@@ -96,6 +98,7 @@ export class AuthController {
    * Implementa token rotation: el refresh token viejo se revoca y se genera uno nuevo
    *
    * @param req - Express request para leer cookies
+   * @param connection - Metadata de conexión (IP, User-Agent)
    * @param res - Express response para setear nueva cookie
    * @returns Nuevo access token
    *
@@ -127,6 +130,7 @@ export class AuthController {
   })
   async refresh(
     @Req() req: Request,
+    @ConnectionInfo() connection: ConnectionMetadata,
     @Res({ passthrough: true }) res: Response,
   ): Promise<{ accessToken: string }> {
     const oldRefreshToken = this.cookieService.getRefreshToken(req)
@@ -135,7 +139,10 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token no encontrado')
     }
 
-    const result = await this.refreshTokenUseCase.execute(oldRefreshToken)
+    const result = await this.refreshTokenUseCase.execute(
+      oldRefreshToken,
+      connection,
+    )
 
     // Setear nuevo refresh token (rotation)
     this.cookieService.setRefreshToken(res, result.refreshToken)
@@ -178,12 +185,10 @@ export class AuthController {
   })
   async logout(
     @GetUser() user: JwtPayload,
+    @GetToken() accessToken: string,
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    // Extraer access token del header Authorization
-    const accessToken = this.extractTokenFromHeader(req)
-
     // Extraer refresh token de la cookie
     const refreshToken = this.cookieService.getRefreshToken(req)
 
@@ -351,16 +356,5 @@ export class AuthController {
       message: `${count} dispositivo(s) eliminado(s) exitosamente`,
       count,
     }
-  }
-
-  /**
-   * Helper: Extrae el access token del header Authorization
-   */
-  private extractTokenFromHeader(req: Request): string | undefined {
-    const authHeader = req.headers.authorization
-    if (!authHeader) return undefined
-
-    const [type, token] = authHeader.split(' ')
-    return type === 'Bearer' ? token : undefined
   }
 }

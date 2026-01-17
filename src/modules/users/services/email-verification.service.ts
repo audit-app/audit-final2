@@ -5,13 +5,20 @@ import {
   Inject,
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { TokenStorageService } from '@core/cache'
+import { v4 as uuidv4 } from 'uuid'
+import { CacheService } from '@core/cache'
 import { EmailService } from '@core/email'
 import { USERS_REPOSITORY } from '../tokens'
 import type { IUsersRepository } from '../repositories'
 
 // Constante local para el prefijo de verificación de email
 const EMAIL_VERIFICATION_PREFIX = 'auth:verify-email'
+
+interface TokenMetadata {
+  email: string
+  fullName: string
+  createdAt: number
+}
 
 /**
  * Servicio de Verificación de Email (Simplificado)
@@ -34,7 +41,7 @@ export class EmailVerificationService {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    private readonly tokenStorage: TokenStorageService,
+    private readonly cacheService: CacheService,
     private readonly emailService: EmailService,
     private readonly configService: ConfigService,
   ) {
@@ -68,34 +75,24 @@ export class EmailVerificationService {
     }
 
     // 3. Revocar TODOS los tokens anteriores del usuario
-    await this.tokenStorage.revokeAllUserTokens(
-      userId,
-      EMAIL_VERIFICATION_PREFIX,
-    )
+    await this.revokeAllUserTokens(userId)
 
     // 4. Generar nuevo token
-    const tokenId = this.tokenStorage.generateTokenId()
+    const tokenId = uuidv4()
 
-    // 5. Guardar token con datos del usuario
-    await this.tokenStorage.storeTokenWithMetadata(
-      userId,
-      tokenId,
-      {
-        email: user.email,
-        fullName: user.fullName,
-      },
-      {
-        prefix: EMAIL_VERIFICATION_PREFIX,
-        ttlSeconds: this.VERIFICATION_TTL,
-      },
-    )
+    // 5. Guardar token con metadata
+    const metadata: TokenMetadata = {
+      email: user.email,
+      fullName: user.fullName,
+      createdAt: Date.now(),
+    }
+
+    const tokenKey = `${EMAIL_VERIFICATION_PREFIX}:${userId}:${tokenId}`
+    await this.cacheService.setJSON(tokenKey, metadata, this.VERIFICATION_TTL)
 
     // 6. Crear mapping inverso: token -> userId (para búsqueda rápida)
-    await this.tokenStorage.storeSimple(
-      `${this.TOKEN_MAP_PREFIX}${tokenId}`,
-      userId,
-      this.VERIFICATION_TTL,
-    )
+    const mapKey = `${this.TOKEN_MAP_PREFIX}${tokenId}`
+    await this.cacheService.set(mapKey, userId, this.VERIFICATION_TTL)
 
     // 7. Construir link y enviar email
     const verificationLink = this.buildVerificationLink(tokenId)
@@ -124,20 +121,17 @@ export class EmailVerificationService {
   } | null> {
     // 1. Buscar userId usando mapping inverso (O(1) en Redis)
     const mapKey = `${this.TOKEN_MAP_PREFIX}${tokenId}`
-    const userId = await this.tokenStorage['redis'].get(mapKey)
+    const userId = await this.cacheService.get(mapKey)
 
     if (!userId) {
       return null // Token inválido o expirado
     }
 
     // 2. Obtener datos del token
-    const tokenData = await this.tokenStorage.getTokenData(
-      userId,
-      tokenId,
-      EMAIL_VERIFICATION_PREFIX,
-    )
+    const tokenKey = `${EMAIL_VERIFICATION_PREFIX}:${userId}:${tokenId}`
+    const metadata = await this.cacheService.getJSON<TokenMetadata>(tokenKey)
 
-    if (!tokenData || !tokenData.metadata) {
+    if (!metadata) {
       return null
     }
 
@@ -147,8 +141,8 @@ export class EmailVerificationService {
     // 4. Retornar datos
     return {
       userId,
-      email: tokenData.metadata.email as string,
-      fullName: tokenData.metadata.fullName as string,
+      email: metadata.email,
+      fullName: metadata.fullName,
     }
   }
 
@@ -160,14 +154,38 @@ export class EmailVerificationService {
    */
   private async revokeToken(userId: string, tokenId: string): Promise<void> {
     // Revocar token principal
-    await this.tokenStorage.revokeToken(
-      userId,
-      tokenId,
-      EMAIL_VERIFICATION_PREFIX,
-    )
+    const tokenKey = `${EMAIL_VERIFICATION_PREFIX}:${userId}:${tokenId}`
+    await this.cacheService.del(tokenKey)
 
     // Revocar mapping inverso
-    await this.tokenStorage.deleteSimple(`${this.TOKEN_MAP_PREFIX}${tokenId}`)
+    const mapKey = `${this.TOKEN_MAP_PREFIX}${tokenId}`
+    await this.cacheService.del(mapKey)
+  }
+
+  /**
+   * Revoca TODOS los tokens de verificación de un usuario
+   *
+   * @param userId - ID del usuario
+   */
+  private async revokeAllUserTokens(userId: string): Promise<void> {
+    // Buscar todos los tokens del usuario
+    const pattern = `${EMAIL_VERIFICATION_PREFIX}:${userId}:*`
+    const keys = await this.cacheService.keys(pattern)
+
+    if (keys.length === 0) return
+
+    // Extraer tokenIds y eliminar mappings inversos
+    const deletePromises = keys.map(async (key) => {
+      // Extraer tokenId del key: auth:verify-email:userId:tokenId
+      const tokenId = key.split(':').pop()
+      if (tokenId) {
+        const mapKey = `${this.TOKEN_MAP_PREFIX}${tokenId}`
+        await this.cacheService.del(mapKey)
+      }
+      await this.cacheService.del(key)
+    })
+
+    await Promise.all(deletePromises)
   }
 
   /**

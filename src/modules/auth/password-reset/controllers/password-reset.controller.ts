@@ -6,7 +6,7 @@ import { Public } from '../../shared/decorators'
 import {
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
-} from '../use-cases/password-reset'
+} from '../use-cases/request-reset'
 
 /**
  * PasswordResetController
@@ -111,18 +111,7 @@ export class PasswordResetController {
     status: HttpStatus.NOT_FOUND,
     description: 'Usuario no encontrado',
   })
-  @ApiResponse({
-    status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiados intentos desde esta IP',
-  })
-  async reset(
-    @Body() dto: ResetPasswordDto,
-    @RealIp() ip: string,
-  ): Promise<{ message: string }> {
-    return await this.resetPasswordUseCase.execute(
-      dto.token,
-      dto.newPassword,
-      ip,
-    )
+  async reset(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
+    return await this.resetPasswordUseCase.execute(dto.token, dto.newPassword)
   }
 }

@@ -9,7 +9,6 @@ import {
   IsOptional,
   IsBoolean,
 } from 'class-validator'
-import { TWO_FACTOR_CONSTRAINTS } from '../../shared/constants'
 
 /**
  * DTO para verificar un código 2FA
@@ -31,29 +30,25 @@ export class Verify2FACodeDto {
   @ApiProperty({
     description: 'ID del usuario',
     example: '550e8400-e29b-41d4-a716-446655440000',
-    maxLength: TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX,
+    maxLength: 255,
   })
   @IsString({ message: 'El userId debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El userId es requerido' })
-  @MaxLength(TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX)
+  @MaxLength(255)
   userId: string
 
   @ApiProperty({
-    description: `Código numérico de ${TWO_FACTOR_CONSTRAINTS.CODE.LENGTH} dígitos`,
+    description: 'Código numérico de 6 dígitos',
     example: '123456',
-    minLength: TWO_FACTOR_CONSTRAINTS.CODE.LENGTH,
-    maxLength: TWO_FACTOR_CONSTRAINTS.CODE.LENGTH,
+    minLength: 6,
+    maxLength: 6,
   })
   @IsString({ message: 'El código debe ser una cadena de texto' })
-  @Length(
-    TWO_FACTOR_CONSTRAINTS.CODE.LENGTH,
-    TWO_FACTOR_CONSTRAINTS.CODE.LENGTH,
-    {
-      message: `El código debe tener exactamente ${TWO_FACTOR_CONSTRAINTS.CODE.LENGTH} dígitos`,
-    },
-  )
-  @Matches(TWO_FACTOR_CONSTRAINTS.CODE.PATTERN, {
-    message: TWO_FACTOR_CONSTRAINTS.CODE.MESSAGE,
+  @Length(6, 6, {
+    message: 'El código debe tener exactamente 6 dígitos',
+  })
+  @Matches(/^\d{6}$/, {
+    message: 'El código debe tener exactamente 6 dígitos numéricos',
   })
   @IsNotEmpty({ message: 'El código es requerido' })
   code: string
@@ -63,13 +58,13 @@ export class Verify2FACodeDto {
       'Token JWT requerido para validación (vincula sesión con código)',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
     required: true,
-    minLength: TWO_FACTOR_CONSTRAINTS.TOKEN.MIN,
-    maxLength: TWO_FACTOR_CONSTRAINTS.TOKEN.MAX,
+    minLength: 10,
+    maxLength: 1000,
   })
   @IsString({ message: 'El token debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El token es requerido' })
-  @MinLength(TWO_FACTOR_CONSTRAINTS.TOKEN.MIN)
-  @MaxLength(TWO_FACTOR_CONSTRAINTS.TOKEN.MAX)
+  @MinLength(10)
+  @MaxLength(1000)
   token: string
 
   @ApiPropertyOptional({

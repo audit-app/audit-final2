@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import * as crypto from 'crypto'
 import { CacheService } from '@core/cache'
-import { AUTH_KEYS } from '../../shared/constants'
+import { TRUSTED_DEVICE_CONFIG } from '../config/trusted-device.config'
 
 /**
  * Metadata de un dispositivo confiable almacenado en Redis
@@ -42,25 +41,11 @@ export interface DeviceFingerprintData {
  */
 @Injectable()
 export class TrustedDeviceService {
-  private readonly DEVICE_TTL_DAYS: number
-  private readonly DEVICE_TTL_SECONDS: number
-  private readonly FINGERPRINT_SALT: string
+  private readonly DEVICE_TTL_DAYS = TRUSTED_DEVICE_CONFIG.ttlDays
+  private readonly DEVICE_TTL_SECONDS = this.DEVICE_TTL_DAYS * 24 * 60 * 60
+  private readonly FINGERPRINT_SALT = TRUSTED_DEVICE_CONFIG.fingerprintSalt
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly cacheService: CacheService,
-  ) {
-    this.DEVICE_TTL_DAYS = this.configService.get<number>(
-      'TRUSTED_DEVICE_TTL_DAYS',
-      90,
-    )
-    this.DEVICE_TTL_SECONDS = this.DEVICE_TTL_DAYS * 24 * 60 * 60
-
-    this.FINGERPRINT_SALT = this.configService.get<string>(
-      'DEVICE_FINGERPRINT_SALT',
-      'default-salt-change-me-in-production',
-    )
-  }
+  constructor(private readonly cacheService: CacheService) {}
 
   /**
    * Genera fingerprint SHA-256 del dispositivo
@@ -119,7 +104,7 @@ export class TrustedDeviceService {
     fingerprint: string,
     metadata: Omit<TrustedDeviceMetadata, 'createdAt' | 'lastUsedAt'>,
   ): Promise<void> {
-    const key = AUTH_KEYS.TRUSTED_DEVICE(userId, fingerprint)
+    const key = `auth:trusted-device:${userId}:${fingerprint}`
 
     const data: TrustedDeviceMetadata = {
       ...metadata,
@@ -138,7 +123,7 @@ export class TrustedDeviceService {
    * @returns true si el dispositivo existe y no ha expirado
    */
   async isTrustedDevice(userId: string, fingerprint: string): Promise<boolean> {
-    const key = AUTH_KEYS.TRUSTED_DEVICE(userId, fingerprint)
+    const key = `auth:trusted-device:${userId}:${fingerprint}`
     return await this.cacheService.exists(key)
   }
 
@@ -152,7 +137,7 @@ export class TrustedDeviceService {
    * @param fingerprint - Fingerprint SHA-256 del dispositivo
    */
   async updateLastUsed(userId: string, fingerprint: string): Promise<void> {
-    const key = AUTH_KEYS.TRUSTED_DEVICE(userId, fingerprint)
+    const key = `auth:trusted-device:${userId}:${fingerprint}`
     const metadata = await this.cacheService.getJSON<TrustedDeviceMetadata>(key)
 
     if (!metadata) return
@@ -177,15 +162,14 @@ export class TrustedDeviceService {
   async getTrustedDevices(
     userId: string,
   ): Promise<Array<TrustedDeviceMetadata & { fingerprint: string }>> {
-    const pattern = AUTH_KEYS.USER_TRUSTED_DEVICES(userId)
+    const pattern = `auth:trusted-device:${userId}:*`
     const keys = await this.cacheService.keys(pattern)
 
     const devices: Array<TrustedDeviceMetadata & { fingerprint: string }> = []
 
     for (const key of keys) {
-      const metadata = await this.cacheService.getJSON<TrustedDeviceMetadata>(
-        key,
-      )
+      const metadata =
+        await this.cacheService.getJSON<TrustedDeviceMetadata>(key)
       if (!metadata) continue
 
       try {
@@ -216,9 +200,8 @@ export class TrustedDeviceService {
     userId: string,
     fingerprint: string,
   ): Promise<boolean> {
-    const key = AUTH_KEYS.TRUSTED_DEVICE(userId, fingerprint)
-    const result = await this.cacheService.del(key)
-    return result > 0
+    const key = `auth:trusted-device:${userId}:${fingerprint}`
+    return await this.cacheService.del(key)
   }
 
   /**
@@ -233,7 +216,7 @@ export class TrustedDeviceService {
    * @returns Número de dispositivos eliminados
    */
   async revokeAllUserDevices(userId: string): Promise<number> {
-    const pattern = AUTH_KEYS.USER_TRUSTED_DEVICES(userId)
+    const pattern = `auth:trusted-device:${userId}:*`
     return await this.cacheService.delByPattern(pattern)
   }
 

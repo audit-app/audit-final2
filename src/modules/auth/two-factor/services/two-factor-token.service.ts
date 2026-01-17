@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import * as crypto from 'crypto'
 import { CacheService } from '@core/cache'
 import { JwtTokenHelper } from '../../shared/helpers'
-import { AUTH_KEYS } from '../../shared/constants'
+import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
 
 interface TwoFactorData {
   userId: string
@@ -46,17 +45,13 @@ interface TwoFactorData {
  */
 @Injectable()
 export class TwoFactorTokenService {
-  private readonly codeLength: number
-  private readonly codeExpiry: string
+  private readonly codeLength = TWO_FACTOR_CONFIG.code.length
+  private readonly codeExpiry = TWO_FACTOR_CONFIG.code.expiresIn
 
   constructor(
-    private readonly configService: ConfigService,
     private readonly cacheService: CacheService,
     private readonly jwtTokenHelper: JwtTokenHelper,
-  ) {
-    this.codeLength = configService.get('TWO_FACTOR_CODE_LENGTH', 6)
-    this.codeExpiry = configService.get('TWO_FACTOR_CODE_EXPIRES_IN', '5m')
-  }
+  ) {}
 
   /**
    * Genera un código 2FA
@@ -79,7 +74,7 @@ export class TwoFactorTokenService {
 
     // Almacenar en Redis con TTL
     const ttlSeconds = this.jwtTokenHelper.getExpirySeconds(this.codeExpiry)
-    const key = AUTH_KEYS.TWO_FACTOR(token)
+    const key = `auth:2fa:${token}`
     const data: TwoFactorData = { userId, code }
     await this.cacheService.setJSON(key, data, ttlSeconds)
 
@@ -112,7 +107,7 @@ export class TwoFactorTokenService {
   ): Promise<boolean> {
     try {
       // 1. Obtener datos de Redis
-      const key = AUTH_KEYS.TWO_FACTOR(token)
+      const key = `auth:2fa:${token}`
       const data = await this.cacheService.getJSON<TwoFactorData>(key)
 
       if (!data) {
@@ -164,7 +159,7 @@ export class TwoFactorTokenService {
    * Obtiene el TTL restante de un código
    */
   async getCodeTTL(token: string): Promise<number> {
-    const key = AUTH_KEYS.TWO_FACTOR(token)
+    const key = `auth:2fa:${token}`
     return await this.cacheService.ttl(key)
   }
 }

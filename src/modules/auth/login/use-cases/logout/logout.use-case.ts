@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { TokensService } from '../../services/tokens.service'
+import { LoggerService } from '@core'
 
 /**
  * Use Case: Logout de usuario
@@ -12,7 +13,10 @@ import { TokensService } from '../../services/tokens.service'
  */
 @Injectable()
 export class LogoutUseCase {
-  constructor(private readonly tokensService: TokensService) {}
+  constructor(
+    private readonly tokensService: TokensService,
+    private readonly logger: LoggerService,
+  ) {}
 
   /**
    * Ejecuta el flujo de logout
@@ -36,7 +40,10 @@ export class LogoutUseCase {
         const decoded = this.tokensService.decodeRefreshToken(refreshToken)
         await this.tokensService.revokeRefreshToken(userId, decoded.tokenId)
       } catch {
-        // Token inválido, ignorar (ya está revocado de facto)
+        this.logger.warn(
+          `Fallo al procesar refresh token en logout. User: ${userId}`,
+          'LogoutUseCase',
+        )
       }
     }
   }

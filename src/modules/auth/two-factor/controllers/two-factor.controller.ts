@@ -7,6 +7,7 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
 import { Generate2FACodeDto, Verify2FACodeDto, Resend2FACodeDto } from '../dtos'
 import { Public, GetUser } from '../../shared/decorators'
 import { JwtAuthGuard } from '../../shared/guards'
@@ -91,6 +92,7 @@ export class TwoFactorController {
    * El código se elimina de Redis después del primer uso
    *
    * @param dto - userId, código y token
+   * @param connection - Metadata de conexión (IP, User-Agent)
    * @returns Resultado de la validación
    *
    * @example
@@ -129,13 +131,14 @@ export class TwoFactorController {
   })
   async verify(
     @Body() dto: Verify2FACodeDto,
+    @ConnectionInfo() connection: ConnectionMetadata,
   ): Promise<{
     valid: boolean
     message: string
     accessToken?: string
     refreshToken?: string
   }> {
-    return await this.verifyUseCase.execute(dto)
+    return await this.verifyUseCase.execute(dto, connection)
   }
 
   /**

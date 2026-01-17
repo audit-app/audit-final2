@@ -44,7 +44,7 @@ export class UploadLogoUseCase {
         overwrite: true,
         validationOptions: {
           fileType: FileType.IMAGE,
-          maxSize: 5 * 1024 * 1024, // 5MB
+          maxSize: 5 * 1024 * 1024,
           maxWidth: 1024,
           maxHeight: 1024,
         },

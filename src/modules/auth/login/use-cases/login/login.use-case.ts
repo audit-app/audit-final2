@@ -1,21 +1,20 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { REQUEST } from '@nestjs/core'
-import type { Request } from 'express'
 import { PasswordHashService } from '@core/security'
 import { EmailService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { TokensService } from '../../services/tokens.service'
-import { TwoFactorTokenService } from '../../../two-factor'
-import { TrustedDeviceService } from '../../../trusted-devices'
+//import { TwoFactorTokenService } from '../../../two-factor'
+//import { TrustedDeviceService } from '../../../trusted-devices'
 import { LoginRateLimitPolicy } from '../../policies'
 import type { LoginDto, LoginResponseDto } from '../../dtos'
 import {
   InvalidCredentialsException,
   UserNotActiveException,
   EmailNotVerifiedException,
-} from '../../../shared/exceptions'
+} from '../../exceptions'
 import { UserStatus } from '../../../../users/entities/user.entity'
+import { ConnectionMetadata } from '@core/common'
 
 /**
  * Use Case: Login de usuario con 2FA condicional
@@ -48,10 +47,9 @@ export class LoginUseCase {
     private readonly passwordHashService: PasswordHashService,
     private readonly tokensService: TokensService,
     private readonly loginRateLimitPolicy: LoginRateLimitPolicy,
-    private readonly twoFactorTokenService: TwoFactorTokenService,
-    private readonly trustedDeviceService: TrustedDeviceService,
+    //private readonly twoFactorTokenService: TwoFactorTokenService,
+    //private readonly trustedDeviceService: TrustedDeviceService,
     private readonly emailService: EmailService,
-    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
   /**
@@ -67,11 +65,12 @@ export class LoginUseCase {
    */
   async execute(
     dto: LoginDto,
-    ip: string,
+    connection: ConnectionMetadata,
   ): Promise<{
     response: LoginResponseDto
     refreshToken?: string
   }> {
+    const { ip } = connection
     // 1. Verificar rate limiting (IP y usuario)
     await this.loginRateLimitPolicy.checkLimits(ip, dto.usernameOrEmail)
 
@@ -117,7 +116,7 @@ export class LoginUseCase {
     await this.loginRateLimitPolicy.resetAttempts(ip, dto.usernameOrEmail)
 
     // 6. NUEVO: Verificar 2FA condicional
-    if (user.isTwoFactorEnabled) {
+    /*   if (user.isTwoFactorEnabled) {
       // Usuario tiene 2FA habilitado → verificar dispositivo
       const userAgent = this.request.headers['user-agent'] || 'unknown'
 
@@ -138,9 +137,8 @@ export class LoginUseCase {
         await this.trustedDeviceService.updateLastUsed(user.id, fingerprint)
 
         // Generar tokens JWT directamente
-        const userAgent = this.request.headers['user-agent'] || 'Unknown'
         const { accessToken, refreshToken } =
-          await this.tokensService.generateTokenPair(user, ip, userAgent)
+          await this.tokensService.generateTokenPair(user, connection)
 
         return {
           response: {
@@ -160,8 +158,9 @@ export class LoginUseCase {
       }
 
       // Dispositivo NO confiable: Requerir código 2FA
-      const { code, token } =
-        await this.twoFactorTokenService.generateCode(user.id)
+      const { code, token } = await this.twoFactorTokenService.generateCode(
+        user.id,
+      )
 
       // Enviar código por email
       await this.emailService.sendTwoFactorCode({
@@ -190,12 +189,11 @@ export class LoginUseCase {
         },
         // NO hay refreshToken hasta verificar 2FA
       }
-    }
+    } */
 
     // 7. Usuario NO tiene 2FA habilitado: Flujo normal
-    const userAgent = this.request.headers['user-agent'] || 'Unknown'
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, ip, userAgent)
+      await this.tokensService.generateTokenPair(user, connection)
 
     return {
       response: {

@@ -1,6 +1,5 @@
 import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { LOGIN_CONSTRAINTS } from '../../shared/constants'
 
 /**
  * DTO para el login de usuarios
@@ -13,21 +12,21 @@ export class LoginDto {
   @ApiProperty({
     description: 'Email o username del usuario',
     example: 'admin@gmail.com',
-    maxLength: LOGIN_CONSTRAINTS.USERNAME_OR_EMAIL.MAX,
+    maxLength: 255,
   })
   @IsString()
-  @IsNotEmpty({ message: LOGIN_CONSTRAINTS.USERNAME_OR_EMAIL.MESSAGE })
-  @MaxLength(LOGIN_CONSTRAINTS.USERNAME_OR_EMAIL.MAX)
+  @IsNotEmpty({ message: 'El email o username es requerido' })
+  @MaxLength(255)
   usernameOrEmail: string
 
   @ApiProperty({
     description: 'Contraseña del usuario',
     example: 'Password123!',
-    maxLength: LOGIN_CONSTRAINTS.PASSWORD.MAX,
+    maxLength: 128,
   })
   @IsString()
-  @IsNotEmpty({ message: LOGIN_CONSTRAINTS.PASSWORD.MESSAGE })
-  @MaxLength(LOGIN_CONSTRAINTS.PASSWORD.MAX)
+  @IsNotEmpty({ message: 'La contraseña es requerida' })
+  @MaxLength(128)
   password: string
 
   @ApiPropertyOptional({

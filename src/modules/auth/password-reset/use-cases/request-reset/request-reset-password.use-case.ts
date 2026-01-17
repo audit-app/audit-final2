@@ -1,9 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { EmailService } from '@core/email'
 import { ResetPasswordTokenService } from '../../services/reset-password-token.service'
-import { EmailOperationRateLimitPolicy } from '../../../shared/policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
+import { ResetPasswordRateLimitPolicy } from '../../policies'
 
 /**
  * Use Case: Solicitar reset de contraseña
@@ -26,7 +26,7 @@ export class RequestResetPasswordUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly resetPasswordTokenService: ResetPasswordTokenService,
     private readonly emailService: EmailService,
-    private readonly emailOperationRateLimitPolicy: EmailOperationRateLimitPolicy,
+    private readonly resetPasswordRateLimitPolicy: ResetPasswordRateLimitPolicy,
   ) {}
 
   /**
@@ -38,16 +38,13 @@ export class RequestResetPasswordUseCase {
    * @throws TooManyAttemptsException si excede intentos
    */
   async execute(email: string, ip: string): Promise<{ message: string }> {
-    // 1. Verificar rate limiting por IP
-    await this.emailOperationRateLimitPolicy.checkResetPasswordLimit(ip)
-
     // 2. Buscar usuario por email
     const user = await this.usersRepository.findByEmail(email)
 
     if (!user) {
       // Incrementar contador incluso si el usuario no existe
       // Esto previene enumerar emails válidos
-      await this.emailOperationRateLimitPolicy.incrementResetPasswordAttempt(ip)
+      await this.resetPasswordRateLimitPolicy.incrementAttempts(ip)
 
       // Por seguridad, no revelamos si el email existe o no
       return {
@@ -67,11 +64,11 @@ export class RequestResetPasswordUseCase {
       to: user.email,
       userName: user.username,
       resetLink,
-      expiresInMinutes: 60, // 1 hora
+      expiresInMinutes: 60,
     })
 
     // 6. Incrementar contador (previene spam de emails)
-    await this.emailOperationRateLimitPolicy.incrementResetPasswordAttempt(ip)
+    await this.resetPasswordRateLimitPolicy.incrementAttempts(ip)
 
     return {
       message:

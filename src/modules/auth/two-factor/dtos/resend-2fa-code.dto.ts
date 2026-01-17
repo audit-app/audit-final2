@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsString, IsNotEmpty, MaxLength } from 'class-validator'
-import { TWO_FACTOR_CONSTRAINTS } from '../../shared/constants'
 
 /**
  * DTO para reenviar un código 2FA
@@ -15,10 +14,10 @@ export class Resend2FACodeDto {
   @ApiProperty({
     description: 'ID del usuario que necesita reenvío del código',
     example: '550e8400-e29b-41d4-a716-446655440000',
-    maxLength: TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX,
+    maxLength: 255,
   })
   @IsString({ message: 'El userId debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El userId es requerido' })
-  @MaxLength(TWO_FACTOR_CONSTRAINTS.IDENTIFIER.MAX)
+  @MaxLength(255)
   userId: string
 }
