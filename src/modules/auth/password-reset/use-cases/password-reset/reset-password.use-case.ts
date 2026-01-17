@@ -61,11 +61,10 @@ export class ResetPasswordUseCase {
     newPassword: string,
   ): Promise<{ message: string }> {
     // 1. Validar tokenId + OTP (doble validación)
-    const userId =
-      await this.resetPasswordTokenService.validateTokenWithOtp(
-        tokenId,
-        otpCode,
-      )
+    const userId = await this.resetPasswordTokenService.validateTokenWithOtp(
+      tokenId,
+      otpCode,
+    )
 
     if (!userId) {
       throw new BadRequestException('Token o código OTP inválido o expirado')

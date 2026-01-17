@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
-import { TemplatesRepository } from '../../repositories/templates.repository'
+import { TemplatesRepository } from '../../../repositories/templates.repository'
 import {
   TemplateNotFoundException,
   TemplateNotEditableException,
-} from '../../exceptions'
+} from '../../../exceptions'
 import type { UpdateTemplateDto } from './update-template.dto'
-import type { TemplateEntity } from '../../entities/template.entity'
+import type { TemplateEntity } from '../../../entities/template.entity'
 
 /**
  * Update Template Use Case
@@ -15,8 +15,14 @@ import type { TemplateEntity } from '../../entities/template.entity'
  *
  * Reglas de negocio:
  * - El template debe existir
- * - El template debe estar en estado draft (editable)
- * - Templates published/archived no pueden editarse
+ * - El template debe estar en estado DRAFT (editable)
+ * - Templates PUBLISHED/ARCHIVED no pueden editarse
+ * - La versión NO puede modificarse (se calcula automáticamente al crear)
+ * - El status NO puede modificarse (usar endpoints publish/archive)
+ *
+ * Campos editables:
+ * - name (nombre de la plantilla)
+ * - description (descripción)
  */
 @Injectable()
 export class UpdateTemplateUseCase {
@@ -26,7 +32,7 @@ export class UpdateTemplateUseCase {
    * Ejecuta la actualización del template
    *
    * @param id - ID del template
-   * @param dto - Datos a actualizar
+   * @param dto - Datos a actualizar (nombre y/o descripción)
    * @returns Template actualizado
    * @throws {TemplateNotFoundException} Si el template no existe
    * @throws {TemplateNotEditableException} Si el template no es editable
@@ -39,16 +45,18 @@ export class UpdateTemplateUseCase {
       throw new TemplateNotFoundException(id)
     }
 
-    // 2. Verificar que sea editable
+    // 2. Verificar que sea editable (solo DRAFT)
     if (!template.isEditable) {
       throw new TemplateNotEditableException(id, template.status)
     }
 
-    // 3. Actualizar campos
+    // 3. Actualizar campos permitidos
     if (dto.name !== undefined) template.name = dto.name
     if (dto.description !== undefined) template.description = dto.description
-    if (dto.version !== undefined) template.version = dto.version
-    if (dto.status !== undefined) template.status = dto.status
+
+    // Nota: version y status NO se actualizan aquí
+    // - version: se calcula automáticamente al crear
+    // - status: usar endpoints POST /templates/:id/publish o /archive
 
     // 4. Guardar cambios
     return await this.templatesRepository.save(template)

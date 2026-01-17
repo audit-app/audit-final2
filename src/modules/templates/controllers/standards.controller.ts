@@ -22,17 +22,41 @@ import {
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { ResponseMessage } from '@core/decorators'
-import { StandardsService } from '../services/standards.service'
 import {
   CreateStandardDto,
   UpdateStandardDto,
   StandardResponseDto,
 } from '../dtos'
+import {
+  CreateStandardUseCase,
+  UpdateStandardUseCase,
+  DeleteStandardUseCase,
+  FindStandardUseCase,
+  FindAllStandardsUseCase,
+  FindStandardsByTemplateUseCase,
+  FindStandardsTreeUseCase,
+  FindStandardChildrenUseCase,
+  FindAuditableStandardsUseCase,
+  ActivateStandardUseCase,
+  DeactivateStandardUseCase,
+} from '../use-cases/standards'
 
 @ApiTags('standards')
 @Controller('standards')
 export class StandardsController {
-  constructor(private readonly standardsService: StandardsService) {}
+  constructor(
+    private readonly createStandard: CreateStandardUseCase,
+    private readonly updateStandard: UpdateStandardUseCase,
+    private readonly deleteStandard: DeleteStandardUseCase,
+    private readonly findStandard: FindStandardUseCase,
+    private readonly findAllStandards: FindAllStandardsUseCase,
+    private readonly findStandardsByTemplate: FindStandardsByTemplateUseCase,
+    private readonly findStandardsTree: FindStandardsTreeUseCase,
+    private readonly findStandardChildren: FindStandardChildrenUseCase,
+    private readonly findAuditableStandards: FindAuditableStandardsUseCase,
+    private readonly activateStandard: ActivateStandardUseCase,
+    private readonly deactivateStandard: DeactivateStandardUseCase,
+  ) {}
 
   @Post()
   @ApiCreate(StandardResponseDto, {
@@ -42,7 +66,7 @@ export class StandardsController {
     conflictMessage: 'Ya existe un estándar con ese código en la plantilla',
   })
   async create(@Body() createStandardDto: CreateStandardDto) {
-    return await this.standardsService.create(createStandardDto)
+    return await this.createStandard.execute(createStandardDto)
   }
 
   @Get()
@@ -77,24 +101,24 @@ export class StandardsController {
     @Query('auditableOnly') auditableOnly?: string,
   ) {
     if (templateId && tree === 'true') {
-      return await this.standardsService.findByTemplateTree(templateId)
+      return await this.findStandardsTree.execute(templateId)
     }
 
     if (templateId && auditableOnly === 'true') {
-      return await this.standardsService.findAuditableByTemplate(templateId)
+      return await this.findAuditableStandards.execute(templateId)
     }
 
     if (templateId) {
-      return await this.standardsService.findByTemplate(templateId)
+      return await this.findStandardsByTemplate.execute(templateId)
     }
 
-    return await this.standardsService.findAll()
+    return await this.findAllStandards.execute()
   }
 
   @Get(':id')
   @ApiFindOne(StandardResponseDto)
   async findOne(@Param() { id }: UuidParamDto) {
-    return await this.standardsService.findOne(id)
+    return await this.findStandard.execute(id)
   }
 
   @Get(':id/children')
@@ -107,7 +131,7 @@ export class StandardsController {
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [400] })
   async findChildren(@Param() { id }: UuidParamDto) {
-    return await this.standardsService.findChildren(id)
+    return await this.findStandardChildren.execute(id)
   }
 
   // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
@@ -138,7 +162,7 @@ export class StandardsController {
     @Param() { id }: UuidParamDto,
     @Body() updateStandardDto: UpdateStandardDto,
   ) {
-    await this.standardsService.update(id, updateStandardDto)
+    await this.updateStandard.execute(id, updateStandardDto)
   }
 
   // OPCIÓN 1: Devolver entidad eliminada
@@ -170,7 +194,7 @@ export class StandardsController {
     conflictMessage: 'No se puede eliminar un estándar con hijos',
   })
   async remove(@Param() { id }: UuidParamDto) {
-    await this.standardsService.remove(id)
+    await this.deleteStandard.execute(id)
   }
 
   // OPCIÓN 1: Devolver entidad actualizada
@@ -193,7 +217,7 @@ export class StandardsController {
       'Cambia el estado isActive a false. Los estándares inactivos no aparecen en nuevas auditorías. Retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    await this.standardsService.deactivate(id)
+    await this.deactivateStandard.execute(id)
   }
 
   // OPCIÓN 1: Devolver entidad actualizada
@@ -216,6 +240,6 @@ export class StandardsController {
       'Cambia el estado isActive a true. Los estándares activos aparecen en nuevas auditorías. Retorna un mensaje de confirmación.',
   })
   async activate(@Param() { id }: UuidParamDto) {
-    await this.standardsService.activate(id)
+    await this.activateStandard.execute(id)
   }
 }

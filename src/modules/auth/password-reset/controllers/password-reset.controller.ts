@@ -44,7 +44,9 @@ export class PasswordResetController {
   @Public()
   @Post('request-reset')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Solicitar reset de contraseña con doble validación' })
+  @ApiOperation({
+    summary: 'Solicitar reset de contraseña con doble validación',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Email enviado con código OTP (si el usuario existe)',
@@ -96,7 +98,9 @@ export class PasswordResetController {
   @Public()
   @Post('reset')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resetear contraseña con doble validación (tokenId + OTP)' })
+  @ApiOperation({
+    summary: 'Resetear contraseña con doble validación (tokenId + OTP)',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Contraseña actualizada exitosamente',

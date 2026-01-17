@@ -1,20 +1,7 @@
 import { UserFactory } from './user.factory'
 import { CreateUserDto, UpdateUserDto } from '../dtos'
-import { UserEntity, UserStatus, Role } from '../entities/user.entity'
-import * as bcrypt from 'bcrypt'
+import { UserEntity, Role } from '../entities/user.entity'
 
-/**
- * ✅ EJEMPLO DE TEST UNITARIO PURO PARA FACTORY
- *
- * UserFactory tiene lógica de:
- * - Normalización (email/username a lowercase)
- * - Hashing de passwords (via PasswordHashService)
- * - Defaults (status, image)
- *
- * Usa PasswordHashService real (no mock) porque:
- * - bcrypt es una función pura (mismo input → mismo output verificable)
- * - No tiene dependencias de I/O (DB, network, filesystem)
- */
 describe('UserFactory', () => {
   let factory: UserFactory
 
@@ -47,8 +34,9 @@ describe('UserFactory', () => {
       expect(result.address).toBe(baseDto.address)
       expect(result.organizationId).toBe(baseDto.organizationId)
       expect(result.roles).toEqual(baseDto.roles)
-      expect(result.status).toBe(UserStatus.PENDING)
-      expect(result.image).toBeNull() // ✅ Default value
+      expect(result.isActive).toBe(true)
+      expect(result.isTwoFactorEnabled).toBe(false)
+      expect(result.image).toBeNull()
     })
 
     it('should normalize email to lowercase', () => {
@@ -136,7 +124,7 @@ describe('UserFactory', () => {
     let existingUser: UserEntity
 
     beforeEach(() => {
-      // Usuario existente con password hasheado
+      // Usuario existente
       existingUser = {
         id: '1',
         names: 'Original Names',
@@ -144,12 +132,14 @@ describe('UserFactory', () => {
         email: 'original@test.com',
         username: 'originaluser',
         ci: '12345678',
-        password: bcrypt.hashSync('OriginalPass123!', 10),
+        password: 'hashed_password', // El password se maneja en el use case
         phone: '71234567',
         address: 'Original Address',
         organizationId: 'org-1',
         roles: [Role.CLIENTE],
-        status: UserStatus.ACTIVE,
+        isActive: true,
+        isTwoFactorEnabled: false,
+        emailVerified: true,
         image: null,
       } as UserEntity
     })
@@ -165,7 +155,7 @@ describe('UserFactory', () => {
       const result = factory.updateFromDto(existingUser, dto)
 
       // Assert
-      expect(result).toBe(existingUser) // ✅ Misma referencia (mutación)
+      expect(result).toBe(existingUser)
       expect(result.names).toBe('Updated Names')
       expect(result.phone).toBe('79999999')
 
@@ -175,7 +165,7 @@ describe('UserFactory', () => {
       expect(result.username).toBe('originaluser')
       expect(result.ci).toBe('12345678')
       expect(result.address).toBe('Original Address')
-      expect(result.status).toBe(UserStatus.ACTIVE)
+      expect(result.isActive).toBe(true)
     })
 
     it('should normalize email to lowercase when updating', () => {
@@ -209,14 +199,13 @@ describe('UserFactory', () => {
       const originalPassword = existingUser.password
       const dto: UpdateUserDto = {
         names: 'Updated Names',
-        // NO hay campo password en UpdateUserDto
       }
 
       // Act
       const result = factory.updateFromDto(existingUser, dto)
 
       // Assert
-      expect(result.password).toBe(originalPassword) // ✅ Password sin cambios
+      expect(result.password).toBe(originalPassword)
     })
 
     it('should update multiple fields at once', () => {
@@ -265,7 +254,7 @@ describe('UserFactory', () => {
       expect(existingUser.email).toBe('original@test.com')
       expect(existingUser.username).toBe('originaluser')
       expect(existingUser.ci).toBe('12345678')
-      expect(existingUser.phone).toBe('79999999') // Solo este cambió
+      expect(existingUser.phone).toBe('79999999')
     })
   })
 
@@ -347,20 +336,19 @@ describe('UserFactory', () => {
       expect(result.roles).toEqual([])
     })
 
-    it('should handle all UserStatus values', () => {
+    it('should set default values correctly', () => {
       // Arrange & Act
-      const activeUser = factory.createFromDto({
+      const user1 = factory.createFromDto({
         names: 'Test',
         lastNames: 'User',
         email: 'test1@test.com',
         username: 'test1',
         ci: '11111111',
-
         organizationId: 'org-1',
         roles: [Role.CLIENTE],
       })
 
-      const suspendedUser = factory.createFromDto({
+      const user2 = factory.createFromDto({
         names: 'Test',
         lastNames: 'User',
         email: 'test2@test.com',
@@ -370,9 +358,14 @@ describe('UserFactory', () => {
         organizationId: 'org-1',
       })
 
-      // Assert
-      expect(activeUser.status).toBe(UserStatus.PENDING)
-      expect(suspendedUser.status).toBe(UserStatus.PENDING)
+      // Assert - Todos los usuarios nuevos deben tener valores por defecto
+      expect(user1.isActive).toBe(true)
+      expect(user1.isTwoFactorEnabled).toBe(false)
+      expect(user1.image).toBeNull()
+
+      expect(user2.isActive).toBe(true)
+      expect(user2.isTwoFactorEnabled).toBe(false)
+      expect(user2.image).toBeNull()
     })
 
     it('should handle all Role values', () => {

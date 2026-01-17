@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
-import { TemplateEntity } from '../../entities/template.entity'
-import { FindTemplatesDto } from '../../dtos'
-import { TemplatesRepository } from '../../repositories/templates.repository'
-import type { TemplateFilters } from '../../repositories/interfaces/templates-repository.interface'
+import { TemplateEntity } from '../../../entities/template.entity'
+import { FindTemplatesDto } from '../../../dtos'
+import { TemplatesRepository } from '../../../repositories/templates.repository'
+import type { TemplateFilters } from '../../../repositories/interfaces/templates-repository.interface'
 
 /**
  * Caso de uso: Buscar plantillas con filtros y paginación

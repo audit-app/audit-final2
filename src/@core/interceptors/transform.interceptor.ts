@@ -9,19 +9,11 @@ import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Request, Response } from 'express'
 import { RESPONSE_MESSAGE_KEY } from '../decorators/response-message.decorator'
+import { PaginationMeta } from '@core/dtos'
 
 // ---------------------------------------------------------------------------
 // Interfaces
 // ---------------------------------------------------------------------------
-
-export interface PaginationMeta {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
-  hasNextPage: boolean
-  hasPrevPage: boolean
-}
 
 export interface StandardResponse<T> {
   success: boolean

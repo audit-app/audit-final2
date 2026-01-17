@@ -48,7 +48,7 @@ import {
   USER_SEARCH_FIELDS,
 } from '../dtos/find-users.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
-import { Role, UserEntity } from '../entities'
+import { Role } from '../entities'
 
 @ApiTags('users')
 @Controller('users')

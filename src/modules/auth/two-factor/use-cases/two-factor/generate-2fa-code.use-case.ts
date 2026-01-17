@@ -74,5 +74,4 @@ export class Generate2FACodeUseCase {
       message: 'Código 2FA enviado al email registrado',
     }
   }
-
 }

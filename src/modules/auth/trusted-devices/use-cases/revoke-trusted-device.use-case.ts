@@ -39,9 +39,7 @@ export class RevokeTrustedDeviceUseCase {
     )
 
     if (!isTrusted) {
-      throw new NotFoundException(
-        'Dispositivo no encontrado o ya fue revocado',
-      )
+      throw new NotFoundException('Dispositivo no encontrado o ya fue revocado')
     }
 
     // 2. Revocar el dispositivo (eliminar de Redis)

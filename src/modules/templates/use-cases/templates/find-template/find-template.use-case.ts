@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { TemplatesRepository } from '../../repositories/templates.repository'
-import { TemplateNotFoundException } from '../../exceptions'
-import type { TemplateEntity } from '../../entities/template.entity'
+import { TemplatesRepository } from '../../../repositories/templates.repository'
+import { TemplateNotFoundException } from '../../../exceptions'
+import type { TemplateEntity } from '../../../entities/template.entity'
 
 /**
  * Find Template Use Case
