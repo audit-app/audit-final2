@@ -41,12 +41,14 @@ export class UserEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, select: false, nullable: true })
   password: string | null
 
+  // Campos no gestionables directamente por el usuario
   @Column({ type: 'boolean', default: false })
   emailVerified: boolean
 
   @Column({ type: 'timestamp', nullable: true })
   emailVerifiedAt: Date | null
 
+  // Habilitación de 2FA
   @Column({ type: 'boolean', default: false })
   isTwoFactorEnabled: boolean
 
@@ -82,9 +84,6 @@ export class UserEntity extends BaseEntity {
     default: UserStatus.PENDING,
   })
   status: UserStatus
-
-  @Column({ type: 'timestamp', nullable: true })
-  activedAt: Date | null
 
   @Column({ type: 'uuid', nullable: false })
   organizationId: string

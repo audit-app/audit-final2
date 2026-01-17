@@ -5,7 +5,7 @@ import {
   MinLength,
   MaxLength,
   Matches,
-} from 'class-validator'
+} from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 export class CreateOrganizationDto {

@@ -40,12 +40,10 @@ export class RemoveOrganizationUseCase {
       throw new OrganizationHasActiveUsersException()
     }
 
-    // 3. Marcar como inactiva y persistir
-    organization.isActive = false
-    const updatedOrganization =
-      await this.organizationRepository.save(organization)
+    // 3. Hacer softDelete
+    await this.organizationRepository.softDelete(organization.id)
 
     // 4. Retornar la organización desactivada (para confirmación en frontend)
-    return updatedOrganization
+    return organization
   }
 }

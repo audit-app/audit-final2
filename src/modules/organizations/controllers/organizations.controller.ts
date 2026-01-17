@@ -6,13 +6,12 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   UploadedFile,
   BadRequestException,
   Query,
+  HttpCode,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation } from '@nestjs/swagger'
+import { ApiTags } from '@nestjs/swagger'
 import { UploadLogo } from '@core/files'
 import {
   ApiCreate,
@@ -21,9 +20,6 @@ import {
   ApiUpdate,
   ApiRemove,
   ApiCustom,
-  ApiOkResponse,
-  ApiNotFoundResponse,
-  ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 import {
@@ -37,13 +33,12 @@ import {
 import {
   CreateOrganizationUseCase,
   UpdateOrganizationUseCase,
-  FindAllOrganizationsUseCase,
   FindOrganizationByIdUseCase,
-  FindOrganizationByNitUseCase,
   FindOrganizationsWithFiltersUseCase,
   UploadLogoUseCase,
   RemoveOrganizationUseCase,
-  DeleteOrganizationUseCase,
+  ActivateOrganizationUseCase,
+  DeactivateOrganizationWithUsersUseCase,
 } from '../use-cases'
 
 @ApiTags('organizations')
@@ -52,13 +47,12 @@ export class OrganizationsController {
   constructor(
     private readonly createOrganizationUseCase: CreateOrganizationUseCase,
     private readonly updateOrganizationUseCase: UpdateOrganizationUseCase,
-    private readonly findAllOrganizationsUseCase: FindAllOrganizationsUseCase,
     private readonly findOrganizationByIdUseCase: FindOrganizationByIdUseCase,
-    private readonly findOrganizationByNitUseCase: FindOrganizationByNitUseCase,
     private readonly findOrganizationsWithFiltersUseCase: FindOrganizationsWithFiltersUseCase,
     private readonly uploadLogoUseCase: UploadLogoUseCase,
     private readonly removeOrganizationUseCase: RemoveOrganizationUseCase,
-    private readonly deleteOrganizationUseCase: DeleteOrganizationUseCase,
+    private readonly deactivateOrganizationWithUsersUseCase: DeactivateOrganizationWithUsersUseCase,
+    private readonly activateOrganizationUseCase: ActivateOrganizationUseCase,
   ) {}
 
   @Post()
@@ -103,16 +97,6 @@ export class OrganizationsController {
     return await this.findOrganizationByIdUseCase.execute(id)
   }
 
-  @Get('nit/:nit')
-  @ApiCustom(OrganizationResponseDto, {
-    summary: 'Obtener una organización por NIT',
-    description:
-      'Retorna los datos completos de una organización específica mediante su NIT.',
-  })
-  async findByNit(@Param('nit') nit: string) {
-    return await this.findOrganizationByNitUseCase.execute(nit)
-  }
-
   @Patch(':id')
   @ApiUpdate(OrganizationResponseDto, {
     conflictMessage: 'Ya existe una organización con ese nombre o NIT',
@@ -128,18 +112,14 @@ export class OrganizationsController {
   }
 
   @Post(':id/upload-logo')
-  @HttpCode(HttpStatus.OK)
   @UploadLogo({
     maxSize: 5 * 1024 * 1024, // 5MB
   })
-  @ApiOperation({
+  @ApiCustom(OrganizationResponseDto, {
     summary: 'Subir logo de la organización',
     description:
       'Sube o reemplaza el logo de la organización y retorna la organización actualizada. Formatos: JPG, PNG, WebP, SVG. Tamaño máximo: 5MB. Se redimensiona automáticamente si excede 1024x1024px.',
   })
-  @ApiOkResponse(OrganizationResponseDto, 'Logo subido exitosamente')
-  @ApiNotFoundResponse('Organización no encontrada')
-  @ApiStandardResponses()
   async uploadLogo(
     @Param() { id }: UuidParamDto,
     @UploadedFile() file: Express.Multer.File,
@@ -151,6 +131,26 @@ export class OrganizationsController {
     return await this.uploadLogoUseCase.execute(id, file)
   }
 
+  @Patch(':id/deactivate')
+  @ApiCustom(OrganizationResponseDto, {
+    summary: 'Desactivar una organización',
+    description:
+      'Cambia el estado del usuario a SUSPENDED y retorna el usuario actualizado.',
+  })
+  async deactivate(@Param() { id }: UuidParamDto) {
+    return await this.deactivateOrganizationWithUsersUseCase.execute(id)
+  }
+
+  @Patch(':id/activate')
+  @ApiCustom(OrganizationResponseDto, {
+    summary: 'Activar una organización',
+    description:
+      'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
+  })
+  async activate(@Param() { id }: UuidParamDto) {
+    return await this.activateOrganizationUseCase.execute(id)
+  }
+
   @Delete(':id')
   @ApiRemove(OrganizationResponseDto, {
     summary: 'Desactivar una organización (soft delete)',
@@ -158,6 +158,7 @@ export class OrganizationsController {
       'Desactiva una organización sin eliminarla de la base de datos. No se puede desactivar si tiene usuarios activos. Retorna la organización desactivada para confirmación.',
     conflictMessage: 'La organización tiene usuarios activos',
   })
+  @HttpCode(200)
   async remove(@Param() { id }: UuidParamDto) {
     return await this.removeOrganizationUseCase.execute(id)
   }
