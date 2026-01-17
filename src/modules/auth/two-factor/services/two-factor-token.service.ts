@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import * as crypto from 'crypto'
 import { CacheService } from '@core/cache'
-import { JwtTokenHelper } from '../../shared/helpers'
 import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
 
 interface TwoFactorData {
@@ -48,10 +47,7 @@ export class TwoFactorTokenService {
   private readonly codeLength = TWO_FACTOR_CONFIG.code.length
   private readonly codeExpiry = TWO_FACTOR_CONFIG.code.expiresIn
 
-  constructor(
-    private readonly cacheService: CacheService,
-    private readonly jwtTokenHelper: JwtTokenHelper,
-  ) {}
+  constructor(private readonly cacheService: CacheService) {}
 
   /**
    * Genera un código 2FA
@@ -73,11 +69,11 @@ export class TwoFactorTokenService {
     const code = this.generateNumericCode()
 
     // Almacenar en Redis con TTL
-    const ttlSeconds = this.jwtTokenHelper.getExpirySeconds(this.codeExpiry)
+    /*  const ttlSeconds = this.jwtTokenHelper.getExpirySeconds(this.codeExpiry)
     const key = `auth:2fa:${token}`
     const data: TwoFactorData = { userId, code }
     await this.cacheService.setJSON(key, data, ttlSeconds)
-
+ */
     return { code, token }
   }
 

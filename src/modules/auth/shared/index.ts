@@ -23,9 +23,6 @@ export * from './decorators/public.decorator'
 export * from './decorators/get-user.decorator'
 export * from './decorators/get-token.decorator'
 
-// Helpers
-export * from './helpers/jwt-token.helper'
-
 // Interfaces
 export * from './interfaces/jwt-payload.interface'
 

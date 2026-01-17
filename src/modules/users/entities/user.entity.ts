@@ -68,6 +68,11 @@ export class UserEntity extends BaseEntity {
     type: 'varchar',
     length: USER_CONSTRAINTS.IMAGE.MAX,
     nullable: true,
+    transformer: {
+      to: (value: string) => value,
+      from: (value: string) =>
+        value ? `http://localhost:3000/uploads/${value}` : null,
+    },
   })
   image: string | null
 

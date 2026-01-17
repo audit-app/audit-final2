@@ -72,7 +72,9 @@ export class TokenStorageRepository {
 
       if (sessions.length > 0) {
         // Ordenar por createdAt (la más vieja primero)
-        const sortedSessions = sessions.sort((a, b) => a.createdAt - b.createdAt)
+        const sortedSessions = sessions.sort(
+          (a, b) => a.createdAt - b.createdAt,
+        )
         const oldestSession = sortedSessions[0]
         await this.delete(userId, oldestSession.tokenId)
       }

@@ -67,7 +67,6 @@ export class UsersController {
     private readonly resendInvitationUseCase: ResendInvitationUseCase,
   ) {}
 
-  @Public()
   @Post()
   @ApiCreate(UserResponseDto, {
     summary: 'Crear un nuevo usuario',
@@ -183,7 +182,6 @@ export class UsersController {
     return await this.activateUserUseCase.execute(id)
   }
 
-  @Public()
   @Post('verify-email')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
