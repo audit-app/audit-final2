@@ -30,14 +30,23 @@ export class RequestResetPasswordUseCase {
   ) {}
 
   /**
-   * Ejecuta el flujo de solicitud de reset de contraseña
+   * Ejecuta el flujo de solicitud de reset de contraseña con doble validación
+   *
+   * Flujo de DOBLE VALIDACIÓN:
+   * 1. Genera tokenId (64 chars) + OTP (6 dígitos)
+   * 2. Devuelve tokenId al frontend en la respuesta
+   * 3. Envía OTP al correo del usuario
+   * 4. Usuario necesita AMBOS para cambiar su contraseña
    *
    * @param email - Email del usuario
    * @param ip - Dirección IP (para rate limiting)
-   * @returns Mensaje genérico (no revela si el email existe)
+   * @returns { message, tokenId } - tokenId se envía al frontend, mensaje genérico
    * @throws TooManyAttemptsException si excede intentos
    */
-  async execute(email: string, ip: string): Promise<{ message: string }> {
+  async execute(
+    email: string,
+    ip: string,
+  ): Promise<{ message: string; tokenId?: string }> {
     // 2. Buscar usuario por email
     const user = await this.usersRepository.findByEmail(email)
 
@@ -49,30 +58,30 @@ export class RequestResetPasswordUseCase {
       // Por seguridad, no revelamos si el email existe o no
       return {
         message:
-          'Si el email existe, recibirás un link para resetear tu contraseña',
+          'Si el email existe, recibirás un código de verificación en tu correo',
       }
     }
 
-    // 3. Generar token de reset
-    const token = await this.resetPasswordTokenService.generateToken(user.id)
+    // 3. Generar token de reset (tokenId + OTP)
+    const { tokenId, otpCode } =
+      await this.resetPasswordTokenService.generateToken(user.id)
 
-    // 4. Construir URL de reset (frontend)
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`
-
-    // 5. Enviar email
+    // 4. Enviar email con el código OTP
     await this.emailService.sendResetPasswordEmail({
       to: user.email,
       userName: user.username,
-      resetLink,
+      resetLink: otpCode, // Ahora enviamos el código OTP en lugar del link
       expiresInMinutes: 60,
     })
 
-    // 6. Incrementar contador (previene spam de emails)
+    // 5. Incrementar contador (previene spam de emails)
     await this.resetPasswordRateLimitPolicy.incrementAttempts(ip)
 
+    // 6. Devolver tokenId al frontend (OTP va por correo)
     return {
       message:
-        'Si el email existe, recibirás un link para resetear tu contraseña',
+        'Si el email existe, recibirás un código de verificación en tu correo',
+      tokenId, // Frontend necesita este ID para validar junto con el OTP
     }
   }
 }

@@ -26,12 +26,12 @@ export class PasswordResetController {
   /**
    * POST /auth/password/request-reset
    *
-   * Solicita un reset de contraseña
-   * Genera un token y envía email con link de reset
+   * Solicita un reset de contraseña con doble validación
+   * Genera tokenId (devuelve al frontend) + OTP (envía por correo)
    *
    * @param dto - Email del usuario
    * @param ip - IP del cliente (rate limiting)
-   * @returns Mensaje de confirmación
+   * @returns { message, tokenId } - tokenId para frontend, OTP va por correo
    *
    * @example
    * ```json
@@ -44,16 +44,21 @@ export class PasswordResetController {
   @Public()
   @Post('request-reset')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Solicitar reset de contraseña' })
+  @ApiOperation({ summary: 'Solicitar reset de contraseña con doble validación' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Email enviado (si el usuario existe)',
+    description: 'Email enviado con código OTP (si el usuario existe)',
     schema: {
       properties: {
         message: {
           type: 'string',
           example:
-            'Si el email existe, recibirás un link para resetear tu contraseña',
+            'Si el email existe, recibirás un código de verificación en tu correo',
+        },
+        tokenId: {
+          type: 'string',
+          example:
+            'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2',
         },
       },
     },
@@ -65,24 +70,25 @@ export class PasswordResetController {
   async requestReset(
     @Body() dto: RequestResetPasswordDto,
     @RealIp() ip: string,
-  ): Promise<{ message: string }> {
+  ): Promise<{ message: string; tokenId?: string }> {
     return await this.requestResetUseCase.execute(dto.email, ip)
   }
 
   /**
    * POST /auth/password/reset
    *
-   * Resetea la contraseña usando el token del email
+   * Resetea la contraseña usando doble validación (tokenId + OTP)
    * Revoca el token y cierra todas las sesiones del usuario
    *
-   * @param dto - Token y nueva contraseña
+   * @param dto - tokenId (del frontend) + otpCode (del correo) + nueva contraseña
    * @returns Mensaje de confirmación
    *
    * @example
    * ```json
    * POST /auth/password/reset
    * {
-   *   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+   *   "tokenId": "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2",
+   *   "otpCode": "123456",
    *   "newPassword": "NewSecurePass123!"
    * }
    * ```
@@ -90,7 +96,7 @@ export class PasswordResetController {
   @Public()
   @Post('reset')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Resetear contraseña con token' })
+  @ApiOperation({ summary: 'Resetear contraseña con doble validación (tokenId + OTP)' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Contraseña actualizada exitosamente',
@@ -105,13 +111,17 @@ export class PasswordResetController {
   })
   @ApiResponse({
     status: HttpStatus.BAD_REQUEST,
-    description: 'Token inválido o expirado',
+    description: 'Token o código OTP inválido o expirado',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Usuario no encontrado',
   })
   async reset(@Body() dto: ResetPasswordDto): Promise<{ message: string }> {
-    return await this.resetPasswordUseCase.execute(dto.token, dto.newPassword)
+    return await this.resetPasswordUseCase.execute(
+      dto.tokenId,
+      dto.otpCode,
+      dto.newPassword,
+    )
   }
 }

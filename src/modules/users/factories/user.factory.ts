@@ -23,6 +23,7 @@ export class UserFactory {
     user.organizationId = dto.organizationId
     user.roles = dto.roles
     user.isActive = true
+    user.isTwoFactorEnabled = false
     user.image = null
     return user
   }

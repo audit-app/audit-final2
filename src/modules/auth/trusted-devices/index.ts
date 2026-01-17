@@ -12,3 +12,12 @@ export * from './repositories'
 
 // Services
 export * from './services'
+
+// Controllers
+export * from './controllers/trusted-devices.controller'
+
+// Use Cases
+export * from './use-cases'
+
+// DTOs
+export * from './dtos'

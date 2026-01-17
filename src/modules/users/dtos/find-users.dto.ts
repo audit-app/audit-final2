@@ -12,7 +12,6 @@ export const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
   'lastNames',
   'email',
   'createdAt',
-  'organizationId',
   'isActive',
   'ci',
   'phone',

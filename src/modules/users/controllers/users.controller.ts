@@ -17,14 +17,14 @@ import {
   ApiCreate,
   ApiList,
   ApiFindOne,
-  ApiUpdate,
-  ApiRemove,
-  ApiCustom,
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiStandardResponses,
+  ApiUpdateWithMessage,
+  ApiRemoveWithMessage,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
+import { ResponseMessage } from '@core/decorators'
 
 import {
   CreateUserUseCase,
@@ -107,17 +107,34 @@ export class UsersController {
     return await this.findUserByIdUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
+  // @Patch(':id')
+  // @ApiUpdate(UserResponseDto, {
+  //   description:
+  //     'Actualiza los datos de un usuario y retorna la entidad actualizada. NO actualiza la contraseña (usar endpoint de autenticación).',
+  //   conflictMessage: 'Ya existe un usuario con ese email, username o CI',
+  // })
+  // async update(
+  //   @Param() { id }: UuidParamDto,
+  //   @Body() updateUserDto: UpdateUserDto,
+  // ) {
+  //   return await this.updateUserUseCase.execute(id, updateUserDto)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
-  @ApiUpdate(UserResponseDto, {
+  @ResponseMessage('Usuario actualizado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Actualizar usuario',
     description:
-      'Actualiza los datos de un usuario y retorna la entidad actualizada. NO actualiza la contraseña (usar endpoint de autenticación).',
+      'Actualiza los datos de un usuario y retorna un mensaje de confirmación. NO actualiza la contraseña (usar endpoint de autenticación).',
     conflictMessage: 'Ya existe un usuario con ese email, username o CI',
   })
   async update(
     @Param() { id }: UuidParamDto,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return await this.updateUserUseCase.execute(id, updateUserDto)
+    await this.updateUserUseCase.execute(id, updateUserDto)
   }
 
   @Post(':id/upload-image')
@@ -157,24 +174,50 @@ export class UsersController {
     return await this.deleteProfileImageUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/deactivate')
+  // @ApiCustom(UserResponseDto, {
+  //   summary: 'Desactivar un usuario',
+  //   description:
+  //     'Cambia el estado del usuario a SUSPENDED y retorna el usuario actualizado.',
+  // })
+  // async deactivate(@Param() { id }: UuidParamDto) {
+  //   return await this.deactivateUserUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/deactivate')
-  @ApiCustom(UserResponseDto, {
+  @ResponseMessage('Usuario desactivado exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Desactivar un usuario',
     description:
-      'Cambia el estado del usuario a SUSPENDED y retorna el usuario actualizado.',
+      'Cambia el estado del usuario a SUSPENDED y retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    return await this.deactivateUserUseCase.execute(id)
+    await this.deactivateUserUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/activate')
+  // @ApiCustom(UserResponseDto, {
+  //   summary: 'Activar un usuario',
+  //   description:
+  //     'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
+  // })
+  // async activate(@Param() { id }: UuidParamDto) {
+  //   return await this.activateUserUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/activate')
-  @ApiCustom(UserResponseDto, {
+  @ResponseMessage('Usuario activado exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Activar un usuario',
     description:
-      'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
+      'Cambia el estado del usuario a ACTIVE y retorna un mensaje de confirmación.',
   })
   async activate(@Param() { id }: UuidParamDto) {
-    return await this.activateUserUseCase.execute(id)
+    await this.activateUserUseCase.execute(id)
   }
 
   @Post('verify-email')
@@ -222,13 +265,38 @@ export class UsersController {
     return await this.resendInvitationUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad eliminada (útil para confirmación visual)
+  // @Delete(':id')
+  // @ApiRemove(UserResponseDto, {
+  //   summary: 'Eliminar un usuario (soft delete)',
+  //   description:
+  //     'Marca el usuario como eliminado sin borrar sus datos de la base de datos. Retorna el usuario eliminado para confirmación.',
+  // })
+  // async remove(@Param() { id }: UuidParamDto) {
+  //   return await this.removeUserUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico
   @Delete(':id')
-  @ApiRemove(UserResponseDto, {
+  @ResponseMessage('Usuario eliminado exitosamente')
+  @ApiRemoveWithMessage({
     summary: 'Eliminar un usuario (soft delete)',
     description:
-      'Marca el usuario como eliminado sin borrar sus datos de la base de datos. Retorna el usuario eliminado para confirmación.',
+      'Marca el usuario como eliminado sin borrar sus datos de la base de datos. Retorna un mensaje de confirmación.',
   })
   async remove(@Param() { id }: UuidParamDto) {
-    return await this.removeUserUseCase.execute(id)
+    await this.removeUserUseCase.execute(id)
   }
+
+  // OPCIÓN 3: 204 No Content (REST puro - sin cuerpo de respuesta)
+  // @Delete(':id')
+  // @ApiRemoveNoContent({
+  //   summary: 'Eliminar un usuario (soft delete)',
+  //   description:
+  //     'Marca el usuario como eliminado sin borrar sus datos de la base de datos. No devuelve contenido.',
+  // })
+  // async remove(@Param() { id }: UuidParamDto) {
+  //   await this.removeUserUseCase.execute(id)
+  //   // No devolver nada (NestJS automáticamente envía 204)
+  // }
 }

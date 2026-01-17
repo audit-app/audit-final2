@@ -6,16 +6,25 @@ import {
   Patch,
   Param,
   Delete,
-  HttpCode,
-  HttpStatus,
   Query,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiTags, ApiOperation } from '@nestjs/swagger'
+import {
+  ApiCreate,
+  ApiFindOne,
+  ApiUpdateWithMessage,
+  ApiRemoveNoContent,
+  ApiOkResponse,
+  ApiStandardResponses,
+} from '@core/swagger'
+import { UuidParamDto } from '@core/dtos'
+import { ResponseMessage } from '@core/decorators'
 import {
   CreateMaturityFrameworkDto,
   UpdateMaturityFrameworkDto,
   QueryMaturityFrameworkDto,
 } from '../dtos'
+import { MaturityFrameworkEntity } from '../entities/maturity-framework.entity'
 import {
   CreateFrameworkUseCase,
   UpdateFrameworkUseCase,
@@ -38,87 +47,117 @@ export class MaturityFrameworksController {
   ) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Crear un nuevo framework de madurez' })
-  @ApiResponse({
-    status: 201,
-    description: 'Framework creado exitosamente',
-  })
-  @ApiResponse({ status: 400, description: 'Datos inválidos' })
-  @ApiResponse({
-    status: 409,
-    description: 'Framework con ese código ya existe',
+  @ApiCreate(MaturityFrameworkEntity, {
+    summary: 'Crear un nuevo framework de madurez',
+    description:
+      'Crea un nuevo framework de madurez (ej: COBIT 5, CMMI). El código debe ser único.',
+    conflictMessage: 'Framework con ese código ya existe',
   })
   async create(@Body() dto: CreateMaturityFrameworkDto) {
     return await this.createFrameworkUseCase.execute(dto)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todos los frameworks de madurez' })
-  @ApiResponse({ status: 200, description: 'Lista de frameworks' })
+  @ApiOperation({
+    summary: 'Obtener todos los frameworks de madurez',
+    description: 'Retorna una lista de frameworks con filtros opcionales.',
+  })
+  @ApiOkResponse(MaturityFrameworkEntity, 'Lista de frameworks', true)
+  @ApiStandardResponses({ exclude: [400] })
   async findAll(@Query() query: QueryMaturityFrameworkDto) {
     return await this.findFrameworksUseCase.execute(query)
   }
 
   @Get(':id')
-  @ApiOperation({
+  @ApiFindOne(MaturityFrameworkEntity, {
     summary: 'Obtener un framework por ID con sus niveles',
+    description:
+      'Retorna los datos completos del framework incluyendo sus niveles de madurez.',
   })
-  @ApiResponse({ status: 200, description: 'Framework encontrado' })
-  @ApiResponse({ status: 404, description: 'Framework no encontrado' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param() { id }: UuidParamDto) {
     return await this.findFrameworkUseCase.execute(id, true)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
+  // @Patch(':id')
+  // @ApiUpdate(MaturityFrameworkEntity, {
+  //   summary: 'Actualizar un framework de madurez',
+  //   conflictMessage: 'Framework con ese código ya existe',
+  // })
+  // async update(
+  //   @Param() { id }: UuidParamDto,
+  //   @Body() dto: UpdateMaturityFrameworkDto,
+  // ) {
+  //   return await this.updateFrameworkUseCase.execute(id, dto)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar un framework de madurez' })
-  @ApiResponse({
-    status: 200,
-    description: 'Framework actualizado exitosamente',
-  })
-  @ApiResponse({ status: 404, description: 'Framework no encontrado' })
-  @ApiResponse({
-    status: 409,
-    description: 'Framework con ese código ya existe',
+  @ResponseMessage('Framework de madurez actualizado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Actualizar un framework de madurez',
+    description:
+      'Actualiza los datos de un framework y retorna un mensaje de confirmación.',
+    conflictMessage: 'Framework con ese código ya existe',
   })
   async update(
-    @Param('id') id: string,
+    @Param() { id }: UuidParamDto,
     @Body() dto: UpdateMaturityFrameworkDto,
   ) {
-    return await this.updateFrameworkUseCase.execute(id, dto)
+    await this.updateFrameworkUseCase.execute(id, dto)
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'Eliminar un framework de madurez' })
-  @ApiResponse({
-    status: 204,
-    description: 'Framework eliminado exitosamente',
+  @ApiRemoveNoContent({
+    summary: 'Eliminar un framework de madurez',
+    description:
+      'Elimina permanentemente un framework de madurez sin devolver contenido.',
   })
-  @ApiResponse({ status: 404, description: 'Framework no encontrado' })
-  async remove(@Param('id') id: string) {
+  async remove(@Param() { id }: UuidParamDto) {
     await this.deleteFrameworkUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/activate')
+  // @ApiCustom(MaturityFrameworkEntity, {
+  //   summary: 'Activar un framework de madurez',
+  //   description: 'Cambia el estado isActive a true.',
+  // })
+  // async activate(@Param() { id }: UuidParamDto) {
+  //   return await this.activateFrameworkUseCase.execute(id, true)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/activate')
-  @ApiOperation({ summary: 'Activar un framework de madurez' })
-  @ApiResponse({
-    status: 200,
-    description: 'Framework activado exitosamente',
+  @ResponseMessage('Framework de madurez activado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Activar un framework de madurez',
+    description:
+      'Cambia el estado isActive a true. Retorna un mensaje de confirmación.',
   })
-  @ApiResponse({ status: 404, description: 'Framework no encontrado' })
-  async activate(@Param('id') id: string) {
-    return await this.activateFrameworkUseCase.execute(id, true)
+  async activate(@Param() { id }: UuidParamDto) {
+    await this.activateFrameworkUseCase.execute(id, true)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/deactivate')
+  // @ApiCustom(MaturityFrameworkEntity, {
+  //   summary: 'Desactivar un framework de madurez',
+  //   description: 'Cambia el estado isActive a false.',
+  // })
+  // async deactivate(@Param() { id }: UuidParamDto) {
+  //   return await this.activateFrameworkUseCase.execute(id, false)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/deactivate')
-  @ApiOperation({ summary: 'Desactivar un framework de madurez' })
-  @ApiResponse({
-    status: 200,
-    description: 'Framework desactivado exitosamente',
+  @ResponseMessage('Framework de madurez desactivado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Desactivar un framework de madurez',
+    description:
+      'Cambia el estado isActive a false. Retorna un mensaje de confirmación.',
   })
-  @ApiResponse({ status: 404, description: 'Framework no encontrado' })
-  async deactivate(@Param('id') id: string) {
-    return await this.activateFrameworkUseCase.execute(id, false)
+  async deactivate(@Param() { id }: UuidParamDto) {
+    await this.activateFrameworkUseCase.execute(id, false)
   }
 }

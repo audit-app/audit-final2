@@ -9,7 +9,11 @@ import { HttpModule } from '@core/http/http.module'
 import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { LoggerModule } from '@core/logger'
 import { HttpExceptionFilter } from '@core/filters'
-import { LoggingInterceptor, AuditInterceptor } from '@core/interceptors'
+import {
+  LoggingInterceptor,
+  AuditInterceptor,
+  TransformInterceptor,
+} from '@core/interceptors'
 import { databaseConfig } from '@core/config'
 import { FilesModule } from '@core/files'
 import { PersistenceModule } from '@core/persistence'
@@ -32,15 +36,15 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
       load: [databaseConfig],
     }),
     DatabaseModule,
-    CacheModule,
+    CacheModule, // Redis cache module
     CommonModule, // Decoradores y servicios comunes (@ConnectionInfo, ConnectionMetadataService)
 
     // Throttling global (protección contra DoS)
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60000, // 1 minuto
-        limit: 100, // 100 requests por minuto
+        ttl: 60000,
+        limit: 100,
       },
     ]),
 
@@ -76,10 +80,10 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     // 2. JwtAuthGuard (registrado en AuthModule)
     // 3. RolesGuard (registrado en AuthModule)
     // 4. PermissionsGuard (Casbin - DESPUÉS de Auth)
-    {
+    /*     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
-    },
+    }, */
 
     // ========================================
     // Global Filters
@@ -101,6 +105,11 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    // 3. TransformInterceptor: Estandariza todas las respuestas exitosas
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
     },
   ],
 })

@@ -5,7 +5,6 @@ import { LOGIN_CONFIG } from '../config/login.config'
 
 @Injectable()
 export class LoginRateLimitPolicy {
-  private readonly maxAttemptsByIp = LOGIN_CONFIG.rateLimit.maxAttemptsByIp
   private readonly maxAttemptsByUser = LOGIN_CONFIG.rateLimit.maxAttemptsByUser
   private readonly windowMinutes = LOGIN_CONFIG.rateLimit.windowMinutes
 
@@ -19,29 +18,7 @@ export class LoginRateLimitPolicy {
    * @throws TooManyAttemptsException si excede algún límite
    */
   async checkLimits(ip: string, userIdentifier: string): Promise<void> {
-    await this.checkIpLimit(ip)
     await this.checkUserLimit(userIdentifier)
-  }
-
-  /**
-   * Verifica límite por IP
-   *
-   * @param ip - Dirección IP
-   * @throws TooManyAttemptsException si excede el límite
-   */
-  async checkIpLimit(ip: string): Promise<void> {
-    const key = `login:ip:${ip}`
-    const canAttempt = await this.rateLimitService.checkLimit(
-      key,
-      this.maxAttemptsByIp,
-    )
-
-    if (!canAttempt) {
-      const remaining = await this.rateLimitService.getTimeUntilReset(key)
-      throw new TooManyAttemptsException(
-        `Demasiados intentos desde esta IP. Intenta de nuevo en ${Math.ceil(remaining / 60)} minutos.`,
-      )
-    }
   }
 
   /**

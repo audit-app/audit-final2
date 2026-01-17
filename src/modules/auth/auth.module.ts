@@ -44,7 +44,21 @@ import {
 import {
   TrustedDeviceRepository,
   DeviceFingerprintService,
+  TrustedDevicesController,
+  ListTrustedDevicesUseCase,
+  RevokeTrustedDeviceUseCase,
+  RevokeAllTrustedDevicesUseCase,
 } from './trusted-devices'
+
+// ========================================
+// SESSIONS CONTEXT
+// ========================================
+import {
+  SessionsController,
+  ListSessionsUseCase,
+  RevokeSessionUseCase,
+  RevokeAllSessionsUseCase,
+} from './sessions'
 
 // ========================================
 // SHARED INFRASTRUCTURE
@@ -89,7 +103,13 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     }),
   ],
 
-  controllers: [AuthController, PasswordResetController, TwoFactorController],
+  controllers: [
+    AuthController,
+    PasswordResetController,
+    TwoFactorController,
+    SessionsController,
+    TrustedDevicesController,
+  ],
 
   providers: [
     // ========================================
@@ -133,6 +153,16 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     Generate2FACodeUseCase,
     Verify2FACodeUseCase,
     Resend2FACodeUseCase,
+
+    // Sessions Management
+    ListSessionsUseCase,
+    RevokeSessionUseCase,
+    RevokeAllSessionsUseCase,
+
+    // Trusted Devices Management
+    ListTrustedDevicesUseCase,
+    RevokeTrustedDeviceUseCase,
+    RevokeAllTrustedDevicesUseCase,
 
     // ========================================
     // Passport Strategies
