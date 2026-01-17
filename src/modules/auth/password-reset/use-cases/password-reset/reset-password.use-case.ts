@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { PasswordHashService } from '@core/security'
 import { ResetPasswordTokenService } from '../../services/reset-password-token.service'
-import { TrustedDeviceService } from '../../../trusted-devices'
+import { TrustedDeviceRepository } from '../../../trusted-devices'
 import { TokensService } from '../../../login/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
@@ -41,7 +41,7 @@ export class ResetPasswordUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly resetPasswordTokenService: ResetPasswordTokenService,
     private readonly passwordHashService: PasswordHashService,
-    private readonly trustedDeviceService: TrustedDeviceService,
+    private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly tokensService: TokensService,
   ) {}
 
@@ -83,7 +83,7 @@ export class ResetPasswordUseCase {
 
     // 6. Revocar TODOS los dispositivos confiables (seguridad máxima)
     // Cuando cambia password, requiere 2FA nuevamente en todos los dispositivos
-    await this.trustedDeviceService.revokeAllUserDevices(userId)
+    await this.trustedDeviceRepository.deleteAllForUser(userId)
 
     // 7. Revocar TODAS las sesiones activas (refresh tokens)
     await this.tokensService.revokeAllUserTokens(userId)

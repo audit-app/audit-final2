@@ -42,7 +42,10 @@ import {
 // ========================================
 // TRUSTED DEVICES CONTEXT
 // ========================================
-import { TrustedDeviceService } from './trusted-devices'
+import {
+  TrustedDeviceRepository,
+  DeviceFingerprintService,
+} from './trusted-devices'
 
 // ========================================
 // SHARED INFRASTRUCTURE
@@ -99,12 +102,17 @@ import {
     JwtTokenHelper,
 
     // ========================================
+    // Repositories
+    // ========================================
+    TrustedDeviceRepository,
+
+    // ========================================
     // Services
     // ========================================
     TokensService,
     ResetPasswordTokenService,
     TwoFactorTokenService,
-    TrustedDeviceService,
+    DeviceFingerprintService,
 
     ConfigService,
 
@@ -149,11 +157,13 @@ import {
   exports: [
     // Exportar helper para otros módulos si lo necesitan
     JwtTokenHelper,
+    // Exportar repositories si otros módulos los necesitan
+    TrustedDeviceRepository,
     // Exportar services si otros módulos los necesitan
     TokensService,
     ResetPasswordTokenService,
     TwoFactorTokenService,
-    TrustedDeviceService,
+    DeviceFingerprintService,
     // Exportar guards para uso manual si es necesario
     JwtAuthGuard,
   ],

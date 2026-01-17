@@ -14,24 +14,24 @@ import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
 import { InvalidTokenException } from '../exceptions'
 import { TimeUtil } from '@core/utils'
+import { LOGIN_CONFIG } from '../config/login.config'
 
 @Injectable()
 export class TokensService {
   private readonly accessTokenExpires: string
   private readonly refreshTokenExpires: string
   private readonly refreshTokenSecret: string
+  private readonly jwtSecret: string
   constructor(
     private readonly jwtService: JwtService,
     private readonly tokenStorage: TokenStorageRepository,
     private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly logger: LoggerService,
   ) {
-    this.accessTokenExpires = this.configService.get('JWT_EXPIRES_IN', '15m')
-    this.refreshTokenExpires = this.configService.getOrThrow(
-      'JWT_REFRESH_EXPIRES_IN',
-    )
-    this.refreshTokenSecret =
-      this.configService.getOrThrow('JWT_REFRESH_SECRET')
+    this.accessTokenExpires = LOGIN_CONFIG.jwt.access.expiresIn
+    this.refreshTokenExpires = LOGIN_CONFIG.jwt.refresh.expiresIn
+    this.refreshTokenSecret = LOGIN_CONFIG.jwt.refresh.secret
+    this.jwtSecret = LOGIN_CONFIG.jwt.access.secret
   }
 
   async generateTokenPair(
@@ -158,7 +158,7 @@ export class TokensService {
   verifyAccessToken(token: string): JwtPayload {
     try {
       return this.jwtService.verify<JwtPayload>(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.jwtSecret,
       })
     } catch (error) {
       this.handleJwtError(error, 'TokensService.verifyAccessToken')

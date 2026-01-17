@@ -21,7 +21,7 @@ import { LoginDto, LoginResponseDto } from '../dtos'
 import { Public, GetUser, GetToken } from '../../shared/decorators'
 import type { JwtPayload } from '../../shared/interfaces'
 import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
-import { TrustedDeviceService } from '../../trusted-devices'
+import { TrustedDeviceRepository } from '../../trusted-devices'
 import { JwtAuthGuard } from '../../shared'
 
 @UseGuards(JwtAuthGuard)
@@ -33,7 +33,7 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly cookieService: CookieService,
-    private readonly trustedDeviceService: TrustedDeviceService,
+    private readonly trustedDeviceRepository: TrustedDeviceRepository,
   ) {}
 
   /**
@@ -248,7 +248,7 @@ export class AuthController {
     description: 'No autenticado',
   })
   async getTrustedDevices(@GetUser() user: JwtPayload) {
-    return await this.trustedDeviceService.getTrustedDevices(user.sub)
+    return await this.trustedDeviceRepository.getUserDevices(user.sub)
   }
 
   /**
@@ -297,7 +297,7 @@ export class AuthController {
     @GetUser() user: JwtPayload,
     @Param('fingerprint') fingerprint: string,
   ) {
-    const removed = await this.trustedDeviceService.removeTrustedDevice(
+    const removed = await this.trustedDeviceRepository.delete(
       user.sub,
       fingerprint,
     )
@@ -350,7 +350,7 @@ export class AuthController {
     description: 'No autenticado',
   })
   async revokeAllTrustedDevices(@GetUser() user: JwtPayload) {
-    const count = await this.trustedDeviceService.revokeAllUserDevices(user.sub)
+    const count = await this.trustedDeviceRepository.deleteAllForUser(user.sub)
 
     return {
       message: `${count} dispositivo(s) eliminado(s) exitosamente`,

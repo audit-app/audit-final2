@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { TokensService } from '../../services/tokens.service'
 import { LoggerService } from '@core'
+import { TokensService } from '../../services'
 
 /**
  * Use Case: Logout de usuario

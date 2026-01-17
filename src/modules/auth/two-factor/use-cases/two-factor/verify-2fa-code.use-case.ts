@@ -1,6 +1,9 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
-import { TrustedDeviceService } from '../../../trusted-devices'
+import {
+  TrustedDeviceRepository,
+  DeviceFingerprintService,
+} from '../../../trusted-devices'
 import { TokensService } from '../../../login/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
@@ -32,7 +35,8 @@ import type { ConnectionMetadata } from '@core/common'
 export class Verify2FACodeUseCase {
   constructor(
     private readonly twoFactorTokenService: TwoFactorTokenService,
-    private readonly trustedDeviceService: TrustedDeviceService,
+    private readonly trustedDeviceRepository: TrustedDeviceRepository,
+    private readonly deviceFingerprintService: DeviceFingerprintService,
     private readonly tokensService: TokensService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
@@ -74,18 +78,18 @@ export class Verify2FACodeUseCase {
       // Generar fingerprint si no se proporcionó
       const fingerprint =
         dto.deviceFingerprint ||
-        this.trustedDeviceService.generateFingerprint(
+        this.deviceFingerprintService.generateFingerprint(
           connection.rawUserAgent,
           connection.ip,
         )
 
       // Parsear User-Agent para obtener información del dispositivo
-      const deviceInfo = this.trustedDeviceService.parseUserAgent(
+      const deviceInfo = this.deviceFingerprintService.parseUserAgent(
         connection.rawUserAgent,
       )
 
       // Agregar dispositivo como confiable (TTL: 90 días)
-      await this.trustedDeviceService.addTrustedDevice(dto.userId, fingerprint, {
+      await this.trustedDeviceRepository.save(dto.userId, fingerprint, {
         browser: deviceInfo.browser,
         os: deviceInfo.os,
         device: deviceInfo.device,
