@@ -14,18 +14,28 @@ export abstract class BaseEntity {
   @CreateDateColumn({ type: 'timestamp', name: 'created_at' })
   createdAt: Date
 
-  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
+  @UpdateDateColumn({ type: 'timestamp', name: 'updated_at', select: false })
   updatedAt: Date
 
   @Exclude()
-  @Column({ type: 'varchar', name: 'created_by', nullable: true })
+  @Column({
+    type: 'varchar',
+    name: 'created_by',
+    nullable: true,
+    select: false,
+  })
   createdBy?: string
 
   @Exclude()
-  @Column({ type: 'varchar', name: 'updated_by', nullable: true })
+  @Column({
+    type: 'varchar',
+    name: 'updated_by',
+    nullable: true,
+    select: false,
+  })
   updatedBy?: string
 
   @Exclude()
-  @DeleteDateColumn()
+  @DeleteDateColumn({ select: false })
   deletedAt?: Date
 }

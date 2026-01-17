@@ -79,7 +79,7 @@ export class UsersController {
   }
 
   @Get()
-  @ApiList(UserEntity, {
+  @ApiList(UserResponseDto, {
     summary: 'Listar todos los usuarios',
     searchFields: USER_SEARCH_FIELDS,
     sortableFields: USER_SORTABLE_FIELDS.map(String),

@@ -8,6 +8,7 @@ import { IUsersRepository } from './users-repository.interface'
 import { PaginatedResponse } from '@core/dtos'
 import { FindUsersDto } from '../dtos/find-users.dto'
 import { ArrayContains } from 'typeorm'
+import { UserResponseDto } from '../dtos'
 @Injectable()
 export class UsersRepository
   extends BaseRepository<UserEntity>
@@ -178,7 +179,7 @@ export class UsersRepository
    */
   async paginateUsers(
     query: FindUsersDto,
-  ): Promise<PaginatedResponse<UserEntity>> {
+  ): Promise<PaginatedResponse<UserResponseDto>> {
     const { search, isActive, organizationId, role } = query
 
     // 1. Definimos los filtros fijos (AND)
@@ -212,9 +213,41 @@ export class UsersRepository
       baseFilter.roles = ArrayContains([role])
     }
 
-    return this.paginateWithOptions(query, {
-      where,
-      relations: { organization: true },
-    })
+    return this.paginateWithMapper<UserResponseDto>(
+      query,
+      (user) => this.mapToDto(user),
+      {
+        where,
+        relations: { organization: true },
+      },
+    )
+  }
+
+  /**
+   * Mapea UserEntity a UserResponseDto
+   * @param user - Entidad de usuario
+   * @returns DTO de respuesta del usuario
+   */
+  private mapToDto(user: UserEntity): UserResponseDto {
+    return {
+      id: user.id,
+      names: user.names,
+      lastNames: user.lastNames,
+      email: user.email,
+      username: user.username,
+      ci: user.ci,
+      phone: user.phone,
+      address: user.address,
+      image: user.image,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      emailVerifiedAt: user.emailVerifiedAt,
+      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      roles: user.roles,
+      organizationId: user.organizationId,
+      organizationName: user.organization?.name || 'Sin organización',
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }
   }
 }
