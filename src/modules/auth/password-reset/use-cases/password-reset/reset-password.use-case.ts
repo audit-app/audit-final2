@@ -15,7 +15,7 @@ import type { IUsersRepository } from '../../../../users/repositories'
  * Use Case: Resetear contraseña con token
  *
  * Responsabilidades:
- * - Validar el token de reset (JWT + Redis) con rate limiting por IP
+ * - Validar el token de reset (JWT + Redis)
  * - Verificar que el usuario existe
  * - Hashear la nueva contraseña
  * - Actualizar la contraseña en la base de datos
@@ -24,11 +24,15 @@ import type { IUsersRepository } from '../../../../users/repositories'
  * - Revocar TODOS los dispositivos confiables (seguridad máxima)
  *
  * Seguridad:
- * - Rate limiting: 10 intentos por IP en 60 minutos
  * - Token de un solo uso (se elimina de Redis después de usarse)
+ * - Token expira en 1 hora (configurado en servicio)
+ * - Token es aleatorio de 256 bits (imposible de adivinar)
  * - Cierra todas las sesiones activas por seguridad
  * - Revoca todos los dispositivos confiables (fuerza 2FA en próximo login)
  * - Nueva contraseña debe cumplir requisitos de complejidad (validado en DTO)
+ *
+ * NOTA: No tiene rate limiting porque el token ya es de un solo uso y aleatorio.
+ * El rate limiting está en request-reset-password (al solicitar el email).
  */
 @Injectable()
 export class ResetPasswordUseCase {
@@ -42,23 +46,20 @@ export class ResetPasswordUseCase {
   ) {}
 
   /**
-   * Ejecuta el flujo de reset de contraseña CON RATE LIMITING
+   * Ejecuta el flujo de reset de contraseña
    *
    * @param token - Token de reset (del email)
    * @param newPassword - Nueva contraseña (validada por DTO)
-   * @param ip - Dirección IP del usuario (para rate limiting)
    * @returns Mensaje de confirmación
    * @throws BadRequestException si el token es inválido o expirado
    * @throws NotFoundException si el usuario no existe
-   * @throws TooManyAttemptsException si excede intentos por IP
    */
   async execute(
     token: string,
     newPassword: string,
-    ip: string,
   ): Promise<{ message: string }> {
-    // 1. Validar token (con rate limiting por IP)
-    const userId = await this.resetPasswordTokenService.validateToken(token, ip)
+    // 1. Validar token
+    const userId = await this.resetPasswordTokenService.validateToken(token)
 
     if (!userId) {
       throw new BadRequestException('Token inválido o expirado')
@@ -80,14 +81,11 @@ export class ResetPasswordUseCase {
     // 5. Revocar token usado (un solo uso)
     await this.resetPasswordTokenService.revokeToken(token)
 
-    // 6. Revocar todos los tokens de reset password del usuario (seguridad)
-    await this.resetPasswordTokenService.revokeUserTokens(userId)
-
-    // 7. NUEVO: Revocar TODOS los dispositivos confiables (seguridad máxima)
+    // 6. Revocar TODOS los dispositivos confiables (seguridad máxima)
     // Cuando cambia password, requiere 2FA nuevamente en todos los dispositivos
     await this.trustedDeviceService.revokeAllUserDevices(userId)
 
-    // 8. Revocar TODAS las sesiones activas (refresh tokens)
+    // 7. Revocar TODAS las sesiones activas (refresh tokens)
     await this.tokensService.revokeAllUserTokens(userId)
 
     return {

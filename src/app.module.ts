@@ -14,12 +14,14 @@ import { databaseConfig } from '@core/config'
 import { FilesModule } from '@core/files'
 import { PersistenceModule } from '@core/persistence'
 import { CacheModule } from '@core/cache'
+import { CommonModule } from '@core/common/common.module'
 import { UsersModule } from './modules/users'
 import { OrganizationsModule } from './modules/organizations'
 import { AuthModule } from './modules/auth'
 import { AuthorizationModule, PermissionsGuard } from './modules/authorization'
 import { TemplatesModule } from './modules/templates'
 import { MaturityModule } from './modules/maturity'
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 
 @Module({
   imports: [
@@ -31,6 +33,17 @@ import { MaturityModule } from './modules/maturity'
     }),
     DatabaseModule,
     CacheModule,
+    CommonModule, // Decoradores y servicios comunes (@ConnectionInfo, ConnectionMetadataService)
+
+    // Throttling global (protección contra DoS)
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000, // 1 minuto
+        limit: 100, // 100 requests por minuto
+      },
+    ]),
+
     FilesModule,
     LoggerModule,
     EmailModule,
@@ -55,9 +68,14 @@ import { MaturityModule } from './modules/maturity'
     // ========================================
     // Global Guards (orden de ejecución)
     // ========================================
-    // 1. JwtAuthGuard (registrado en AuthModule)
-    // 2. RolesGuard (registrado en AuthModule)
-    // 3. PermissionsGuard (Casbin - DESPUÉS de Auth)
+    // 1. ThrottlerGuard (protección DoS - PRIMERO)
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    // 2. JwtAuthGuard (registrado en AuthModule)
+    // 3. RolesGuard (registrado en AuthModule)
+    // 4. PermissionsGuard (Casbin - DESPUÉS de Auth)
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,

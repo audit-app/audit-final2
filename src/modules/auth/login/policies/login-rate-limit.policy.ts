@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
-import { RATE_LIMIT_KEYS } from '../../shared/constants'
-import { RATE_LIMIT_CONFIG } from '../../shared/config/rate-limit.config'
 import { TooManyAttemptsException } from '../../shared/exceptions'
+import { LOGIN_CONFIG } from '../config/login.config'
 
 @Injectable()
 export class LoginRateLimitPolicy {
-  private readonly maxAttemptsByIp = RATE_LIMIT_CONFIG.login.maxAttemptsByIp
-  private readonly maxAttemptsByUser = RATE_LIMIT_CONFIG.login.maxAttemptsByUser
-  private readonly windowMinutes = RATE_LIMIT_CONFIG.login.windowMinutes
+  private readonly maxAttemptsByIp = LOGIN_CONFIG.rateLimit.maxAttemptsByIp
+  private readonly maxAttemptsByUser = LOGIN_CONFIG.rateLimit.maxAttemptsByUser
+  private readonly windowMinutes = LOGIN_CONFIG.rateLimit.windowMinutes
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 
@@ -31,7 +30,7 @@ export class LoginRateLimitPolicy {
    * @throws TooManyAttemptsException si excede el límite
    */
   async checkIpLimit(ip: string): Promise<void> {
-    const key = RATE_LIMIT_KEYS.LOGIN_IP(ip)
+    const key = `login:ip:${ip}`
     const canAttempt = await this.rateLimitService.checkLimit(
       key,
       this.maxAttemptsByIp,
@@ -53,7 +52,7 @@ export class LoginRateLimitPolicy {
    */
   async checkUserLimit(userIdentifier: string): Promise<void> {
     const normalizedIdentifier = userIdentifier.toLowerCase()
-    const key = RATE_LIMIT_KEYS.LOGIN_USER(normalizedIdentifier)
+    const key = `login:user:${normalizedIdentifier}`
     const canAttempt = await this.rateLimitService.checkLimit(
       key,
       this.maxAttemptsByUser,
@@ -75,8 +74,8 @@ export class LoginRateLimitPolicy {
    */
   async incrementAttempts(ip: string, userIdentifier: string): Promise<void> {
     const normalizedIdentifier = userIdentifier.toLowerCase()
-    const ipKey = RATE_LIMIT_KEYS.LOGIN_IP(ip)
-    const userKey = RATE_LIMIT_KEYS.LOGIN_USER(normalizedIdentifier)
+    const ipKey = `login:ip:${ip}`
+    const userKey = `login:user:${normalizedIdentifier}`
 
     await Promise.all([
       this.rateLimitService.incrementAttempts(ipKey, this.windowMinutes),
@@ -92,8 +91,8 @@ export class LoginRateLimitPolicy {
    */
   async resetAttempts(ip: string, userIdentifier: string): Promise<void> {
     const normalizedIdentifier = userIdentifier.toLowerCase()
-    const ipKey = RATE_LIMIT_KEYS.LOGIN_IP(ip)
-    const userKey = RATE_LIMIT_KEYS.LOGIN_USER(normalizedIdentifier)
+    const ipKey = `login:ip:${ip}`
+    const userKey = `login:user:${normalizedIdentifier}`
 
     await Promise.all([
       this.rateLimitService.resetAttempts(ipKey),

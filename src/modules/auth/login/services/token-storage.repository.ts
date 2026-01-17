@@ -15,7 +15,7 @@ export interface StoredSession extends SessionMetadata {
   tokenId: string
   userId: string
   createdAt: number
-  lastActiveAt: number // Útil para mostrar "Activo hace 5 min"
+  lastActiveAt: number
 }
 
 @Injectable()

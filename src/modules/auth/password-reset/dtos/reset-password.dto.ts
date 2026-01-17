@@ -6,7 +6,6 @@ import {
   MaxLength,
   Matches,
 } from 'class-validator'
-import { PASSWORD_RESET_CONSTRAINTS } from '../../shared/constants'
 
 /**
  * DTO para resetear la contraseña usando el token
@@ -21,31 +20,35 @@ export class ResetPasswordDto {
   @ApiProperty({
     description: 'Token de reset password (JWT)',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-    minLength: PASSWORD_RESET_CONSTRAINTS.TOKEN.MIN,
-    maxLength: PASSWORD_RESET_CONSTRAINTS.TOKEN.MAX,
+    minLength: 10,
+    maxLength: 1000,
   })
   @IsString({ message: 'El token debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El token es requerido' })
-  @MinLength(PASSWORD_RESET_CONSTRAINTS.TOKEN.MIN)
-  @MaxLength(PASSWORD_RESET_CONSTRAINTS.TOKEN.MAX)
+  @MinLength(10)
+  @MaxLength(1000)
   token: string
 
   @ApiProperty({
     description: 'Nueva contraseña (debe cumplir requisitos de complejidad)',
     example: 'NewSecurePass123!',
-    minLength: PASSWORD_RESET_CONSTRAINTS.PASSWORD.MIN,
-    maxLength: PASSWORD_RESET_CONSTRAINTS.PASSWORD.MAX,
+    minLength: 8,
+    maxLength: 128,
   })
   @IsString({ message: 'La contraseña debe ser una cadena de texto' })
-  @MinLength(PASSWORD_RESET_CONSTRAINTS.PASSWORD.MIN, {
-    message: `La contraseña debe tener al menos ${PASSWORD_RESET_CONSTRAINTS.PASSWORD.MIN} caracteres`,
+  @MinLength(8, {
+    message: 'La contraseña debe tener al menos 8 caracteres',
   })
-  @MaxLength(PASSWORD_RESET_CONSTRAINTS.PASSWORD.MAX, {
-    message: `La contraseña no puede exceder ${PASSWORD_RESET_CONSTRAINTS.PASSWORD.MAX} caracteres`,
+  @MaxLength(128, {
+    message: 'La contraseña no puede exceder 128 caracteres',
   })
-  @Matches(PASSWORD_RESET_CONSTRAINTS.PASSWORD.PATTERN, {
-    message: PASSWORD_RESET_CONSTRAINTS.PASSWORD.MESSAGE,
-  })
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#.])[A-Za-z\d@$!%*?&#.]+$/,
+    {
+      message:
+        'La contraseña debe contener al menos una mayúscula, una minúscula, un número y un carácter especial',
+    },
+  )
   @IsNotEmpty({ message: 'La contraseña es requerida' })
   newPassword: string
 }

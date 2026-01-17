@@ -29,28 +29,90 @@ export class LoggerService implements NestLoggerService {
   }
 
   // ===== NESTJS LOGGER SERVICE INTERFACE =====
-  log(message: string): void {
-    this.http.info(message)
+  /**
+   * Log genérico (nivel INFO)
+   * @param message - Mensaje a loguear
+   * @param context - Contexto opcional (nombre del servicio/clase)
+   */
+  log(message: string, context?: string): void {
+    this.http.info(
+      message,
+      context ? { additionalData: { context } } : undefined,
+    )
   }
 
-  error(message: string, trace?: string): void {
-    const error = new Error(message)
-    if (trace) {
-      error.stack = trace
+  /**
+   * Log de error
+   * @param message - Mensaje de error o instancia de Error
+   * @param trace - Stack trace opcional (deprecated, usar objeto Error)
+   * @param context - Contexto opcional (nombre del servicio/clase)
+   */
+  error(message: string | Error, trace?: string, context?: string): void {
+    // 1. Si viene un objeto Error nativo (Lo ideal)
+    if (message instanceof Error) {
+      this.exception.logUnhandledException(
+        message,
+        context ? { context } : undefined,
+      )
+      return
     }
-    this.exception.logUnhandledException(error)
+
+    // 2. Si viene un string (Compatibilidad Legacy / Nest Internal)
+    const error = new Error(message)
+
+    // MAGIA DE NESTJS: Detectar si 'trace' es realmente un contexto
+    // Si no hay 3er argumento y el 2do argumento no parece un stack trace...
+    const isTraceActuallyContext = !context && trace && !trace.includes('\n')
+
+    if (isTraceActuallyContext) {
+      // El 2do argumento era el contexto
+      this.exception.logUnhandledException(error, { context: trace })
+    } else {
+      // El 2do argumento SÍ era un trace (o undefined)
+      if (trace) {
+        error.stack = trace
+      }
+      this.exception.logUnhandledException(
+        error,
+        context ? { context } : undefined,
+      )
+    }
   }
 
-  warn(message: string): void {
-    this.http.warn(message)
+  /**
+   * Log de warning
+   * @param message - Mensaje de advertencia
+   * @param context - Contexto opcional (nombre del servicio/clase)
+   */
+  warn(message: string, context?: string): void {
+    this.http.warn(
+      message,
+      context ? { additionalData: { context } } : undefined,
+    )
   }
 
-  debug(message: string): void {
-    this.http.debug(message)
+  /**
+   * Log de debug
+   * @param message - Mensaje de debug
+   * @param context - Contexto opcional (nombre del servicio/clase)
+   */
+  debug(message: string, context?: string): void {
+    this.http.debug(
+      message,
+      context ? { additionalData: { context } } : undefined,
+    )
   }
 
-  verbose(message: string): void {
-    this.http.verbose(message)
+  /**
+   * Log verbose
+   * @param message - Mensaje detallado
+   * @param context - Contexto opcional (nombre del servicio/clase)
+   */
+  verbose(message: string, context?: string): void {
+    this.http.verbose(
+      message,
+      context ? { additionalData: { context } } : undefined,
+    )
   }
 
   // ===== HTTP LOGGING =====

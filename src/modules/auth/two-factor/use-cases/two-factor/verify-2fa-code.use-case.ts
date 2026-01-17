@@ -1,12 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { REQUEST } from '@nestjs/core'
-import type { Request } from 'express'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
 import { TrustedDeviceService } from '../../../trusted-devices'
 import { TokensService } from '../../../login/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { Verify2FACodeDto } from '../../dtos/verify-2fa-code.dto'
+import type { ConnectionMetadata } from '@core/common'
 
 /**
  * Use Case: Verificar código 2FA y generar tokens
@@ -37,16 +36,19 @@ export class Verify2FACodeUseCase {
     private readonly tokensService: TokensService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    @Inject(REQUEST) private readonly request: Request,
   ) {}
 
   /**
    * Ejecuta el flujo de verificación de código 2FA
    *
    * @param dto - DTO con userId, code, token, trustDevice (opcional), deviceFingerprint (opcional)
+   * @param connection - Metadata de la conexión (IP, User-Agent)
    * @returns Resultado con tokens JWT o error
    */
-  async execute(dto: Verify2FACodeDto): Promise<{
+  async execute(
+    dto: Verify2FACodeDto,
+    connection: ConnectionMetadata,
+  ): Promise<{
     valid: boolean
     message: string
     accessToken?: string
@@ -69,23 +71,25 @@ export class Verify2FACodeUseCase {
 
     // 2. NUEVO: Si usuario quiere confiar en este dispositivo
     if (dto.trustDevice) {
-      const userAgent = this.request.headers['user-agent'] || 'unknown'
-      const ip = this.request.ip || 'unknown'
-
       // Generar fingerprint si no se proporcionó
       const fingerprint =
         dto.deviceFingerprint ||
-        this.trustedDeviceService.generateFingerprint(userAgent, ip)
+        this.trustedDeviceService.generateFingerprint(
+          connection.rawUserAgent,
+          connection.ip,
+        )
 
       // Parsear User-Agent para obtener información del dispositivo
-      const deviceInfo = this.trustedDeviceService.parseUserAgent(userAgent)
+      const deviceInfo = this.trustedDeviceService.parseUserAgent(
+        connection.rawUserAgent,
+      )
 
       // Agregar dispositivo como confiable (TTL: 90 días)
       await this.trustedDeviceService.addTrustedDevice(dto.userId, fingerprint, {
         browser: deviceInfo.browser,
         os: deviceInfo.os,
         device: deviceInfo.device,
-        ip,
+        ip: connection.ip,
       })
     }
 
@@ -99,12 +103,8 @@ export class Verify2FACodeUseCase {
       }
     }
 
-    // Obtener información del request
-    const ip = this.request.ip || 'Unknown'
-    const userAgent = this.request.headers['user-agent'] || 'Unknown'
-
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, ip, userAgent)
+      await this.tokensService.generateTokenPair(user, connection)
 
     return {
       valid: true,

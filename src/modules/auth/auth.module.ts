@@ -36,6 +36,7 @@ import {
   ResetPasswordTokenService,
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
+  ResetPasswordRateLimitPolicy,
 } from './password-reset'
 
 // ========================================
@@ -51,7 +52,6 @@ import {
   JwtRefreshStrategy,
   JwtAuthGuard,
   JwtTokenHelper,
-  EmailOperationRateLimitPolicy,
 } from './shared'
 
 @Module({
@@ -112,7 +112,7 @@ import {
     // Policies
     // ========================================
     LoginRateLimitPolicy,
-    EmailOperationRateLimitPolicy,
+    ResetPasswordRateLimitPolicy,
 
     // ========================================
     // Use Cases

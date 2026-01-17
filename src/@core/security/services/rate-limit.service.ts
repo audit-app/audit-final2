@@ -3,11 +3,7 @@ import { CacheService } from '@core/cache' // Solo importamos tu servicio
 
 @Injectable()
 export class RateLimitService {
-  constructor(
-    // ELIMINADO: @Inject(REDIS_CLIENT) private readonly redis: Redis
-    // AHORA: Solo inyectamos tu wrapper estandarizado
-    private readonly cacheService: CacheService,
-  ) {}
+  constructor(private readonly cacheService: CacheService) {}
 
   /**
    * Verifica si se puede realizar un intento más
