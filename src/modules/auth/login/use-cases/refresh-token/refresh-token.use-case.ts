@@ -4,7 +4,6 @@ import type { IUsersRepository } from '../../../../users/repositories'
 import { InvalidTokenException } from '../../exceptions'
 import type { ConnectionMetadata } from '@core/common'
 import { LoggerService } from '@core/logger'
-import { UserStatus } from 'src/modules/users/entities'
 import { TokensService } from '../../services'
 
 /**
@@ -57,7 +56,7 @@ export class RefreshTokenUseCase {
 
     // 3. Buscar usuario y verificar estado
     const user = await this.usersRepository.findById(payload.sub)
-    if (!user || user.status !== UserStatus.ACTIVE) {
+    if (!user || !user.isActive) {
       throw new InvalidTokenException('Usuario no encontrado o suspendido')
     }
 

@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
-import { UserEntity, UserStatus } from '../../entities/user.entity'
+import { UserEntity } from '../../entities/user.entity'
 import { UserNotFoundException } from '../../exceptions'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
@@ -26,7 +26,7 @@ export class DeactivateUserUseCase {
     if (!user) {
       throw new UserNotFoundException(id)
     }
-    user.status = UserStatus.SUSPENDED
+    user.isActive = false
     return await this.usersRepository.save(user)
   }
 }

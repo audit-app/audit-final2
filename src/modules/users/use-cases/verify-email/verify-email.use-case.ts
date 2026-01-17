@@ -1,7 +1,7 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { PasswordHashService } from '@core/security'
-import { UserEntity, UserStatus } from '../../entities/user.entity'
+import { UserEntity } from '../../entities/user.entity'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { EmailVerificationService } from '../../services'
@@ -43,7 +43,9 @@ export class VerifyEmailUseCase {
   @Transactional()
   async execute(dto: VerifyEmailDto): Promise<UserEntity> {
     // 1. Consumir token (busca, valida y revoca automáticamente)
-    const tokenData = await this.emailVerificationService.consumeToken(dto.token)
+    const tokenData = await this.emailVerificationService.consumeToken(
+      dto.token,
+    )
 
     if (!tokenData) {
       throw new BadRequestException(
@@ -72,7 +74,6 @@ export class VerifyEmailUseCase {
     // 5. Marcar como verificado y activar
     user.emailVerified = true
     user.emailVerifiedAt = new Date()
-    user.status = UserStatus.ACTIVE
 
     // 6. Guardar cambios
     return await this.usersRepository.save(user)

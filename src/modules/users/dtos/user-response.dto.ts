@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { UserStatus, Role } from '../entities/user.entity'
+import { Role } from '../entities/user.entity'
 
 /**
  * DTO de respuesta para usuario
@@ -64,11 +64,10 @@ export class UserResponseDto {
   image: string | null
 
   @ApiProperty({
-    enum: UserStatus,
     description: 'Estado del usuario',
-    example: UserStatus.ACTIVE,
+    example: true,
   })
-  status: UserStatus
+  isActive: boolean
 
   @ApiProperty({
     description: 'Indica si el email fue verificado',

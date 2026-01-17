@@ -40,15 +40,15 @@ import {
   ResendInvitationUseCase,
 } from '../use-cases'
 import { CreateUserDto, UpdateUserDto, VerifyEmailDto } from '../dtos'
-import { UserStatus, Role, UserEntity } from '../entities/user.entity'
 import { UploadAvatar } from '@core/files'
-import { Public } from '../../auth'
+
 import {
   FindUsersDto,
   USER_SORTABLE_FIELDS,
   USER_SEARCH_FIELDS,
 } from '../dtos/find-users.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
+import { Role, UserEntity } from '../entities'
 
 @ApiTags('users')
 @Controller('users')
@@ -85,11 +85,6 @@ export class UsersController {
     sortableFields: USER_SORTABLE_FIELDS.map(String),
     defaultSortBy: 'createdAt',
     filterFields: [
-      {
-        name: 'status',
-        description: 'Filtrar por estado del usuario',
-        type: `enum: ${Object.values(UserStatus).join(', ')}`,
-      },
       {
         name: 'role',
         description: 'Filtrar por rol',

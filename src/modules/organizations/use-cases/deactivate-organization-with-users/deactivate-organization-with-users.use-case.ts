@@ -5,7 +5,6 @@ import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
 import { USERS_REPOSITORY } from '../../../users' // ⚠️ Importa token de users
 import type { IUsersRepository } from '../../../users' // ⚠️ Importa interface
-import { UserStatus } from '../../../users/entities/user.entity'
 
 /**
  * Caso de uso: Desactivar organización y sus usuarios en cascada
@@ -44,8 +43,8 @@ export class DeactivateOrganizationWithUsersUseCase {
 
     // 3. Suspender todos los usuarios activos
     for (const user of users) {
-      if (user.status !== UserStatus.SUSPENDED) {
-        user.status = UserStatus.SUSPENDED
+      if (user.isActive) {
+        user.isActive = false
         await this.usersRepository.save(user)
       }
     }
