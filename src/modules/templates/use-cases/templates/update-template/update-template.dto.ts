@@ -1,5 +1,5 @@
-import { PartialType, OmitType } from '@nestjs/swagger'
-import { CreateTemplateDto } from '../create-template/create-template.dto'
+import { PartialType } from '@nestjs/swagger'
+import { CreateTemplateDto } from '../../../dtos/create-template.dto'
 
 /**
  * DTO para actualizar un template

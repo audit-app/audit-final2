@@ -7,7 +7,12 @@ import {
   HttpStatus,
   Req,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { ResponseMessage } from '@core/decorators'
 import type { Request } from 'express'
 import {
@@ -115,7 +120,10 @@ export class TrustedDevicesController {
   ): Promise<{ message: string }> {
     const userId = req.user.sub
 
-    return await this.revokeTrustedDeviceUseCase.execute(userId, dto.fingerprint)
+    return await this.revokeTrustedDeviceUseCase.execute(
+      userId,
+      dto.fingerprint,
+    )
   }
 
   /**

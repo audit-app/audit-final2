@@ -38,9 +38,7 @@ export class RevokeSessionUseCase {
     const isValid = await this.tokenStorage.validate(userId, sessionId)
 
     if (!isValid) {
-      throw new NotFoundException(
-        'Sesión no encontrada o ya fue revocada',
-      )
+      throw new NotFoundException('Sesión no encontrada o ya fue revocada')
     }
 
     // 2. Revocar la sesión (eliminar de Redis)

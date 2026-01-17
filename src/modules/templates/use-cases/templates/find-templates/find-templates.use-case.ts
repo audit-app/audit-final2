@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
-import { TemplatesRepository } from '../../repositories/templates.repository'
-import { TemplateStatus } from '../../constants/template-status.enum'
-import type { TemplateEntity } from '../../entities/template.entity'
+import { TemplatesRepository } from '../../../repositories/templates.repository'
+import { TemplateStatus } from '../../../constants/template-status.enum'
+import type { TemplateEntity } from '../../../entities/template.entity'
 
 /**
  * Find Templates Use Case

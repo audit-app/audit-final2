@@ -10,22 +10,32 @@ import { TemplatesRepository } from './repositories/templates.repository'
 import { StandardsRepository } from './repositories/standards.repository'
 
 // Use Cases - Templates
-import { CreateTemplateUseCase } from './use-cases/create-template/create-template.use-case'
-import { UpdateTemplateUseCase } from './use-cases/update-template/update-template.use-case'
-import { DeleteTemplateUseCase } from './use-cases/delete-template/delete-template.use-case'
-import { FindTemplateUseCase } from './use-cases/find-template/find-template.use-case'
-import { FindTemplatesUseCase } from './use-cases/find-templates/find-templates.use-case'
-import { FindTemplatesWithFiltersUseCase } from './use-cases/find-templates-with-filters/find-templates-with-filters.use-case'
-import { PublishTemplateUseCase } from './use-cases/publish-template/publish-template.use-case'
-import { ArchiveTemplateUseCase } from './use-cases/archive-template/archive-template.use-case'
-import { CloneTemplateUseCase } from './use-cases/clone-template/clone-template.use-case'
+import {
+  CreateTemplateUseCase,
+  UpdateTemplateUseCase,
+  DeleteTemplateUseCase,
+  FindTemplateUseCase,
+  FindTemplatesUseCase,
+  FindTemplatesWithFiltersUseCase,
+  PublishTemplateUseCase,
+  ArchiveTemplateUseCase,
+  CloneTemplateUseCase,
+} from './use-cases/templates'
 
 // Use Cases - Standards
-import { CreateStandardUseCase } from './use-cases/standards/create-standard/create-standard.use-case'
-import { UpdateStandardUseCase } from './use-cases/standards/update-standard/update-standard.use-case'
-import { DeleteStandardUseCase } from './use-cases/standards/delete-standard/delete-standard.use-case'
-import { FindStandardsByTemplateUseCase } from './use-cases/standards/find-standards-by-template/find-standards-by-template.use-case'
-import { FindStandardsTreeUseCase } from './use-cases/standards/find-standards-tree/find-standards-tree.use-case'
+import {
+  CreateStandardUseCase,
+  UpdateStandardUseCase,
+  DeleteStandardUseCase,
+  FindStandardUseCase,
+  FindAllStandardsUseCase,
+  FindStandardsByTemplateUseCase,
+  FindStandardsTreeUseCase,
+  FindStandardChildrenUseCase,
+  FindAuditableStandardsUseCase,
+  ActivateStandardUseCase,
+  DeactivateStandardUseCase,
+} from './use-cases/standards'
 
 // Controllers
 import { TemplatesController } from './controllers/templates.controller'
@@ -33,7 +43,6 @@ import { StandardsController } from './controllers/standards.controller'
 
 // Services
 import { TemplateImportService } from './services/template-import.service'
-import { StandardsService } from './services/standards.service'
 
 @Module({
   imports: [TypeOrmModule.forFeature([TemplateEntity, StandardEntity])],
@@ -45,7 +54,6 @@ import { StandardsService } from './services/standards.service'
 
     // Services
     TemplateImportService,
-    StandardsService,
 
     // Template Use Cases
     CreateTemplateUseCase,
@@ -62,8 +70,14 @@ import { StandardsService } from './services/standards.service'
     CreateStandardUseCase,
     UpdateStandardUseCase,
     DeleteStandardUseCase,
+    FindStandardUseCase,
+    FindAllStandardsUseCase,
     FindStandardsByTemplateUseCase,
     FindStandardsTreeUseCase,
+    FindStandardChildrenUseCase,
+    FindAuditableStandardsUseCase,
+    ActivateStandardUseCase,
+    DeactivateStandardUseCase,
   ],
   exports: [
     // Repositories (por si otros módulos los necesitan)

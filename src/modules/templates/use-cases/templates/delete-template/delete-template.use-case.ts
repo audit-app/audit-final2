@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
-import { TemplatesRepository } from '../../repositories/templates.repository'
-import { TemplateEntity } from '../../entities/template.entity'
+import { TemplatesRepository } from '../../../repositories/templates.repository'
+import { TemplateEntity } from '../../../entities/template.entity'
 import {
   TemplateNotFoundException,
   TemplateNotEditableException,
-} from '../../exceptions'
+} from '../../../exceptions'
 
 /**
  * Delete Template Use Case
