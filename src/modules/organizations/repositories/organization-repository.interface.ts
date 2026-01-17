@@ -10,14 +10,6 @@ export interface OrganizationFilters {
 export interface IOrganizationRepository extends IBaseRepository<OrganizationEntity> {
   findByNit(nit: string): Promise<OrganizationEntity | null>
   findByName(name: string): Promise<OrganizationEntity | null>
-  findAllActive(): Promise<OrganizationEntity[]>
-  findActiveById(id: string): Promise<OrganizationEntity | null>
-  findActiveByNit(nit: string): Promise<OrganizationEntity | null>
-  existsActiveById(id: string): Promise<boolean>
-  countActiveUsers(organizationId: string): Promise<number>
-  hardDelete(id: string): Promise<void>
-
-  // Búsqueda con filtros personalizados
   findWithFilters(
     filters: OrganizationFilters,
     page?: number,

@@ -32,7 +32,7 @@ export class UpdateOrganizationUseCase {
     dto: UpdateOrganizationDto,
   ): Promise<OrganizationEntity> {
     // 1. Verificar que la organización existe y está activa
-    const organization = await this.organizationRepository.findActiveById(id)
+    const organization = await this.organizationRepository.findById(id)
     if (!organization) {
       throw new OrganizationNotFoundException(id)
     }

@@ -135,7 +135,7 @@ export class OrganizationsController {
   @ApiCustom(OrganizationResponseDto, {
     summary: 'Desactivar una organización',
     description:
-      'Cambia el estado del usuario a SUSPENDED y retorna el usuario actualizado.',
+      'Cambia el estado de la organizacion a false y junto con ella a los usuarios de esa organizacion.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
     return await this.deactivateOrganizationWithUsersUseCase.execute(id)
@@ -145,7 +145,7 @@ export class OrganizationsController {
   @ApiCustom(OrganizationResponseDto, {
     summary: 'Activar una organización',
     description:
-      'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
+      'Cambia el estado de la organización a true y retorna la organización actualizada.',
   })
   async activate(@Param() { id }: UuidParamDto) {
     return await this.activateOrganizationUseCase.execute(id)
@@ -153,9 +153,9 @@ export class OrganizationsController {
 
   @Delete(':id')
   @ApiRemove(OrganizationResponseDto, {
-    summary: 'Desactivar una organización (soft delete)',
+    summary: 'Eliminar una organización (soft delete)',
     description:
-      'Desactiva una organización sin eliminarla de la base de datos. No se puede desactivar si tiene usuarios activos. Retorna la organización desactivada para confirmación.',
+      'Elimina una organización siempre que no tenga usuarios en bd. Retorna la organización desactivada para confirmación.',
     conflictMessage: 'La organización tiene usuarios activos',
   })
   @HttpCode(200)

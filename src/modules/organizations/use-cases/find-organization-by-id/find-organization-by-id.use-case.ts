@@ -15,7 +15,7 @@ export class FindOrganizationByIdUseCase {
   ) {}
 
   async execute(id: string): Promise<OrganizationEntity> {
-    const organization = await this.organizationRepository.findActiveById(id)
+    const organization = await this.organizationRepository.findById(id)
 
     if (!organization) {
       throw new OrganizationNotFoundException(id)

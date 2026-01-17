@@ -79,8 +79,7 @@ export class UserValidator {
    * @throws OrganizationNotFoundForUserException si la organización no existe o está inactiva
    */
   async validateOrganizationExists(organizationId: string): Promise<void> {
-    const exists =
-      await this.organizationRepository.existsActiveById(organizationId)
+    const exists = await this.organizationRepository.findById(organizationId)
 
     if (!exists) {
       throw new OrganizationNotFoundForUserException(organizationId)

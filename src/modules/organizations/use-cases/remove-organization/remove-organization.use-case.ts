@@ -7,6 +7,7 @@ import {
 } from '../../exceptions'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
+import { type IUsersRepository, USERS_REPOSITORY } from 'src/modules/users'
 
 /**
  * Caso de uso: Eliminar una organización (soft delete)
@@ -22,19 +23,21 @@ export class RemoveOrganizationUseCase {
   constructor(
     @Inject(ORGANIZATION_REPOSITORY)
     private readonly organizationRepository: IOrganizationRepository,
+    @Inject(USERS_REPOSITORY)
+    private readonly usersRepository: IUsersRepository,
   ) {}
 
   @Transactional()
   async execute(id: string): Promise<OrganizationEntity> {
     // 1. Verificar que la organización existe y está activa
-    const organization = await this.organizationRepository.findActiveById(id)
+    const organization = await this.organizationRepository.findById(id)
     if (!organization) {
       throw new OrganizationNotFoundException(id)
     }
 
     // 2. Verificar que no tiene usuarios activos
     const activeUsersCount =
-      await this.organizationRepository.countActiveUsers(id)
+      await this.usersRepository.countUsersByOrganization(id)
 
     if (activeUsersCount > 0) {
       throw new OrganizationHasActiveUsersException()

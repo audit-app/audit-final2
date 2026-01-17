@@ -1,6 +1,6 @@
-import { BadRequestException } from '@nestjs/common'
+import { ConflictException } from '@nestjs/common'
 
-export class OrganizationHasActiveUsersException extends BadRequestException {
+export class OrganizationHasActiveUsersException extends ConflictException {
   constructor() {
     super(
       'La organización no puede ser desactivada porque tiene usuarios activos asociados',
