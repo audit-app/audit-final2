@@ -1,5 +1,5 @@
 import { UnauthorizedException } from '@nestjs/common'
-import { UserStatus } from '../../../users/entities/user.entity'
+import {} from '../../../users/entities/user.entity'
 
 /**
  * Excepción lanzada cuando un usuario intenta autenticarse
@@ -10,7 +10,7 @@ import { UserStatus } from '../../../users/entities/user.entity'
  * - El email no ha sido verificado (emailVerified=false)
  */
 export class UserNotActiveException extends UnauthorizedException {
-  constructor(status: UserStatus) {
-    super(`Usuario no activo. Estado actual: ${status}`)
+  constructor() {
+    super(`Usuario no activo. Estado actual: INACTIVO`)
   }
 }

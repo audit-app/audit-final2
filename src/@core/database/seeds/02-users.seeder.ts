@@ -1,11 +1,7 @@
 import { Seeder } from 'typeorm-extension'
 import { DataSource } from 'typeorm'
 import * as bcrypt from 'bcrypt'
-import {
-  UserEntity,
-  Role,
-  UserStatus,
-} from '../../../modules/users/entities/user.entity'
+import { UserEntity, Role } from '../../../modules/users/entities/user.entity'
 import { OrganizationEntity } from '../../../modules/organizations/entities/organization.entity'
 
 /**
@@ -61,7 +57,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000001',
         address: 'La Paz, Bolivia',
         roles: [Role.ADMIN],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
 
@@ -78,7 +74,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000002',
         address: 'La Paz, Bolivia',
         roles: [Role.GERENTE],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
       {
@@ -91,7 +87,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000003',
         address: 'Santa Cruz, Bolivia',
         roles: [Role.GERENTE],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org2.id,
       },
 
@@ -108,7 +104,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000004',
         address: 'La Paz, Bolivia',
         roles: [Role.AUDITOR],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
       {
@@ -121,7 +117,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000005',
         address: 'La Paz, Bolivia',
         roles: [Role.AUDITOR],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
       {
@@ -134,7 +130,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000006',
         address: 'Santa Cruz, Bolivia',
         roles: [Role.AUDITOR],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org2.id,
       },
 
@@ -151,7 +147,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000007',
         address: 'La Paz, Bolivia',
         roles: [Role.CLIENTE],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
       {
@@ -164,7 +160,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000008',
         address: 'Cochabamba, Bolivia',
         roles: [Role.CLIENTE],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org3.id,
       },
 
@@ -181,7 +177,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000009',
         address: 'La Paz, Bolivia',
         roles: [Role.GERENTE, Role.AUDITOR],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
       },
 
@@ -198,7 +194,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000010',
         address: 'La Paz, Bolivia',
         roles: [Role.CLIENTE],
-        status: UserStatus.ACTIVE,
+        status: true,
         organizationId: org1.id,
         // emailVerified = false por defecto, no puede hacer login
       },
@@ -212,7 +208,7 @@ export default class UsersSeeder implements Seeder {
         phone: '+591 70000011',
         address: 'La Paz, Bolivia',
         roles: [Role.CLIENTE],
-        status: UserStatus.SUSPENDED,
+        status: false,
         organizationId: org1.id,
       },
     ]

@@ -3,12 +3,6 @@ import { BaseEntity } from '@core/entities/base.entity'
 import { OrganizationEntity } from '../../organizations/entities/organization.entity'
 import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
 
-export enum UserStatus {
-  ACTIVE = 'active',
-  SUSPENDED = 'suspended',
-  PENDING = 'pending',
-}
-
 export enum Role {
   ADMIN = 'admin',
   GERENTE = 'gerente',
@@ -78,12 +72,8 @@ export class UserEntity extends BaseEntity {
   })
   image: string | null
 
-  @Column({
-    type: 'enum',
-    enum: UserStatus,
-    default: UserStatus.PENDING,
-  })
-  status: UserStatus
+  @Column({ type: 'boolean', default: true })
+  isActive: boolean
 
   @Column({ type: 'uuid', nullable: false })
   organizationId: string

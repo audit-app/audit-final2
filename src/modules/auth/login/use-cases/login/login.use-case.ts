@@ -12,7 +12,7 @@ import {
   UserNotActiveException,
   EmailNotVerifiedException,
 } from '../../exceptions'
-import { UserStatus } from '../../../../users/entities/user.entity'
+
 import { ConnectionMetadata } from '@core/common'
 import { TokensService } from '../../services'
 
@@ -105,8 +105,8 @@ export class LoginUseCase {
     }
 
     // 4. Verificar estado activo y email verificado
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new UserNotActiveException(user.status)
+    if (!user.isActive) {
+      throw new UserNotActiveException()
     }
 
     if (!user.emailVerified) {
@@ -206,7 +206,7 @@ export class LoginUseCase {
           fullName: user.fullName,
           roles: user.roles,
           organizationId: user.organizationId,
-          status: user.status,
+          status: user.isActive,
         },
       },
       refreshToken,

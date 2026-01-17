@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { UserEntity, UserStatus } from '../entities/user.entity'
+import { UserEntity } from '../entities/user.entity'
 import { CreateUserDto, UpdateUserDto } from '../dtos'
 
 @Injectable()
@@ -22,7 +22,7 @@ export class UserFactory {
     user.address = dto.address ?? null
     user.organizationId = dto.organizationId
     user.roles = dto.roles
-    user.status = UserStatus.PENDING
+    user.isActive = true
     user.image = null
     return user
   }

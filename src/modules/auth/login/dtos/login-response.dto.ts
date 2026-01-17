@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Role, UserStatus } from '../../../users/entities/user.entity'
+import { Role } from '../../../users/entities/user.entity'
 
 /**
  * DTO de respuesta del login
@@ -31,7 +31,7 @@ export class LoginResponseDto {
     fullName: string
     roles: Role[]
     organizationId: string
-    status: UserStatus
+    status: boolean
   }
 
   @ApiPropertyOptional({

@@ -179,12 +179,12 @@ export class UsersRepository
   async paginateUsers(
     query: FindUsersDto,
   ): Promise<PaginatedResponse<UserEntity>> {
-    const { search, status, organizationId, role } = query
+    const { search, isActive, organizationId, role } = query
 
     // 1. Definimos los filtros fijos (AND)
     const baseFilter: FindOptionsWhere<UserEntity> = {}
 
-    if (status) baseFilter.status = status
+    if (isActive !== undefined) baseFilter.isActive = isActive
     if (organizationId) baseFilter.organizationId = organizationId
 
     // 2. Definimos la lógica de búsqueda (OR) combinada con el filtro base

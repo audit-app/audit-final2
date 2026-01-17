@@ -1,7 +1,9 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator'
 import { PaginationDto } from '@core/dtos'
-import { UserStatus, Role, UserEntity } from '../entities/user.entity'
-import { IsIn } from '@core/i18n'
+import { Role, UserEntity } from '../entities/user.entity'
+import { IsBoolean, IsIn } from '@core/i18n'
+import { Transform } from 'class-transformer'
+import { ApiPropertyOptional } from '@nestjs/swagger'
 
 /**
  * Campos por los que se puede ordenar la lista de usuarios
@@ -11,7 +13,7 @@ export const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
   'email',
   'createdAt',
   'organizationId',
-  'status',
+  'isActive',
   'ci',
   'phone',
   'names',
@@ -38,13 +40,22 @@ export class FindUsersDto extends PaginationDto {
   search?: string
 
   /**
-   * Filtrar por estado del usuario
-   * Puede ser: active, inactive, suspended
-   * Si no se especifica, devuelve usuarios con cualquier estado
+   * Filtrar por estado de la organización
    */
+  @ApiPropertyOptional({
+    description: 'Filtrar por estado activo/inactivo',
+    example: false,
+  })
   @IsOptional()
-  @IsEnum(UserStatus)
-  status?: UserStatus
+  @Transform(({ value }) => {
+    if (value === 'true') return true
+    if (value === 'false') return false
+    return Boolean(value)
+  })
+  @IsBoolean()
+  isActive?: boolean
+
+  /**
 
   /**
    * Filtrar por rol
