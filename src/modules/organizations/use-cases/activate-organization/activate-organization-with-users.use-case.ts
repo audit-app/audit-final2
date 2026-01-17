@@ -1,26 +1,22 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { OrganizationEntity } from '../../entities/organization.entity'
 import { OrganizationNotFoundException } from '../../exceptions'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
 
-/**
- * Caso de uso: Buscar una organización activa por NIT
- */
 @Injectable()
-export class FindOrganizationByNitUseCase {
+export class ActivateOrganizationUseCase {
   constructor(
     @Inject(ORGANIZATION_REPOSITORY)
     private readonly organizationRepository: IOrganizationRepository,
   ) {}
 
-  async execute(nit: string): Promise<OrganizationEntity> {
-    const organization = await this.organizationRepository.findActiveByNit(nit)
-
+  async execute(organizationId: string): Promise<void> {
+    const organization =
+      await this.organizationRepository.findActiveById(organizationId)
     if (!organization) {
-      throw new OrganizationNotFoundException(nit, 'NIT')
+      throw new OrganizationNotFoundException(organizationId)
     }
-
-    return organization
+    organization.isActive = true
+    await this.organizationRepository.save(organization)
   }
 }

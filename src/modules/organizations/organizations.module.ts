@@ -7,11 +7,11 @@ import {
   UpdateOrganizationUseCase,
   FindAllOrganizationsUseCase,
   FindOrganizationByIdUseCase,
-  FindOrganizationByNitUseCase,
   FindOrganizationsWithFiltersUseCase,
   UploadLogoUseCase,
   RemoveOrganizationUseCase,
-  DeleteOrganizationUseCase,
+  ActivateOrganizationUseCase,
+  DeactivateOrganizationWithUsersUseCase,
 } from './use-cases'
 
 @Module({
@@ -23,15 +23,14 @@ import {
     UpdateOrganizationUseCase,
     FindAllOrganizationsUseCase,
     FindOrganizationByIdUseCase,
-    FindOrganizationByNitUseCase,
     FindOrganizationsWithFiltersUseCase,
     UploadLogoUseCase,
     RemoveOrganizationUseCase,
-    DeleteOrganizationUseCase,
-
+    ActivateOrganizationUseCase,
     // Infrastructure
     OrganizationValidator,
     OrganizationFactory,
+    DeactivateOrganizationWithUsersUseCase,
   ],
   exports: [],
 })
