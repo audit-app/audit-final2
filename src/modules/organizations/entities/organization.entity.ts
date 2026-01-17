@@ -23,7 +23,16 @@ export class OrganizationEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 200, nullable: true })
   email: string | null
 
-  @Column({ type: 'varchar', length: 500, nullable: true })
+  @Column({
+    type: 'varchar',
+    length: 500,
+    nullable: true,
+    transformer: {
+      to: (value: string) => value,
+      from: (value: string) =>
+        value ? `http://localhost:3000/uploads/${value}` : null,
+    },
+  })
   logoUrl: string | null
 
   @Column({ type: 'boolean', default: true })

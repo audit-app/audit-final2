@@ -169,7 +169,7 @@ export class EmailVerificationService {
    */
   private async revokeAllUserTokens(userId: string): Promise<void> {
     // Buscar todos los tokens del usuario
-    const pattern = `${EMAIL_VERIFICATION_PREFIX}:${userId}:*`
+    /*     const pattern = `${EMAIL_VERIFICATION_PREFIX}:${userId}:*`
     const keys = await this.cacheService.keys(pattern)
 
     if (keys.length === 0) return
@@ -185,7 +185,7 @@ export class EmailVerificationService {
       await this.cacheService.del(key)
     })
 
-    await Promise.all(deletePromises)
+    await Promise.all(deletePromises) */
   }
 
   /**

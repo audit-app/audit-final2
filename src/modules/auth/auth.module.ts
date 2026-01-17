@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { APP_GUARD } from '@nestjs/core'
+
 import type * as ms from 'ms'
 
 // ========================================
@@ -36,7 +36,6 @@ import {
   ResetPasswordTokenService,
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
-  ResetPasswordRateLimitPolicy,
 } from './password-reset'
 
 // ========================================
@@ -50,12 +49,9 @@ import {
 // ========================================
 // SHARED INFRASTRUCTURE
 // ========================================
-import {
-  JwtStrategy,
-  JwtRefreshStrategy,
-  JwtAuthGuard,
-  JwtTokenHelper,
-} from './shared'
+import { JwtStrategy, JwtRefreshStrategy, JwtAuthGuard } from './shared'
+import { ResetPasswordRateLimitPolicy } from './password-reset/policies'
+import { TokenStorageRepository } from './login/services/token-storage.repository'
 
 @Module({
   imports: [
@@ -99,7 +95,6 @@ import {
     // ========================================
     // Helpers
     // ========================================
-    JwtTokenHelper,
 
     // ========================================
     // Repositories
@@ -152,11 +147,11 @@ import {
       provide: APP_GUARD,
       useClass: JwtAuthGuard, // ✅ Protege TODAS las rutas por defecto (usar @Public() para excepciones)
     }, */
+    TokenStorageRepository,
   ],
 
   exports: [
     // Exportar helper para otros módulos si lo necesitan
-    JwtTokenHelper,
     // Exportar repositories si otros módulos los necesitan
     TrustedDeviceRepository,
     // Exportar services si otros módulos los necesitan
