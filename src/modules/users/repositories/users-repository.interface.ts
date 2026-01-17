@@ -2,6 +2,7 @@ import { IBaseRepository } from '@core/repositories/base-repository.interface'
 import { UserEntity } from '../entities/user.entity'
 import { PaginatedResponse } from '@core/dtos'
 import { FindUsersDto } from '../dtos/find-users.dto'
+import { UserResponseDto } from '../dtos'
 
 export interface IUsersRepository extends IBaseRepository<UserEntity> {
   // Búsquedas básicas
@@ -19,5 +20,7 @@ export interface IUsersRepository extends IBaseRepository<UserEntity> {
   findByOrganization(organizationId: string): Promise<UserEntity[]>
   countUsersByOrganization(organizationId: string): Promise<number>
   // Búsquedas avanzadas
-  paginateUsers(query: FindUsersDto): Promise<PaginatedResponse<UserEntity>>
+  paginateUsers(
+    query: FindUsersDto,
+  ): Promise<PaginatedResponse<UserResponseDto>>
 }

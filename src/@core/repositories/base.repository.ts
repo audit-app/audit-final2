@@ -229,7 +229,6 @@ export abstract class BaseRepository<
   ): Promise<PaginatedResponse<R>> {
     // Obtener datos paginados (entidades)
     const paginatedResult = await this.paginateWithOptions(query, options)
-
     // Mapear los datos
     const mappedData = paginatedResult.data.map(mapper)
 

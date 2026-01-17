@@ -88,13 +88,6 @@ export class UserResponseDto {
   })
   isTwoFactorEnabled: boolean
 
-  @ApiPropertyOptional({
-    description: 'Fecha de activación del usuario',
-    example: '2024-01-15T10:30:00.000Z',
-    nullable: true,
-  })
-  activedAt: Date | null
-
   @ApiProperty({
     enum: Role,
     isArray: true,
@@ -108,6 +101,12 @@ export class UserResponseDto {
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   organizationId: string
+
+  @ApiProperty({
+    description: 'Nombre de la organización',
+    example: 'Empresa S.A.',
+  })
+  organizationName: string
 
   @ApiProperty({
     description: 'Fecha de creación del usuario',

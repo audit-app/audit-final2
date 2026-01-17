@@ -3,7 +3,7 @@ import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { FindUsersDto } from '../../dtos/find-users.dto'
 import { PaginatedResponse } from '@core/dtos'
-import { UserEntity } from '../../entities'
+import { UserResponseDto } from '../../dtos'
 
 /**
  * Caso de uso: Obtener todos los usuarios
@@ -17,7 +17,7 @@ export class FindAllUsersUseCase {
 
   async execute(
     findUsersDto: FindUsersDto,
-  ): Promise<PaginatedResponse<UserEntity>> {
+  ): Promise<PaginatedResponse<UserResponseDto>> {
     return await this.usersRepository.paginateUsers(findUsersDto)
   }
 }
