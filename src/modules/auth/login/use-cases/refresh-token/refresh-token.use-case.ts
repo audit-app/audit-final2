@@ -1,11 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { TokensService } from '../../services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { InvalidTokenException } from '../../exceptions'
 import type { ConnectionMetadata } from '@core/common'
 import { LoggerService } from '@core/logger'
 import { UserStatus } from 'src/modules/users/entities'
+import { TokensService } from '../../services'
 
 /**
  * Use Case: Renovar tokens (Token Rotation)

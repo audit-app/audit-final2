@@ -3,9 +3,8 @@ import { PasswordHashService } from '@core/security'
 import { EmailService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
-import { TokensService } from '../../services/tokens.service'
 //import { TwoFactorTokenService } from '../../../two-factor'
-//import { TrustedDeviceService } from '../../../trusted-devices'
+//import { TrustedDeviceRepository, DeviceFingerprintService } from '../../../trusted-devices'
 import { LoginRateLimitPolicy } from '../../policies'
 import type { LoginDto, LoginResponseDto } from '../../dtos'
 import {
@@ -15,6 +14,7 @@ import {
 } from '../../exceptions'
 import { UserStatus } from '../../../../users/entities/user.entity'
 import { ConnectionMetadata } from '@core/common'
+import { TokensService } from '../../services'
 
 /**
  * Use Case: Login de usuario con 2FA condicional
@@ -48,7 +48,8 @@ export class LoginUseCase {
     private readonly tokensService: TokensService,
     private readonly loginRateLimitPolicy: LoginRateLimitPolicy,
     //private readonly twoFactorTokenService: TwoFactorTokenService,
-    //private readonly trustedDeviceService: TrustedDeviceService,
+    //private readonly trustedDeviceRepository: TrustedDeviceRepository,
+    //private readonly deviceFingerprintService: DeviceFingerprintService,
     private readonly emailService: EmailService,
   ) {}
 
@@ -123,10 +124,10 @@ export class LoginUseCase {
       // Generar fingerprint si el cliente no lo envió
       const fingerprint =
         dto.deviceFingerprint ||
-        this.trustedDeviceService.generateFingerprint(userAgent, ip)
+        this.deviceFingerprintService.generateFingerprint(userAgent, ip)
 
       // Verificar si es dispositivo confiable
-      const isTrusted = await this.trustedDeviceService.isTrustedDevice(
+      const isTrusted = await this.trustedDeviceRepository.isTrusted(
         user.id,
         fingerprint,
       )
@@ -134,7 +135,7 @@ export class LoginUseCase {
       if (isTrusted) {
         // BYPASS 2FA: Dispositivo confiable
         // Actualizar última fecha de uso del dispositivo
-        await this.trustedDeviceService.updateLastUsed(user.id, fingerprint)
+        await this.trustedDeviceRepository.updateLastUsed(user.id, fingerprint)
 
         // Generar tokens JWT directamente
         const { accessToken, refreshToken } =

@@ -122,11 +122,20 @@ export class CacheService {
   }
 
   /**
-   * Elimina un valor de un Set.
+   * Elimina uno o más valores de un Set.
    * Es atómico.
+   *
+   * @param key - La key del Set
+   * @param values - Uno o más valores a eliminar
+   * @returns Número de elementos eliminados
+   *
+   * @example
+   * await srem('users:set', 'user1') // Eliminar uno
+   * await srem('users:set', 'user1', 'user2', 'user3') // Eliminar varios
+   * await srem('users:set', ...userIds) // Spread de array
    */
-  async srem(key: string, value: string): Promise<number> {
-    return await this.redis.srem(key, value)
+  async srem(key: string, ...values: string[]): Promise<number> {
+    return await this.redis.srem(key, ...values)
   }
 
   /**

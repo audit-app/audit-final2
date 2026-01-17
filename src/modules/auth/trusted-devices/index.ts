@@ -7,5 +7,8 @@
  * - Gestión y revocación de dispositivos
  */
 
+// Repositories
+export * from './repositories'
+
 // Services
-export * from './services/trusted-device.service'
+export * from './services'
