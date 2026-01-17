@@ -13,13 +13,15 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger'
 import {
   ApiCreate,
-  ApiUpdate,
-  ApiCustom,
+  ApiFindOne,
+  ApiUpdateWithMessage,
+  ApiRemoveWithMessage,
   ApiOkResponse,
   ApiNotFoundResponse,
   ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
+import { ResponseMessage } from '@core/decorators'
 import { StandardsService } from '../services/standards.service'
 import {
   CreateStandardDto,
@@ -90,14 +92,7 @@ export class StandardsController {
   }
 
   @Get(':id')
-  @ApiOperation({
-    summary: 'Obtener un estándar por ID',
-    description:
-      'Retorna los datos completos de un estándar específico mediante su ID único.',
-  })
-  @ApiOkResponse(StandardResponseDto, 'Estándar encontrado')
-  @ApiNotFoundResponse('Estándar no encontrado')
-  @ApiStandardResponses({ exclude: [400] })
+  @ApiFindOne(StandardResponseDto)
   async findOne(@Param() { id }: UuidParamDto) {
     return await this.standardsService.findOne(id)
   }
@@ -115,55 +110,112 @@ export class StandardsController {
     return await this.standardsService.findChildren(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
+  // @Patch(':id')
+  // @ApiUpdate(StandardResponseDto, {
+  //   summary: 'Actualizar un estándar',
+  //   description:
+  //     'Actualiza los datos de un estándar y retorna el estándar actualizado.',
+  //   conflictMessage: 'Ya existe un estándar con ese código en la plantilla',
+  // })
+  // async update(
+  //   @Param() { id }: UuidParamDto,
+  //   @Body() updateStandardDto: UpdateStandardDto,
+  // ) {
+  //   return await this.standardsService.update(id, updateStandardDto)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
-  @ApiUpdate(StandardResponseDto, {
+  @ResponseMessage('Estándar actualizado exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Actualizar un estándar',
     description:
-      'Actualiza los datos de un estándar y retorna el estándar actualizado.',
+      'Actualiza los datos de un estándar y retorna un mensaje de confirmación.',
     conflictMessage: 'Ya existe un estándar con ese código en la plantilla',
   })
   async update(
     @Param() { id }: UuidParamDto,
     @Body() updateStandardDto: UpdateStandardDto,
   ) {
-    return await this.standardsService.update(id, updateStandardDto)
+    await this.standardsService.update(id, updateStandardDto)
   }
 
+  // OPCIÓN 1: Devolver entidad eliminada
+  // @Delete(':id')
+  // @HttpCode(HttpStatus.OK)
+  // @ApiOperation({
+  //   summary: 'Eliminar un estándar',
+  //   description:
+  //     'Elimina permanentemente un estándar. No se puede eliminar si tiene estándares hijos. Retorna el estándar eliminado para confirmación.',
+  // })
+  // @ApiOkResponse(StandardResponseDto, 'Estándar eliminado exitosamente')
+  // @ApiNotFoundResponse('Estándar no encontrado')
+  // @ApiResponse({
+  //   status: 409,
+  //   description: 'No se puede eliminar un estándar con hijos',
+  // })
+  // @ApiStandardResponses({ exclude: [400] })
+  // async remove(@Param() { id }: UuidParamDto) {
+  //   return await this.standardsService.remove(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico
   @Delete(':id')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
+  @ResponseMessage('Estándar eliminado exitosamente')
+  @ApiRemoveWithMessage({
     summary: 'Eliminar un estándar',
     description:
-      'Elimina permanentemente un estándar. No se puede eliminar si tiene estándares hijos. Retorna el estándar eliminado para confirmación.',
+      'Elimina permanentemente un estándar. No se puede eliminar si tiene estándares hijos. Retorna un mensaje de confirmación.',
+    conflictMessage: 'No se puede eliminar un estándar con hijos',
   })
-  @ApiOkResponse(StandardResponseDto, 'Estándar eliminado exitosamente')
-  @ApiNotFoundResponse('Estándar no encontrado')
-  @ApiResponse({
-    status: 409,
-    description: 'No se puede eliminar un estándar con hijos',
-  })
-  @ApiStandardResponses({ exclude: [400] })
   async remove(@Param() { id }: UuidParamDto) {
-    return await this.standardsService.remove(id)
+    await this.standardsService.remove(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/deactivate')
+  // @ApiCustom(StandardResponseDto, {
+  //   summary: 'Desactivar un estándar',
+  //   description:
+  //     'Cambia el estado isActive a false. Los estándares inactivos no aparecen en nuevas auditorías.',
+  // })
+  // async deactivate(@Param() { id }: UuidParamDto) {
+  //   return await this.standardsService.deactivate(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/deactivate')
-  @ApiCustom(StandardResponseDto, {
+  @ResponseMessage('Estándar desactivado exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Desactivar un estándar',
     description:
-      'Cambia el estado isActive a false. Los estándares inactivos no aparecen en nuevas auditorías.',
+      'Cambia el estado isActive a false. Los estándares inactivos no aparecen en nuevas auditorías. Retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    return await this.standardsService.deactivate(id)
+    await this.standardsService.deactivate(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/activate')
+  // @ApiCustom(StandardResponseDto, {
+  //   summary: 'Activar un estándar',
+  //   description:
+  //     'Cambia el estado isActive a true. Los estándares activos aparecen en nuevas auditorías.',
+  // })
+  // async activate(@Param() { id }: UuidParamDto) {
+  //   return await this.standardsService.activate(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/activate')
-  @ApiCustom(StandardResponseDto, {
+  @ResponseMessage('Estándar activado exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Activar un estándar',
     description:
-      'Cambia el estado isActive a true. Los estándares activos aparecen en nuevas auditorías.',
+      'Cambia el estado isActive a true. Los estándares activos aparecen en nuevas auditorías. Retorna un mensaje de confirmación.',
   })
   async activate(@Param() { id }: UuidParamDto) {
-    return await this.standardsService.activate(id)
+    await this.standardsService.activate(id)
   }
 }

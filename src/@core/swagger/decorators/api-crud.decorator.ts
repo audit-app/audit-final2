@@ -5,7 +5,7 @@
  */
 
 import { applyDecorators, Type, HttpCode, HttpStatus } from '@nestjs/common'
-import { ApiOperation } from '@nestjs/swagger'
+import { ApiOperation, ApiResponse } from '@nestjs/swagger'
 import {
   ApiCreatedResponse,
   ApiOkResponse,
@@ -16,6 +16,7 @@ import {
   ApiPaginatedResponse,
 } from './api-responses.decorator'
 import { buildPaginatedOperation } from '../helpers/api-operation.helper'
+import { StandardResponseDto } from '@core/dtos'
 
 interface CrudOperationOptions<T> {
   /** Tipo de respuesta (DTO) */
@@ -304,6 +305,159 @@ export function ApiCustom<T>(
 
   if (options.conflict) {
     decorators.splice(3, 0, ApiConflictResponse(options.conflict))
+  }
+
+  return applyDecorators(...decorators)
+}
+
+/**
+ * Decorador para endpoint PATCH /:id (Update) con mensaje genérico
+ *
+ * Similar a @ApiUpdate pero devuelve un mensaje de éxito en lugar de la entidad.
+ *
+ * Incluye:
+ * - @HttpCode(200)
+ * - @ApiOperation
+ * - @ApiOkResponse con StandardResponseDto
+ * - @ApiNotFoundResponse
+ * - @ApiConflictResponse (opcional)
+ * - Respuestas estándar
+ *
+ * @example
+ * ```typescript
+ * @Patch(':id')
+ * @ApiUpdateWithMessage({
+ *   summary: 'Actualizar usuario',
+ *   conflictMessage: 'Email ya existe',
+ * })
+ * async update(@Param() { id }: UuidParamDto, @Body() dto: UpdateUserDto) {
+ *   await this.updateUseCase.execute(id, dto)
+ *   return { message: 'Usuario actualizado exitosamente' }
+ * }
+ * ```
+ */
+export function ApiUpdateWithMessage(options?: {
+  summary?: string
+  description?: string
+  conflictMessage?: string
+}) {
+  const summary = options?.summary || 'Actualizar recurso'
+  const description =
+    options?.description ||
+    'Actualiza los datos del recurso y retorna un mensaje de confirmación.'
+
+  const decorators = [
+    HttpCode(HttpStatus.OK),
+    ApiOperation({ summary, description }),
+    ApiOkResponse(StandardResponseDto, 'Recurso actualizado exitosamente'),
+    ApiNotFoundResponse('Recurso no encontrado'),
+    ApiStandardResponses(),
+  ]
+
+  if (options?.conflictMessage) {
+    decorators.splice(3, 0, ApiConflictResponse(options.conflictMessage))
+  }
+
+  return applyDecorators(...decorators)
+}
+
+/**
+ * Decorador para endpoint DELETE /:id (Remove) con mensaje genérico
+ *
+ * Similar a @ApiRemove pero devuelve un mensaje de éxito en lugar de la entidad.
+ *
+ * Incluye:
+ * - @HttpCode(200)
+ * - @ApiOperation
+ * - @ApiOkResponse con StandardResponseDto
+ * - @ApiNotFoundResponse
+ * - @ApiConflictResponse (opcional)
+ * - Respuestas estándar
+ *
+ * @example
+ * ```typescript
+ * @Delete(':id')
+ * @ApiRemoveWithMessage({
+ *   summary: 'Eliminar usuario (soft delete)',
+ * })
+ * async remove(@Param() { id }: UuidParamDto) {
+ *   await this.removeUseCase.execute(id)
+ *   return { message: 'Usuario eliminado exitosamente' }
+ * }
+ * ```
+ */
+export function ApiRemoveWithMessage(options?: {
+  summary?: string
+  description?: string
+  conflictMessage?: string
+}) {
+  const summary = options?.summary || 'Eliminar recurso'
+  const description =
+    options?.description ||
+    'Elimina el recurso y retorna un mensaje de confirmación.'
+
+  const decorators = [
+    HttpCode(HttpStatus.OK),
+    ApiOperation({ summary, description }),
+    ApiOkResponse(StandardResponseDto, 'Recurso eliminado exitosamente'),
+    ApiNotFoundResponse('Recurso no encontrado'),
+    ApiStandardResponses(),
+  ]
+
+  if (options?.conflictMessage) {
+    decorators.splice(3, 0, ApiConflictResponse(options.conflictMessage))
+  }
+
+  return applyDecorators(...decorators)
+}
+
+/**
+ * Decorador para endpoint DELETE /:id con status 204 No Content
+ *
+ * Estándar REST puro: elimina el recurso sin devolver cuerpo.
+ *
+ * Incluye:
+ * - @HttpCode(204)
+ * - @ApiOperation
+ * - @ApiResponse con status 204
+ * - @ApiNotFoundResponse
+ * - @ApiConflictResponse (opcional)
+ * - Respuestas estándar
+ *
+ * @example
+ * ```typescript
+ * @Delete(':id')
+ * @ApiRemoveNoContent({
+ *   summary: 'Eliminar usuario (soft delete)',
+ * })
+ * async remove(@Param() { id }: UuidParamDto) {
+ *   await this.removeUseCase.execute(id)
+ *   // No devolver nada
+ * }
+ * ```
+ */
+export function ApiRemoveNoContent(options?: {
+  summary?: string
+  description?: string
+  conflictMessage?: string
+}) {
+  const summary = options?.summary || 'Eliminar recurso'
+  const description =
+    options?.description || 'Elimina el recurso sin devolver contenido.'
+
+  const decorators = [
+    HttpCode(HttpStatus.NO_CONTENT),
+    ApiOperation({ summary, description }),
+    ApiResponse({
+      status: HttpStatus.NO_CONTENT,
+      description: 'Recurso eliminado exitosamente (sin contenido)',
+    }),
+    ApiNotFoundResponse('Recurso no encontrado'),
+    ApiStandardResponses({ exclude: [400] }),
+  ]
+
+  if (options?.conflictMessage) {
+    decorators.splice(3, 0, ApiConflictResponse(options.conflictMessage))
   }
 
   return applyDecorators(...decorators)

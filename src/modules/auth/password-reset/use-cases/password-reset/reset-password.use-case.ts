@@ -46,23 +46,29 @@ export class ResetPasswordUseCase {
   ) {}
 
   /**
-   * Ejecuta el flujo de reset de contraseña
+   * Ejecuta el flujo de reset de contraseña con doble validación
    *
-   * @param token - Token de reset (del email)
+   * @param tokenId - Token ID (64 chars hex, recibido del frontend)
+   * @param otpCode - Código OTP (6 dígitos, recibido por correo)
    * @param newPassword - Nueva contraseña (validada por DTO)
    * @returns Mensaje de confirmación
-   * @throws BadRequestException si el token es inválido o expirado
+   * @throws BadRequestException si tokenId o OTP son inválidos o expirados
    * @throws NotFoundException si el usuario no existe
    */
   async execute(
-    token: string,
+    tokenId: string,
+    otpCode: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    // 1. Validar token
-    const userId = await this.resetPasswordTokenService.validateToken(token)
+    // 1. Validar tokenId + OTP (doble validación)
+    const userId =
+      await this.resetPasswordTokenService.validateTokenWithOtp(
+        tokenId,
+        otpCode,
+      )
 
     if (!userId) {
-      throw new BadRequestException('Token inválido o expirado')
+      throw new BadRequestException('Token o código OTP inválido o expirado')
     }
 
     // 2. Buscar usuario
@@ -78,8 +84,7 @@ export class ResetPasswordUseCase {
     // 4. Actualizar contraseña
     await this.usersRepository.update(user.id, { password: hashedPassword })
 
-    // 5. Revocar token usado (un solo uso)
-    await this.resetPasswordTokenService.revokeToken(token)
+    // 5. El token ya fue revocado automáticamente por validateTokenWithOtp (one-time use)
 
     // 6. Revocar TODOS los dispositivos confiables (seguridad máxima)
     // Cuando cambia password, requiere 2FA nuevamente en todos los dispositivos

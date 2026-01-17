@@ -4,9 +4,26 @@ import { CacheService } from '@core/cache'
 import * as crypto from 'crypto'
 import { TimeUtil } from '@core/utils'
 
+/**
+ * Payload almacenado en Redis para reset password
+ */
+interface ResetPasswordPayload {
+  userId: string
+  code: string // OTP de 6 dígitos
+}
+
+/**
+ * Respuesta del método generateToken
+ */
+export interface GenerateResetTokenResponse {
+  tokenId: string // Código de 64 chars (se envía al frontend)
+  otpCode: string // Código de 6 dígitos (se envía al correo)
+}
+
 @Injectable()
 export class ResetPasswordTokenService {
   private readonly tokenExpiry: string
+  private readonly otpLength: number
 
   constructor(
     private readonly configService: ConfigService,
@@ -16,42 +33,147 @@ export class ResetPasswordTokenService {
       'RESET_PASSWORD_TOKEN_EXPIRES_IN',
       '1h',
     )
+    this.otpLength = configService.get('RESET_PASSWORD_OTP_LENGTH', 6)
   }
 
   private getKey(tokenId: string): string {
     return `auth:reset-pw:${tokenId}`
   }
-  /**
-   * Genera un token de reset password
-   *
-   * Flujo SIMPLE:
-   * 1. Genera un token aleatorio (256 bits = 64 chars hex)
-   * 2. Almacena en Redis: auth:reset-pw:{token} → userId
-   * 3. Devuelve el token al cliente
-   *
-   * @param userId - ID del usuario
-   * @returns Token aleatorio de 64 caracteres
-   */
-  async generateToken(userId: string): Promise<string> {
-    // Generar token aleatorio (256 bits)
-    const tokenId = crypto.randomBytes(32).toString('hex') // 64 chars
 
-    const ttlSeconds = TimeUtil.toSeconds(this.tokenExpiry)
-    const key = this.getKey(tokenId)
-    await this.cacheService.set(key, userId, ttlSeconds)
-    return tokenId
+  /**
+   * Genera un código OTP numérico aleatorio
+   */
+  private generateOTP(): string {
+    const max = Math.pow(10, this.otpLength) - 1
+    const min = Math.pow(10, this.otpLength - 1)
+    const otp = Math.floor(Math.random() * (max - min + 1)) + min
+    return otp.toString()
   }
 
   /**
-   * Valida un token de reset password
+   * Valida que el payload sea válido
+   */
+  private isValidPayload(payload: unknown): payload is ResetPasswordPayload {
+    return (
+      typeof payload === 'object' &&
+      payload !== null &&
+      'userId' in payload &&
+      'code' in payload &&
+      typeof (payload as ResetPasswordPayload).userId === 'string' &&
+      typeof (payload as ResetPasswordPayload).code === 'string'
+    )
+  }
+  /**
+   * Genera un token de reset password con doble validación
+   *
+   * Flujo de DOBLE VALIDACIÓN:
+   * 1. Genera un tokenId aleatorio (256 bits = 64 chars hex) → se envía al frontend
+   * 2. Genera un OTP de 6 dígitos → se envía al correo del usuario
+   * 3. Almacena en Redis: auth:reset-pw:{tokenId} → { userId, code: OTP }
+   * 4. Devuelve { tokenId, otpCode }
+   *
+   * Seguridad:
+   * - El usuario necesita AMBOS códigos para cambiar su contraseña
+   * - tokenId: recibido en la respuesta HTTP (64 chars)
+   * - otpCode: recibido en su correo electrónico (6 dígitos)
+   *
+   * @param userId - ID del usuario
+   * @returns { tokenId, otpCode } - tokenId para frontend, otpCode para correo
+   */
+  async generateToken(userId: string): Promise<GenerateResetTokenResponse> {
+    // Generar tokenId aleatorio (256 bits = 64 chars hex)
+    const tokenId = crypto.randomBytes(32).toString('hex')
+
+    // Generar OTP de 6 dígitos
+    const otpCode = this.generateOTP()
+
+    // Guardar payload en Redis
+    const payload: ResetPasswordPayload = {
+      userId,
+      code: otpCode,
+    }
+
+    const ttlSeconds = TimeUtil.toSeconds(this.tokenExpiry)
+    const key = this.getKey(tokenId)
+    await this.cacheService.set(key, JSON.stringify(payload), ttlSeconds)
+
+    return {
+      tokenId,
+      otpCode,
+    }
+  }
+
+  /**
+   * Valida SOLO el tokenId (sin OTP)
+   *
+   * Útil para verificar si el tokenId existe antes de solicitar el OTP al usuario.
+   * NO debe usarse para autorizar el cambio de contraseña, solo para verificación previa.
    *
    * @param tokenId - Token a validar
-   * @returns userId si el token es válido, null si no existe o expiró
+   * @returns userId si el token existe, null si no existe o expiró
    */
   async validateToken(tokenId: string): Promise<string | null> {
     const key = this.getKey(tokenId)
-    const userId = await this.cacheService.get(key)
-    return userId || null
+    const payloadJson = await this.cacheService.get(key)
+
+    if (!payloadJson) {
+      return null
+    }
+
+    try {
+      const payload = JSON.parse(payloadJson) as unknown
+      if (!this.isValidPayload(payload)) {
+        return null
+      }
+      return payload.userId
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Valida el tokenId + OTP (doble validación)
+   *
+   * MÉTODO PRINCIPAL para autorizar el cambio de contraseña.
+   * Valida:
+   * 1. Que el tokenId exista en Redis (no expiró)
+   * 2. Que el OTP coincida con el almacenado
+   * 3. Revoca el token después de validarlo exitosamente (one-time use)
+   *
+   * @param tokenId - Token de 64 chars recibido del frontend
+   * @param otpCode - Código de 6 dígitos recibido del usuario
+   * @returns userId si ambos códigos son válidos, null en caso contrario
+   */
+  async validateTokenWithOtp(
+    tokenId: string,
+    otpCode: string,
+  ): Promise<string | null> {
+    const key = this.getKey(tokenId)
+    const payloadJson = await this.cacheService.get(key)
+
+    if (!payloadJson) {
+      return null
+    }
+
+    try {
+      const payload = JSON.parse(payloadJson) as unknown
+
+      if (!this.isValidPayload(payload)) {
+        return null
+      }
+
+      // Validar que el OTP coincida
+      if (payload.code !== otpCode) {
+        return null
+      }
+
+      // Token válido - revocar inmediatamente (one-time use)
+      await this.cacheService.del(key)
+
+      return payload.userId
+    } catch {
+      return null
+    }
   }
 
   /**

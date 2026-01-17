@@ -17,11 +17,14 @@ import {
   ApiCreate,
   ApiList,
   ApiFindOne,
-  ApiUpdate,
-  ApiRemove,
-  ApiCustom,
+  ApiUpdateWithMessage,
+  ApiRemoveWithMessage,
+  ApiOkResponse,
+  ApiNotFoundResponse,
+  ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
+import { ResponseMessage } from '@core/decorators'
 import {
   CreateOrganizationDto,
   UpdateOrganizationDto,
@@ -97,29 +100,45 @@ export class OrganizationsController {
     return await this.findOrganizationByIdUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
+  // @Patch(':id')
+  // @ApiUpdate(OrganizationResponseDto, {
+  //   conflictMessage: 'Ya existe una organización con ese nombre o NIT',
+  // })
+  // async update(
+  //   @Param() { id }: UuidParamDto,
+  //   @Body() updateOrganizationDto: UpdateOrganizationDto,
+  // ) {
+  //   return await this.updateOrganizationUseCase.execute(
+  //     id,
+  //     updateOrganizationDto,
+  //   )
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
-  @ApiUpdate(OrganizationResponseDto, {
+  @ResponseMessage('Organización actualizada exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Actualizar organización',
+    description:
+      'Actualiza los datos de una organización y retorna un mensaje de confirmación. El NIT y nombre deben ser únicos.',
     conflictMessage: 'Ya existe una organización con ese nombre o NIT',
   })
   async update(
     @Param() { id }: UuidParamDto,
     @Body() updateOrganizationDto: UpdateOrganizationDto,
   ) {
-    return await this.updateOrganizationUseCase.execute(
-      id,
-      updateOrganizationDto,
-    )
+    await this.updateOrganizationUseCase.execute(id, updateOrganizationDto)
   }
 
   @Post(':id/upload-logo')
+  @HttpCode(200)
   @UploadLogo({
     maxSize: 5 * 1024 * 1024, // 5MB
   })
-  @ApiCustom(OrganizationResponseDto, {
-    summary: 'Subir logo de la organización',
-    description:
-      'Sube o reemplaza el logo de la organización y retorna la organización actualizada. Formatos: JPG, PNG, WebP, SVG. Tamaño máximo: 5MB. Se redimensiona automáticamente si excede 1024x1024px.',
-  })
+  @ApiOkResponse(OrganizationResponseDto, 'Logo subido exitosamente')
+  @ApiNotFoundResponse('Organización no encontrada')
+  @ApiStandardResponses()
   async uploadLogo(
     @Param() { id }: UuidParamDto,
     @UploadedFile() file: Express.Multer.File,
@@ -131,35 +150,74 @@ export class OrganizationsController {
     return await this.uploadLogoUseCase.execute(id, file)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/deactivate')
+  // @ApiCustom(OrganizationResponseDto, {
+  //   summary: 'Desactivar una organización',
+  //   description:
+  //     'Cambia el estado de la organizacion a false y junto con ella a los usuarios de esa organizacion.',
+  // })
+  // async deactivate(@Param() { id }: UuidParamDto) {
+  //   return await this.deactivateOrganizationWithUsersUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/deactivate')
-  @ApiCustom(OrganizationResponseDto, {
+  @ResponseMessage('Organización desactivada exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Desactivar una organización',
     description:
-      'Cambia el estado de la organizacion a false y junto con ella a los usuarios de esa organizacion.',
+      'Cambia el estado de la organización a inactivo junto con todos sus usuarios. Retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    return await this.deactivateOrganizationWithUsersUseCase.execute(id)
+    await this.deactivateOrganizationWithUsersUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad actualizada
+  // @Patch(':id/activate')
+  // @ApiCustom(OrganizationResponseDto, {
+  //   summary: 'Activar una organización',
+  //   description:
+  //     'Cambia el estado de la organización a true y retorna la organización actualizada.',
+  // })
+  // async activate(@Param() { id }: UuidParamDto) {
+  //   return await this.activateOrganizationUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/activate')
-  @ApiCustom(OrganizationResponseDto, {
+  @ResponseMessage('Organización activada exitosamente')
+  @ApiUpdateWithMessage({
     summary: 'Activar una organización',
     description:
-      'Cambia el estado de la organización a true y retorna la organización actualizada.',
+      'Cambia el estado de la organización a activo y retorna un mensaje de confirmación.',
   })
   async activate(@Param() { id }: UuidParamDto) {
-    return await this.activateOrganizationUseCase.execute(id)
+    await this.activateOrganizationUseCase.execute(id)
   }
 
+  // OPCIÓN 1: Devolver entidad eliminada
+  // @Delete(':id')
+  // @ApiRemove(OrganizationResponseDto, {
+  //   summary: 'Eliminar una organización (soft delete)',
+  //   description:
+  //     'Elimina una organización siempre que no tenga usuarios en bd. Retorna la organización desactivada para confirmación.',
+  //   conflictMessage: 'La organización tiene usuarios activos',
+  // })
+  // async remove(@Param() { id }: UuidParamDto) {
+  //   return await this.removeOrganizationUseCase.execute(id)
+  // }
+
+  // OPCIÓN 2: Devolver mensaje genérico
   @Delete(':id')
-  @ApiRemove(OrganizationResponseDto, {
+  @ResponseMessage('Organización eliminada exitosamente')
+  @ApiRemoveWithMessage({
     summary: 'Eliminar una organización (soft delete)',
     description:
-      'Elimina una organización siempre que no tenga usuarios en bd. Retorna la organización desactivada para confirmación.',
+      'Elimina una organización siempre que no tenga usuarios. Retorna un mensaje de confirmación.',
     conflictMessage: 'La organización tiene usuarios activos',
   })
-  @HttpCode(200)
   async remove(@Param() { id }: UuidParamDto) {
-    return await this.removeOrganizationUseCase.execute(id)
+    await this.removeOrganizationUseCase.execute(id)
   }
 }
