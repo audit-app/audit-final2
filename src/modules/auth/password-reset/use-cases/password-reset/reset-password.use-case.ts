@@ -4,97 +4,116 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common'
-import { PasswordHashService } from '@core/security'
-import { ResetPasswordTokenService } from '../../services/reset-password-token.service'
+import {
+  PasswordHashService,
+  RateLimitService,
+  OtpCoreService,
+} from '@core/security'
 import { TrustedDeviceRepository } from '../../../trusted-devices'
 import { TokensService } from '../../../login/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 
-/**
- * Use Case: Resetear contraseña con token
- *
- * Responsabilidades:
- * - Validar el token de reset (JWT + Redis)
- * - Verificar que el usuario existe
- * - Hashear la nueva contraseña
- * - Actualizar la contraseña en la base de datos
- * - Revocar el token usado (un solo uso)
- * - Revocar todos los refresh tokens del usuario (cerrar sesiones)
- * - Revocar TODOS los dispositivos confiables (seguridad máxima)
- *
- * Seguridad:
- * - Token de un solo uso (se elimina de Redis después de usarse)
- * - Token expira en 1 hora (configurado en servicio)
- * - Token es aleatorio de 256 bits (imposible de adivinar)
- * - Cierra todas las sesiones activas por seguridad
- * - Revoca todos los dispositivos confiables (fuerza 2FA en próximo login)
- * - Nueva contraseña debe cumplir requisitos de complejidad (validado en DTO)
- *
- * NOTA: No tiene rate limiting porque el token ya es de un solo uso y aleatorio.
- * El rate limiting está en request-reset-password (al solicitar el email).
- */
 @Injectable()
 export class ResetPasswordUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    private readonly resetPasswordTokenService: ResetPasswordTokenService,
     private readonly passwordHashService: PasswordHashService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly tokensService: TokensService,
+    // Inyectamos los servicios genéricos
+    private readonly otpCoreService: OtpCoreService,
+    private readonly rateLimitService: RateLimitService,
   ) {}
 
-  /**
-   * Ejecuta el flujo de reset de contraseña con doble validación
-   *
-   * @param tokenId - Token ID (64 chars hex, recibido del frontend)
-   * @param otpCode - Código OTP (6 dígitos, recibido por correo)
-   * @param newPassword - Nueva contraseña (validada por DTO)
-   * @returns Mensaje de confirmación
-   * @throws BadRequestException si tokenId o OTP son inválidos o expirados
-   * @throws NotFoundException si el usuario no existe
-   */
   async execute(
     tokenId: string,
     otpCode: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    // 1. Validar tokenId + OTP (doble validación)
-    const userId = await this.resetPasswordTokenService.validateTokenWithOtp(
-      tokenId,
-      otpCode,
+    const CONTEXT = 'reset-pw' // Prefijo para Redis
+    const ATTEMPTS_KEY = `attempts:${CONTEXT}:${tokenId}`
+
+    // ---------------------------------------------------------
+    // 1. SEGURIDAD OTP: Control de Intentos (Token Burning)
+    // ---------------------------------------------------------
+
+    // Incrementamos el contador ANTES de validar nada.
+    // Usamos una ventana corta (ej. 15 min), suficiente para el proceso.
+    const attempts = await this.rateLimitService.incrementAttempts(
+      ATTEMPTS_KEY,
+      15,
     )
 
-    if (!userId) {
-      throw new BadRequestException('Token o código OTP inválido o expirado')
+    // Si supera 3 intentos, QUEMAMOS el token inmediatamente.
+    if (attempts > 3) {
+      await this.otpCoreService.deleteSession(CONTEXT, tokenId) // Borra el token real
+      await this.rateLimitService.resetAttempts(ATTEMPTS_KEY) // Limpia el contador
+
+      throw new BadRequestException(
+        'El código ha expirado por exceso de intentos. Solicita uno nuevo.',
+      )
     }
 
-    // 2. Buscar usuario
+    // ---------------------------------------------------------
+    // 2. VALIDACIÓN DEL CÓDIGO
+    // ---------------------------------------------------------
+
+    // Recuperamos el payload (userId) validando el OTP
+    // Usamos la interfaz <{ userId: string }> para tipado seguro
+    const { isValid, payload } = await this.otpCoreService.validateSession<{
+      userId: string
+    }>(CONTEXT, tokenId, otpCode)
+
+    if (!isValid || !payload) {
+      // Feedback explícito al usuario
+      const remaining = 3 - attempts
+      throw new BadRequestException(
+        `Código incorrecto o expirado. Te quedan ${remaining} intentos.`,
+      )
+    }
+
+    const userId = payload.userId
+
+    // ---------------------------------------------------------
+    // 3. Lógica de Negocio (Usuario y Password)
+    // ---------------------------------------------------------
+
     const user = await this.usersRepository.findById(userId)
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    // 3. Hash de la nueva contraseña
+    // Hash de la nueva contraseña
     const hashedPassword = await this.passwordHashService.hash(newPassword)
 
-    // 4. Actualizar contraseña
+    // Actualizar contraseña en BD
     await this.usersRepository.update(user.id, { password: hashedPassword })
 
-    // 5. El token ya fue revocado automáticamente por validateTokenWithOtp (one-time use)
+    // ---------------------------------------------------------
+    // 4. PROTOCOLO "TIERRA QUEMADA" (Seguridad Máxima)
+    // ---------------------------------------------------------
 
-    // 6. Revocar TODOS los dispositivos confiables (seguridad máxima)
-    // Cuando cambia password, requiere 2FA nuevamente en todos los dispositivos
+    // A. Quemar el token usado (Para que no se pueda reusar en un Replay Attack)
+    await this.otpCoreService.deleteSession(CONTEXT, tokenId)
+    await this.rateLimitService.resetAttempts(ATTEMPTS_KEY)
+
+    // B. Revocar TODOS los dispositivos confiables
+    // Obliga a usar 2FA la próxima vez en cualquier dispositivo.
     await this.trustedDeviceRepository.deleteAllForUser(userId)
 
-    // 7. Revocar TODAS las sesiones activas (refresh tokens)
+    // C. Revocar TODAS las sesiones activas (Refresh Tokens)
+    // Expulsa al usuario (y al atacante) de todos los navegadores/apps.
     await this.tokensService.revokeAllUserTokens(userId)
+
+    // Incrementamos la versión del token (si implementaste lo que hablamos antes)
+    // await this.usersRepository.incrementTokenVersion(userId);
 
     return {
       message:
-        'Contraseña actualizada exitosamente. Por seguridad, se cerraron todas las sesiones y se revocaron los dispositivos confiables.',
+        'Contraseña actualizada. Se han cerrado todas las sesiones por seguridad.',
     }
   }
 }

@@ -17,7 +17,6 @@ export abstract class BaseRateLimitPolicy {
 
   /**
    * Construye la key compuesta.
-   * Tu RateLimitService ya agrega 'rate-limit:', así que aquí solo agregamos el contexto.
    * Resultado final en Redis: rate-limit:login:admin@gmail.com
    */
   protected getKey(identifier: string): string {
@@ -25,18 +24,42 @@ export abstract class BaseRateLimitPolicy {
     return `${this.contextPrefix}:${normalizedId}`
   }
 
+  // ==========================================
+  // 1. MÉTODO BOOLEANO (Sin Exception)
+  // ==========================================
+
   /**
-   * Verifica si el usuario puede intentar. Si no, lanza excepción.
-   * Úsalo ANTES de procesar la lógica de negocio.
+   * Verifica si el usuario puede intentar, retornando true o false.
+   * NO lanza excepción.
+   * * Úsalo para:
+   * - Request Reset Password (Silent Drop)
+   * - Validaciones personalizadas donde quieras manejar el error tú mismo.
+   * * @returns true si PUEDE intentar, false si está BLOQUEADO.
+   */
+  async canAttempt(identifier: string): Promise<boolean> {
+    const key = this.getKey(identifier)
+    // Retorna booleano directo del servicio
+    return await this.rateLimitService.checkLimit(key, this.maxAttempts)
+  }
+
+  // ==========================================
+  // 2. MÉTODO ESTRICTO (Con Exception)
+  // ==========================================
+
+  /**
+   * Verifica si el usuario puede intentar. Si no, lanza excepción automática.
+   * * Úsalo para:
+   * - Login
+   * - Validar OTP
+   * - Cualquier lugar donde el usuario deba ver el mensaje de error "Espera X min".
    */
   async checkLimitOrThrow(identifier: string): Promise<void> {
-    const key = this.getKey(identifier)
-    const canAttempt = await this.rateLimitService.checkLimit(
-      key,
-      this.maxAttempts,
-    )
+    // Reutilizamos el método de arriba para verificar
+    const allowed = await this.canAttempt(identifier)
 
-    if (!canAttempt) {
+    if (!allowed) {
+      // Solo calculamos el tiempo si realmente vamos a lanzar el error
+      const key = this.getKey(identifier)
       const remainingSeconds =
         await this.rateLimitService.getTimeUntilReset(key)
       const minutes = Math.ceil(remainingSeconds / 60)
@@ -47,9 +70,12 @@ export abstract class BaseRateLimitPolicy {
     }
   }
 
+  // ==========================================
+  // 3. HELPERS
+  // ==========================================
+
   /**
    * Registra un intento fallido.
-   * Úsalo cuando la contraseña/código sea incorrecto.
    */
   async registerFailure(identifier: string): Promise<void> {
     const key = this.getKey(identifier)
@@ -58,7 +84,6 @@ export abstract class BaseRateLimitPolicy {
 
   /**
    * Limpia el historial.
-   * Úsalo cuando el login/validación sea exitoso.
    */
   async clearRecords(identifier: string): Promise<void> {
     const key = this.getKey(identifier)

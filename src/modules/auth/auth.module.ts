@@ -33,7 +33,6 @@ import {
 // ========================================
 import {
   PasswordResetController,
-  ResetPasswordTokenService,
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
 } from './password-reset'
@@ -64,7 +63,10 @@ import {
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtRefreshStrategy, JwtAuthGuard } from './shared'
-import { ResetPasswordRateLimitPolicy } from './password-reset/policies'
+import {
+  RequestResetPasswordRateLimitPolicy,
+  ResetPasswordRateLimitPolicy,
+} from './password-reset/policies'
 import { TokenStorageRepository } from './login/services/token-storage.repository'
 
 @Module({
@@ -125,7 +127,6 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // Services
     // ========================================
     TokensService,
-    ResetPasswordTokenService,
     TwoFactorTokenService,
     DeviceFingerprintService,
 
@@ -136,7 +137,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // ========================================
     LoginRateLimitPolicy,
     ResetPasswordRateLimitPolicy,
-
+    RequestResetPasswordRateLimitPolicy,
     // ========================================
     // Use Cases
     // ========================================
@@ -186,7 +187,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TrustedDeviceRepository,
     // Exportar services si otros módulos los necesitan
     TokensService,
-    ResetPasswordTokenService,
+
     TwoFactorTokenService,
     DeviceFingerprintService,
     // Exportar guards para uso manual si es necesario

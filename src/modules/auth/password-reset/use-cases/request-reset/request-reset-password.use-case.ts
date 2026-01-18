@@ -1,87 +1,92 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { EmailService } from '@core/email'
-import { ResetPasswordTokenService } from '../../services/reset-password-token.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
-import { ResetPasswordRateLimitPolicy } from '../../policies'
+import { RequestResetPasswordRateLimitPolicy } from '../../policies'
+import { OtpCoreService } from '@core/security'
 
-/**
- * Use Case: Solicitar reset de contraseña
- *
- * Responsabilidades:
- * - Verificar rate limiting por IP (previene spam)
- * - Verificar que el email existe en el sistema
- * - Generar token de reset (JWT + Redis)
- * - Construir URL de reset para el frontend
- * - Enviar email con el link de reset
- *
- * Seguridad:
- * - Rate limiting: 10 intentos por IP en 60 minutos
- * - No revela si el email existe o no (timing attack prevention)
- */
+// Definimos el Payload que guardaremos en el OTP para este caso
+interface ResetPasswordPayload {
+  userId: string
+}
+
 @Injectable()
 export class RequestResetPasswordUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    private readonly resetPasswordTokenService: ResetPasswordTokenService,
+    private readonly otpCoreService: OtpCoreService, // Inyectamos el genérico
     private readonly emailService: EmailService,
-    private readonly resetPasswordRateLimitPolicy: ResetPasswordRateLimitPolicy,
+    private readonly requestResetPasswordRateLimitPolicy: RequestResetPasswordRateLimitPolicy,
   ) {}
 
-  /**
-   * Ejecuta el flujo de solicitud de reset de contraseña con doble validación
-   *
-   * Flujo de DOBLE VALIDACIÓN:
-   * 1. Genera tokenId (64 chars) + OTP (6 dígitos)
-   * 2. Devuelve tokenId al frontend en la respuesta
-   * 3. Envía OTP al correo del usuario
-   * 4. Usuario necesita AMBOS para cambiar su contraseña
-   *
-   * @param email - Email del usuario
-   * @param ip - Dirección IP (para rate limiting)
-   * @returns { message, tokenId } - tokenId se envía al frontend, mensaje genérico
-   * @throws TooManyAttemptsException si excede intentos
-   */
-  async execute(
-    email: string,
-    ip: string,
-  ): Promise<{ message: string; tokenId?: string }> {
-    // 2. Buscar usuario por email
+  async execute(email: string): Promise<{ message: string; tokenId?: string }> {
+    // Definimos el mensaje estándar (SIEMPRE devolvemos esto)
+    const genericResponse = {
+      message:
+        'Si el email existe, recibirás un código de verificación en tu correo',
+      tokenId: undefined,
+    }
+
+    // 1. Buscar usuario por email
     const user = await this.usersRepository.findByEmail(email)
 
     if (!user) {
-      // Incrementar contador incluso si el usuario no existe
-      // Esto previene enumerar emails válidos
-      await this.resetPasswordRateLimitPolicy.incrementAttempts(ip)
-
-      // Por seguridad, no revelamos si el email existe o no
-      return {
-        message:
-          'Si el email existe, recibirás un código de verificación en tu correo',
-      }
+      // MITIGACIÓN TIMING ATTACK:
+      // Si el usuario no existe, esperamos un poco para simular proceso
+      // y devolvemos éxito falso.
+      await this.simulateDelay()
+      return genericResponse
     }
 
-    // 3. Generar token de reset (tokenId + OTP)
-    const { tokenId, otpCode } =
-      await this.resetPasswordTokenService.generateToken(user.id)
+    // 2. RATE LIMIT (SILENT DROP) 🥷
+    // Usamos 'canAttempt' (el método booleano que agregamos a la BasePolicy).
+    // NO usamos 'checkLimitOrThrow' porque no queremos alertar al atacante con un 429.
+    const canAttempt =
+      await this.requestResetPasswordRateLimitPolicy.canAttempt(email)
 
-    // 4. Enviar email con el código OTP
+    if (!canAttempt) {
+      // SI ESTÁ BLOQUEADO: Retornamos éxito falso.
+      // No enviamos email, pero el frontend recibe "200 OK".
+      return genericResponse
+    }
+
+    // 3. Registrar el intento (Consumir una "ficha")
+    // Lo hacemos antes de enviar para prevenir abuso si el email falla.
+    await this.requestResetPasswordRateLimitPolicy.registerFailure(email)
+
+    // 4. Generar sesión OTP (Usando el servicio genérico)
+    // Contexto: 'reset-pw' (debe coincidir con el que uses al validar)
+    const { tokenId, otpCode } =
+      await this.otpCoreService.createSession<ResetPasswordPayload>(
+        'reset-pw',
+        { userId: user.id }, // Payload seguro (ID en lugar de email)
+        3600, // 1 hora de expiración
+      )
+
+    // 5. Enviar email con el código OTP
     await this.emailService.sendResetPasswordEmail({
       to: user.email,
       userName: user.username,
-      resetLink: otpCode, // Ahora enviamos el código OTP en lugar del link
+      resetLink: otpCode, // Enviamos el código de 6 dígitos
       expiresInMinutes: 60,
     })
 
-    // 5. Incrementar contador (previene spam de emails)
-    await this.resetPasswordRateLimitPolicy.incrementAttempts(ip)
-
-    // 6. Devolver tokenId al frontend (OTP va por correo)
+    // 6. Retornar tokenId al frontend
     return {
-      message:
-        'Si el email existe, recibirás un código de verificación en tu correo',
-      tokenId, // Frontend necesita este ID para validar junto con el OTP
+      message: genericResponse.message,
+      tokenId, // El frontend necesita esto para el siguiente paso (Validar OTP)
     }
+  }
+
+  /**
+   * Simula un retraso de red variable (100ms - 300ms)
+   * para evitar enumeración de usuarios por tiempo de respuesta.
+   */
+  private async simulateDelay(): Promise<void> {
+    const min = 100
+    const max = 300
+    const delay = Math.floor(Math.random() * (max - min + 1)) + min
+    return new Promise((resolve) => setTimeout(resolve, delay))
   }
 }

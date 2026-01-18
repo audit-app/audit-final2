@@ -1,5 +1,9 @@
 import { Module, Global } from '@nestjs/common'
-import { PasswordHashService, RateLimitService } from './services'
+import {
+  OtpCoreService,
+  PasswordHashService,
+  RateLimitService,
+} from './services'
 
 /**
  * Security Module
@@ -13,7 +17,7 @@ import { PasswordHashService, RateLimitService } from './services'
  */
 @Global()
 @Module({
-  providers: [PasswordHashService, RateLimitService],
-  exports: [PasswordHashService, RateLimitService],
+  providers: [PasswordHashService, RateLimitService, OtpCoreService],
+  exports: [PasswordHashService, RateLimitService, OtpCoreService],
 })
 export class SecurityModule {}

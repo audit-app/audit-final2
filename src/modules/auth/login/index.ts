@@ -1,12 +1,3 @@
-/**
- * Login Context - Barrel Export
- *
- * Contexto responsable de autenticación básica:
- * - Login con credenciales
- * - Logout y revocación de tokens
- * - Refresh de tokens con rotation
- */
-
 // Controllers
 export * from './controllers/auth.controller'
 

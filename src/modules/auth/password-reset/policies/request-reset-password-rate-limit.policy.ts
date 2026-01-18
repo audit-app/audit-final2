@@ -3,7 +3,7 @@ import { BaseRateLimitPolicy, RateLimitService } from '@core/security'
 import { PASSWORD_RESET_CONFIG } from '../config/password-reset.config'
 
 @Injectable()
-export class ResetPasswordRateLimitPolicy extends BaseRateLimitPolicy {
+export class RequestResetPasswordRateLimitPolicy extends BaseRateLimitPolicy {
   constructor(rateLimitService: RateLimitService) {
     super(
       rateLimitService,

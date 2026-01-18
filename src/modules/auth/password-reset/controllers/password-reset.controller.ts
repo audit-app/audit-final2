@@ -67,13 +67,12 @@ export class PasswordResetController {
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiados intentos desde esta IP',
+    description: 'Demasiados intentos desde esta cuenta',
   })
   async requestReset(
     @Body() dto: RequestResetPasswordDto,
-    @RealIp() ip: string,
   ): Promise<{ message: string; tokenId?: string }> {
-    return await this.requestResetUseCase.execute(dto.email, ip)
+    return await this.requestResetUseCase.execute(dto.email)
   }
 
   /**
