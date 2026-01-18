@@ -28,8 +28,13 @@ import { ResponseMessage } from '@core/decorators'
 
 import {
   CreateUserUseCase,
+  CreateUserDto,
   UpdateUserUseCase,
+  UpdateUserDto,
   FindAllUsersUseCase,
+  FindUsersDto,
+  USER_SORTABLE_FIELDS,
+  USER_SEARCH_FIELDS,
   FindUserByIdUseCase,
   UploadProfileImageUseCase,
   DeleteProfileImageUseCase,
@@ -37,16 +42,10 @@ import {
   RemoveUserUseCase,
   ActivateUserUseCase,
   VerifyEmailUseCase,
+  VerifyEmailDto,
   ResendInvitationUseCase,
 } from '../use-cases'
-import { CreateUserDto, UpdateUserDto, VerifyEmailDto } from '../dtos'
 import { UploadAvatar } from '@core/files'
-
-import {
-  FindUsersDto,
-  USER_SORTABLE_FIELDS,
-  USER_SEARCH_FIELDS,
-} from '../dtos/find-users.dto'
 import { UserResponseDto } from '../dtos/user-response.dto'
 import { Role } from '../entities'
 

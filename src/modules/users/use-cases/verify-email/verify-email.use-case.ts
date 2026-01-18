@@ -5,7 +5,7 @@ import { UserEntity } from '../../entities/user.entity'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { EmailVerificationService } from '../../services'
-import { VerifyEmailDto } from '../../dtos/verify-email.dto'
+import { VerifyEmailDto } from './verify-email.dto'
 
 /**
  * Caso de uso: Verificar email de usuario y establecer contraseña inicial

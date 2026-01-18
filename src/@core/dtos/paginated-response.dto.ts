@@ -1,4 +1,23 @@
 /**
+ * Resultado crudo de paginación del repositorio
+ * Solo contiene los datos y el total, sin metadata de presentación
+ *
+ * Este es el tipo que devuelven los repositorios.
+ * Los use cases luego construyen PaginatedResponse a partir de esto.
+ */
+export interface PaginatedData<T> {
+  /**
+   * Array de datos paginados
+   */
+  data: T[]
+
+  /**
+   * Total de registros en la base de datos (sin paginación)
+   */
+  total: number
+}
+
+/**
  * Metadata de paginación incluida en todas las respuestas paginadas
  */
 export interface PaginationMeta {

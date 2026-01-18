@@ -5,6 +5,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Inject,
   NotFoundException,
   Param,
   Post,
@@ -23,6 +24,9 @@ import type { JwtPayload } from '../../shared/interfaces'
 import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
 import { TrustedDeviceRepository } from '../../trusted-devices'
 import { JwtAuthGuard } from '../../shared'
+import { USERS_REPOSITORY } from '../../../users/tokens'
+import type { IUsersRepository } from '../../../users/repositories'
+import { UserResponseDto } from '../../../users/dtos'
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Auth')
@@ -34,6 +38,8 @@ export class AuthController {
     private readonly logoutUseCase: LogoutUseCase,
     private readonly cookieService: CookieService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
+    @Inject(USERS_REPOSITORY)
+    private readonly usersRepository: IUsersRepository,
   ) {}
 
   /**
@@ -201,6 +207,51 @@ export class AuthController {
 
     // Limpiar cookie
     this.cookieService.clearRefreshToken(res)
+  }
+
+  /**
+   * GET /auth/me
+   *
+   * Obtiene el perfil del usuario autenticado
+   * Retorna toda la información del usuario incluyendo organización
+   *
+   * @param user - Usuario autenticado (del JWT)
+   * @returns Perfil completo del usuario
+   *
+   * @example
+   * ```
+   * GET /auth/me
+   * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   * ```
+   */
+  @Get('me')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Obtener perfil del usuario autenticado',
+    description:
+      'Retorna la información completa del usuario actual incluyendo datos de su organización',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Perfil del usuario',
+    type: UserResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'No autenticado',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Usuario no encontrado',
+  })
+  async getProfile(@GetUser() user: JwtPayload): Promise<UserResponseDto> {
+    const profile = await this.usersRepository.getProfile(user.sub)
+
+    if (!profile) {
+      throw new NotFoundException('Usuario no encontrado')
+    }
+
+    return profile
   }
 
   /**

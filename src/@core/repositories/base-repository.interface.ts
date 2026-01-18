@@ -6,7 +6,7 @@ import type {
   FindOneOptions,
 } from 'typeorm'
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
-import { PaginationDto, PaginatedResponse } from '@core/dtos'
+import { PaginationDto, PaginatedData } from '@core/dtos'
 
 export interface IBaseRepository<T extends BaseEntity> {
   create(data: DeepPartial<T>): T
@@ -26,7 +26,7 @@ export interface IBaseRepository<T extends BaseEntity> {
   ): Promise<T[]>
   count(where?: FindOptionsWhere<T>): Promise<number>
   exists(where: FindOptionsWhere<T>): Promise<boolean>
-  paginate(query: PaginationDto): Promise<PaginatedResponse<T>>
+  paginate(query: PaginationDto): Promise<PaginatedData<T>>
   update(id: string, partialEntity: QueryDeepPartialEntity<T>): Promise<boolean>
   patch(entity: T, partialEntity: DeepPartial<T>): Promise<T>
   softDelete(id: string): Promise<boolean>

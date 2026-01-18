@@ -1,38 +1,26 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { LoggerService } from '@core/logger'
-import { CreateUserDto } from '../../dtos'
+import { CreateUserDto } from './create-user.dto'
 import { UserEntity } from '../../entities/user.entity'
 import { UserValidator } from '../../validators/user.validator'
 import { UserFactory } from '../../factories/user.factory'
 import { EmailVerificationService } from '../../services'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
+import {
+  type IOrganizationRepository,
+  ORGANIZATION_REPOSITORY,
+  OrganizationNotFoundException,
+} from 'src/modules/organizations'
 
-/**
- * Caso de uso: Crear un nuevo usuario
- *
- * SOLO para uso por ADMIN.
- *
- * Responsabilidades:
- * - Validar constraints únicas (email, username, CI)
- * - Validar que la organización existe
- * - Validar roles exclusivos
- * - Crear entidad de usuario con datos normalizados
- * - Persistir el usuario en la base de datos
- * - Enviar email de invitación automáticamente
- *
- * Flujo:
- * 1. Admin crea usuario → Usuario se crea con status=ACTIVE pero emailVerified=false
- * 2. Sistema envía email de invitación automáticamente
- * 3. Usuario recibe email y verifica su cuenta → emailVerified=true
- * 4. Usuario puede hacer login (requiere status=ACTIVE && emailVerified=true)
- */
 @Injectable()
 export class CreateUserUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
+    @Inject(ORGANIZATION_REPOSITORY)
+    private readonly organizationRepository: IOrganizationRepository,
     private readonly validator: UserValidator,
     private readonly userFactory: UserFactory,
     private readonly emailVerificationService: EmailVerificationService,
@@ -47,7 +35,14 @@ export class CreateUserUseCase {
       dto.username,
       dto.ci,
     )
-    await this.validator.validateOrganizationExists(dto.organizationId)
+
+    const organization = await this.organizationRepository.findById(
+      dto.organizationId,
+    )
+
+    if (!organization) {
+      throw new OrganizationNotFoundException(dto.organizationId)
+    }
 
     const user = this.userFactory.createFromDto(dto)
     const savedUser = await this.usersRepository.save(user)

@@ -2,36 +2,22 @@ import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { FilesService, FileType } from '@core/files'
 import { UserEntity } from '../../entities/user.entity'
-import { UserNotFoundException } from '../../exceptions'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
+import { UserValidator } from '../../validators'
 
-/**
- * Caso de uso: Subir imagen de perfil de usuario
- *
- * Responsabilidades:
- * - Verificar que el usuario existe
- * - Reemplazar imagen anterior si existe
- * - Validar formato y tamaño de imagen
- * - Actualizar URL de imagen en usuario
- */
 @Injectable()
 export class UploadProfileImageUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
+    private readonly userValidator: UserValidator,
     private readonly filesService: FilesService,
   ) {}
 
   @Transactional()
   async execute(id: string, file: Express.Multer.File): Promise<UserEntity> {
-    // 1. Verificar que el usuario existe
-    const user = await this.usersRepository.findById(id)
-    if (!user) {
-      throw new UserNotFoundException(id)
-    }
-
-    // 2. Subir nueva imagen (reemplaza la anterior si existe)
+    const user = await this.userValidator.validateAndGetUser(id)
     const uploadResult = await this.filesService.replaceFile(user.image, {
       file,
       folder: 'users/profiles',
@@ -45,8 +31,7 @@ export class UploadProfileImageUseCase {
       },
     })
 
-    // 3. Actualizar usuario con nueva URL
-    user.image = uploadResult.filePath
+    user.updateAvatar(uploadResult.filePath)
     return await this.usersRepository.save(user)
   }
 }

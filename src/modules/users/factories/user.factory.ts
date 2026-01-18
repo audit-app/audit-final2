@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { UserEntity } from '../entities/user.entity'
-import { CreateUserDto, UpdateUserDto } from '../dtos'
+import { CreateUserDto } from '../use-cases/create-user'
+import { UpdateUserDto } from '../use-cases/update-user'
 
 @Injectable()
 export class UserFactory {

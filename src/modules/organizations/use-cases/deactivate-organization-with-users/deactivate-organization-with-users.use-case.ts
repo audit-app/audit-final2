@@ -3,8 +3,8 @@ import { Transactional } from '@core/database'
 import { OrganizationNotFoundException } from '../../exceptions'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
-import { USERS_REPOSITORY } from '../../../users' // ⚠️ Importa token de users
-import type { IUsersRepository } from '../../../users' // ⚠️ Importa interface
+import { USERS_REPOSITORY } from '../../../users/tokens'
+import type { IUsersRepository } from '../../../users/repositories'
 
 /**
  * Caso de uso: Desactivar organización y sus usuarios en cascada

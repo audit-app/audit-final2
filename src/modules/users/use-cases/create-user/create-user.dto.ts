@@ -10,8 +10,8 @@ import {
   Matches,
 } from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Role } from '../entities/user.entity'
-import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
+import { Role } from '../../entities/user.entity'
+import { USER_CONSTRAINTS } from '../../constants/user-schema.constants'
 
 export class CreateUserDto {
   @ApiProperty({

@@ -1,7 +1,7 @@
 import { IBaseRepository } from '@core/repositories/base-repository.interface'
 import { UserEntity } from '../entities/user.entity'
-import { PaginatedResponse } from '@core/dtos'
-import { FindUsersDto } from '../dtos/find-users.dto'
+import { PaginatedData } from '@core/dtos'
+import { FindUsersDto } from '../use-cases/find-all-users'
 import { UserResponseDto } from '../dtos'
 
 export interface IUsersRepository extends IBaseRepository<UserEntity> {
@@ -12,6 +12,8 @@ export interface IUsersRepository extends IBaseRepository<UserEntity> {
     usernameOrEmail: string,
   ): Promise<UserEntity | null>
   findByCI(ci: string): Promise<UserEntity | null>
+  // Perfil de usuario
+  getProfile(userId: string): Promise<UserResponseDto | null>
   // Validaciones de unicidad
   existsByEmail(email: string, excludeId?: string): Promise<boolean>
   existsByUsername(username: string, excludeId?: string): Promise<boolean>
@@ -20,7 +22,5 @@ export interface IUsersRepository extends IBaseRepository<UserEntity> {
   findByOrganization(organizationId: string): Promise<UserEntity[]>
   countUsersByOrganization(organizationId: string): Promise<number>
   // Búsquedas avanzadas
-  paginateUsers(
-    query: FindUsersDto,
-  ): Promise<PaginatedResponse<UserResponseDto>>
+  paginateUsers(query: FindUsersDto): Promise<PaginatedData<UserResponseDto>>
 }

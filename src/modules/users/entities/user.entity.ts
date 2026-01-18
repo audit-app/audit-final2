@@ -95,4 +95,37 @@ export class UserEntity extends BaseEntity {
   get fullName(): string {
     return `${this.names} ${this.lastNames}`
   }
+
+  changePassword(newPassword: string) {
+    this.password = newPassword
+  }
+
+  disable() {
+    this.isActive = false
+  }
+
+  enable() {
+    this.isActive = true
+  }
+
+  verifyEmail() {
+    this.emailVerified = true
+    this.emailVerifiedAt = new Date()
+  }
+
+  twoFactorEnable() {
+    this.isTwoFactorEnabled = true
+  }
+
+  twoFactorDisable() {
+    this.isTwoFactorEnabled = false
+  }
+
+  updateAvatar(url: string): void {
+    this.image = url
+  }
+
+  removeAvatar(): void {
+    this.image = null
+  }
 }

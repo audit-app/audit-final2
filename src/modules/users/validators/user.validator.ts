@@ -6,13 +6,10 @@ import {
   UsernameAlreadyExistsException,
   CiAlreadyExistsException,
   UserNotFoundException,
-  OrganizationNotFoundForUserException,
   ExclusiveRoleException,
 } from '../exceptions'
 import { InvalidRoleException } from '../exceptions/invalid-role.exception'
 import { RoleTransitionException } from '../exceptions/role-transition.exception'
-import { ORGANIZATION_REPOSITORY } from '../../organizations/tokens'
-import type { IOrganizationRepository } from '../../organizations/repositories'
 import { Role, UserEntity } from '../entities'
 
 /**
@@ -24,8 +21,6 @@ export class UserValidator {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    @Inject(ORGANIZATION_REPOSITORY)
-    private readonly organizationRepository: IOrganizationRepository,
   ) {}
 
   /**
@@ -74,19 +69,6 @@ export class UserValidator {
   }
 
   /**
-   * Valida que la organización existe y está activa
-   * @param organizationId - ID de la organización a validar
-   * @throws OrganizationNotFoundForUserException si la organización no existe o está inactiva
-   */
-  async validateOrganizationExists(organizationId: string): Promise<void> {
-    const exists = await this.organizationRepository.findById(organizationId)
-
-    if (!exists) {
-      throw new OrganizationNotFoundForUserException(organizationId)
-    }
-  }
-
-  /**
    * Valida todas las constraints únicas en paralelo
    * @param email - Email a validar
    * @param username - Username a validar
@@ -107,15 +89,21 @@ export class UserValidator {
   }
 
   /**
-   * Verifica que un usuario existe o lanza excepción
-   * @param userId - ID del usuario a verificar
+   * Verifica que un usuario existe y LO DEVUELVE.
+   * Evita tener que volver a consultarlo en el caso de uso.
+   * * @param userId - ID del usuario a verificar
+   * @returns La entidad del usuario encontrada
    * @throws UserNotFoundException si el usuario no existe
    */
-  async ensureUserExists(userId: string): Promise<void> {
+  async validateAndGetUser(userId: string): Promise<UserEntity> {
+    // <--- Cambio de nombre y retorno
     const user = await this.usersRepository.findById(userId)
+
     if (!user) {
       throw new UserNotFoundException(userId)
     }
+
+    return user // <--- ¡Aquí está la clave!
   }
 
   /**

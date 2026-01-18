@@ -5,8 +5,8 @@ import { TransactionService, AuditService } from '@core/database'
 import { BaseRepository } from '@core/repositories/base.repository'
 import { UserEntity } from '../entities/user.entity'
 import { IUsersRepository } from './users-repository.interface'
-import { PaginatedResponse } from '@core/dtos'
-import { FindUsersDto } from '../dtos/find-users.dto'
+import { PaginatedData } from '@core/dtos'
+import { FindUsersDto } from '../use-cases/find-all-users'
 import { ArrayContains } from 'typeorm'
 import { UserResponseDto } from '../dtos'
 @Injectable()
@@ -169,17 +169,21 @@ export class UsersRepository
   /**
    * Paginación de usuarios con filtros avanzados
    *
+   * RESPONSABILIDAD: Solo obtener y mapear datos de la BD
+   * La construcción de la respuesta HTTP se hace en el use case
+   *
    * Soporta búsqueda por:
    * - search: names, lastNames, email, username, ci (búsqueda de texto libre)
-   * - status: estado del usuario (active, inactive, suspended) - opcional
+   * - isActive: estado del usuario (true/false) - opcional
    * - organizationId: filtrar por organización
+   * - role: filtrar por rol
    *
    * @param query - DTO con filtros y opciones de paginación
-   * @returns Datos paginados con UserResponseDto
+   * @returns Datos crudos mapeados { data, total }
    */
   async paginateUsers(
     query: FindUsersDto,
-  ): Promise<PaginatedResponse<UserResponseDto>> {
+  ): Promise<PaginatedData<UserResponseDto>> {
     const { search, isActive, organizationId, role } = query
 
     // 1. Definimos los filtros fijos (AND)
@@ -221,6 +225,24 @@ export class UsersRepository
         relations: { organization: true },
       },
     )
+  }
+
+  /**
+   * Obtiene el perfil completo de un usuario por su ID
+   * @param userId - ID del usuario
+   * @returns Perfil del usuario como DTO o null si no existe
+   */
+  async getProfile(userId: string): Promise<UserResponseDto | null> {
+    const user = await this.getRepo().findOne({
+      where: { id: userId },
+      relations: { organization: true },
+    })
+
+    if (!user) {
+      return null
+    }
+
+    return this.mapToDto(user)
   }
 
   /**

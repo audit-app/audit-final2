@@ -10,11 +10,7 @@ import {
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 import { IBaseRepository } from './base-repository.interface'
 import { TransactionService, AuditService } from '@core/database'
-import {
-  PaginationDto,
-  PaginatedResponse,
-  PaginatedResponseBuilder,
-} from '@core/dtos'
+import { PaginationDto, PaginatedData } from '@core/dtos'
 
 export abstract class BaseRepository<
   T extends BaseEntity,
@@ -133,22 +129,26 @@ export abstract class BaseRepository<
   /**
    * Paginación básica sin filtros personalizados
    *
+   * RESPONSABILIDAD: Solo obtener datos de la BD
+   * La construcción de la respuesta HTTP se hace en el use case
+   *
    * @param query - DTO de paginación (page, limit, all, sortBy, sortOrder)
-   * @returns Datos paginados de tipo T
+   * @returns Datos crudos { data, total }
    */
-  async paginate(query: PaginationDto): Promise<PaginatedResponse<T>> {
+  async paginate(query: PaginationDto): Promise<PaginatedData<T>> {
     return this.paginateWithOptions(query)
   }
 
   /**
    * Paginación con opciones personalizadas de TypeORM
    *
+   * RESPONSABILIDAD: Solo obtener datos de la BD
    * Permite agregar filtros WHERE, relaciones, selects personalizados, etc.
-   * Reutiliza la lógica de paginación del padre.
+   * La construcción de la respuesta HTTP se hace en el use case
    *
    * @param query - DTO de paginación
    * @param options - Opciones de TypeORM (where, relations, select, etc.)
-   * @returns Datos paginados de tipo T
+   * @returns Datos crudos { data, total }
    *
    * @example
    * ```typescript
@@ -164,60 +164,60 @@ export abstract class BaseRepository<
   protected async paginateWithOptions(
     query: PaginationDto,
     options?: FindManyOptions<T>,
-  ): Promise<PaginatedResponse<T>> {
+  ): Promise<PaginatedData<T>> {
     const { page = 1, limit = 10, all = false, sortBy, sortOrder } = query
-
-    // Si all=true, devolver todos los registros
-    if (all) {
-      const allRecords = await this.findAll({
-        ...options,
-        order: sortBy
-          ? { [sortBy]: sortOrder || 'DESC' }
-          : options?.order || undefined,
-      } as FindManyOptions<T>)
-
-      return PaginatedResponseBuilder.createAll(allRecords)
-    }
-
-    // Paginación normal
-    const skip = (page - 1) * limit
 
     const findOptions: FindManyOptions<T> = {
       ...options,
-      take: limit,
-      skip,
       order: sortBy
         ? { [sortBy]: sortOrder || 'DESC' }
         : options?.order || undefined,
     } as FindManyOptions<T>
 
-    const [data, total] = await this.getRepo().findAndCount(findOptions)
+    // Si all=true, devolver todos los registros
+    if (all) {
+      const allRecords = await this.findAll(findOptions)
+      return {
+        data: allRecords,
+        total: allRecords.length,
+      }
+    }
 
-    return PaginatedResponseBuilder.create(data, total, page, limit)
+    // Paginación normal
+    const skip = (page - 1) * limit
+    const [data, total] = await this.getRepo().findAndCount({
+      ...findOptions,
+      take: limit,
+      skip,
+    })
+
+    return { data, total }
   }
 
   /**
    * Paginación con mapeo a DTO
    *
+   * RESPONSABILIDAD: Solo obtener datos de la BD y mapearlos
    * Permite transformar los resultados a un tipo diferente.
    * Útil para convertir entidades a DTOs de respuesta.
+   * La construcción de la respuesta HTTP se hace en el use case
    *
    * @param query - DTO de paginación
-   * @param options - Opciones de TypeORM (opcional)
    * @param mapper - Función de mapeo de T a R
-   * @returns Datos paginados de tipo R (mapeado)
+   * @param options - Opciones de TypeORM (opcional)
+   * @returns Datos crudos mapeados { data, total }
    *
    * @example
    * ```typescript
    * // En UserRepository
-   * async paginateAsDto(dto: FindUsersDto) {
+   * async paginateUsers(dto: FindUsersDto) {
    *   return super.paginateWithMapper<UserResponseDto>(
    *     dto,
+   *     (user) => this.mapToDto(user),
    *     {
    *       where: { status: UserStatus.ACTIVE },
    *       relations: ['organization'],
-   *     },
-   *     (user) => this.mapToDto(user)
+   *     }
    *   )
    * }
    * ```
@@ -226,16 +226,17 @@ export abstract class BaseRepository<
     query: PaginationDto,
     mapper: (entity: T) => R,
     options?: FindManyOptions<T>,
-  ): Promise<PaginatedResponse<R>> {
+  ): Promise<PaginatedData<R>> {
     // Obtener datos paginados (entidades)
-    const paginatedResult = await this.paginateWithOptions(query, options)
-    // Mapear los datos
-    const mappedData = paginatedResult.data.map(mapper)
+    const result = await this.paginateWithOptions(query, options)
 
-    // Retornar con la misma metadata pero datos mapeados
+    // Mapear los datos
+    const mappedData = result.data.map(mapper)
+
+    // Retornar datos mapeados con total
     return {
-      ...paginatedResult,
       data: mappedData,
+      total: result.total,
     }
   }
 

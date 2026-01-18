@@ -7,7 +7,8 @@ import {
 } from '../../exceptions'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
-import { type IUsersRepository, USERS_REPOSITORY } from 'src/modules/users'
+import { USERS_REPOSITORY } from '../../../users/tokens'
+import type { IUsersRepository } from '../../../users/repositories'
 
 /**
  * Caso de uso: Eliminar una organización (soft delete)

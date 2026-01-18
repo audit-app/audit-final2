@@ -1,6 +1,6 @@
 import { IsOptional, IsString, IsEnum } from 'class-validator'
 import { PaginationDto } from '@core/dtos'
-import { Role, UserEntity } from '../entities/user.entity'
+import { Role, UserEntity } from '../../entities/user.entity'
 import { IsBoolean, IsIn } from '@core/i18n'
 import { Transform } from 'class-transformer'
 import { ApiPropertyOptional } from '@nestjs/swagger'
