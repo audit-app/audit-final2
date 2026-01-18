@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
 import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
-import { TooManyAttemptsException } from 'src/modules/auth'
+import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attempts.exception'
 
 /**
  * Política de Rate Limiting para reenvío de códigos 2FA

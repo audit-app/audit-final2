@@ -15,9 +15,9 @@ import { OrganizationRepository } from '../../modules/organizations/repositories
 // import { AuditsRepository } from '../../modules/audits/repositories/audits.repository'
 
 // ========== TOKENS ==========
-// Import tokens from module barrel files (index.ts), not repositories subdirectory
-import { USERS_REPOSITORY } from '../../modules/users'
-import { ORGANIZATION_REPOSITORY } from '../../modules/organizations'
+// Import tokens directly from token files
+import { USERS_REPOSITORY } from '../../modules/users/tokens'
+import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
 // TODO: Importar otros tokens:
 // import { AUDITS_REPOSITORY } from '../../modules/audits'
 

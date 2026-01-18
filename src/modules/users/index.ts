@@ -1,5 +1,0 @@
-export * from './users.module'
-export * from './exceptions'
-export * from './dtos'
-export { USERS_REPOSITORY } from './tokens'
-export type { IUsersRepository } from './repositories'

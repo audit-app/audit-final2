@@ -7,7 +7,7 @@ import {
   StartupLogger,
 } from './loggers'
 import { UserContext } from './types'
-import { JwtPayload } from 'src/modules/auth'
+import { JwtPayload } from '../../modules/auth/shared/interfaces/jwt-payload.interface'
 
 @Injectable()
 export class LoggerService implements NestLoggerService {

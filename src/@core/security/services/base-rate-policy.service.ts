@@ -1,4 +1,4 @@
-import { TooManyAttemptsException } from 'src/modules/auth'
+import { TooManyAttemptsException } from '../../../modules/auth/shared/exceptions/too-many-attempts.exception'
 import { RateLimitService } from '../services/rate-limit.service'
 
 export abstract class BaseRateLimitPolicy {

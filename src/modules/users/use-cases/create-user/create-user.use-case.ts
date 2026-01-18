@@ -8,11 +8,9 @@ import { UserFactory } from '../../factories/user.factory'
 import { EmailVerificationService } from '../../services'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
-import {
-  type IOrganizationRepository,
-  ORGANIZATION_REPOSITORY,
-  OrganizationNotFoundException,
-} from 'src/modules/organizations'
+import { ORGANIZATION_REPOSITORY } from '../../../organizations/tokens'
+import type { IOrganizationRepository } from '../../../organizations/repositories'
+import { OrganizationNotFoundException } from '../../../organizations/exceptions/organization-not-found.exception'
 
 @Injectable()
 export class CreateUserUseCase {
