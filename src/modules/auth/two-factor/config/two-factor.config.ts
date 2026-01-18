@@ -3,21 +3,50 @@
  *
  * Variables de entorno:
  * - TWO_FACTOR_CODE_LENGTH: Longitud del código numérico (default: 6)
- * - TWO_FACTOR_CODE_EXPIRES_IN: Tiempo de expiración (default: '5m')
- * - TWO_FACTOR_JWT_SECRET: Secret para firmar JWTs de 2FA (REQUERIDO)
+ * - TWO_FACTOR_CODE_EXPIRES_IN: Tiempo de expiración en segundos (default: 300 = 5 minutos)
  *
- * NOTA: Rate limiting de 2FA fue ELIMINADO porque:
- * - Login ya tiene rate limiting robusto (5 intentos/15min por usuario)
- * - Códigos 2FA expiran en 5 minutos (ventana muy corta)
- * - Validación usa one-time use (no se puede reutilizar)
- * - Dispositivos confiables reducen frecuencia de 2FA
+ * Rate Limiting:
+ * - TWO_FACTOR_GENERATE_MAX_ATTEMPTS: Intentos máximos para generar código (default: 5)
+ * - TWO_FACTOR_GENERATE_WINDOW_MINUTES: Ventana de tiempo para generación (default: 15)
+ * - TWO_FACTOR_RESEND_COOLDOWN_SECONDS: Tiempo de espera entre resends (default: 60)
+ * - TWO_FACTOR_VERIFY_MAX_ATTEMPTS: Intentos máximos de verificación (default: 3)
+ *
+ * IMPORTANTE: El sistema usa OtpCoreService y rate limiting robusto:
+ * - Generación: Máximo 5 códigos cada 15 minutos
+ * - Resend: Espera 60 segundos entre solicitudes
+ * - Verificación: Máximo 3 intentos, luego se revoca el token
  */
 export const TWO_FACTOR_CONFIG = {
   code: {
     length: parseInt(process.env.TWO_FACTOR_CODE_LENGTH || '6', 10),
-    expiresIn: process.env.TWO_FACTOR_CODE_EXPIRES_IN || '5m',
+    expiresIn: parseInt(process.env.TWO_FACTOR_CODE_EXPIRES_IN || '300', 10), // 5 minutos en segundos
   },
-  jwt: {
-    secret: process.env.TWO_FACTOR_JWT_SECRET || '',
+  rateLimit: {
+    // Límite para generar códigos (evita spam)
+    generate: {
+      maxAttempts: parseInt(
+        process.env.TWO_FACTOR_GENERATE_MAX_ATTEMPTS || '5',
+        10,
+      ),
+      windowMinutes: parseInt(
+        process.env.TWO_FACTOR_GENERATE_WINDOW_MINUTES || '15',
+        10,
+      ),
+    },
+    // Límite para resend (evita spam de emails)
+    resend: {
+      cooldownSeconds: parseInt(
+        process.env.TWO_FACTOR_RESEND_COOLDOWN_SECONDS || '60',
+        10,
+      ),
+    },
+    // Límite para verificación (seguridad contra brute force)
+    verify: {
+      maxAttempts: parseInt(
+        process.env.TWO_FACTOR_VERIFY_MAX_ATTEMPTS || '3',
+        10,
+      ),
+      windowMinutes: 15, // Ventana de tiempo para intentos de verificación
+    },
   },
 } as const

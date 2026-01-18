@@ -1,4 +1,5 @@
-import { Injectable, Inject } from '@nestjs/common'
+import { Injectable, Inject, BadRequestException } from '@nestjs/common'
+import { RateLimitService } from '@core/security'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
 import {
   TrustedDeviceRepository,
@@ -9,26 +10,36 @@ import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { Verify2FACodeDto } from '../../dtos/verify-2fa-code.dto'
 import type { ConnectionMetadata } from '@core/common'
+import { TWO_FACTOR_CONFIG } from '../../config/two-factor.config'
 
 /**
  * Use Case: Verificar código 2FA y generar tokens
  *
  * Responsabilidades:
- * - Validar el código contra Redis (one-time use)
+ * - Controlar intentos de verificación (máximo 3)
+ * - Validar el código contra Redis usando OtpCoreService
+ * - Quemar token si excede intentos
  * - Agregar dispositivo como confiable si el usuario lo solicita
  * - Generar tokens JWT (accessToken + refreshToken)
  * - Retornar tokens para completar el login
  *
- * Flujo completo:
- * 1. Usuario hace login → recibe código 2FA por email
+ * Flujo completo (similar a reset-password):
+ * 1. Usuario hace login → recibe código 2FA por email + tokenId
  * 2. Usuario ingresa código → llama a este use case
- * 3. Validamos código (se elimina de Redis)
- * 4. Si usuario marca "confiar en dispositivo" → agregar a trusted devices
- * 5. Generar tokens JWT y retornar
+ * 3. Incrementar contador de intentos
+ * 4. Si excede 3 intentos → quemar token y lanzar excepción
+ * 5. Validar código con OtpCoreService
+ * 6. Si código inválido → informar intentos restantes
+ * 7. Si código válido:
+ *    - Quemar token (one-time use)
+ *    - Agregar dispositivo como confiable (opcional)
+ *    - Generar tokens JWT
+ *    - Retornar tokens
  *
- * Seguridad:
+ * Seguridad implementada:
+ * - Máximo 3 intentos de verificación (Token Burning)
  * - Código de un solo uso (se elimina después de validarse)
- * - Expira en 5 minutos
+ * - Expira en 5 minutos (TTL automático)
  * - Token obligatorio para vincular sesión
  */
 @Injectable()
@@ -38,16 +49,18 @@ export class Verify2FACodeUseCase {
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly deviceFingerprintService: DeviceFingerprintService,
     private readonly tokensService: TokensService,
+    private readonly rateLimitService: RateLimitService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
   ) {}
 
   /**
-   * Ejecuta el flujo de verificación de código 2FA
+   * Ejecuta el flujo de verificación de código 2FA con control de intentos
    *
    * @param dto - DTO con userId, code, token, trustDevice (opcional), deviceFingerprint (opcional)
    * @param connection - Metadata de la conexión (IP, User-Agent)
    * @returns Resultado con tokens JWT o error
+   * @throws BadRequestException si excede intentos o código inválido
    */
   async execute(
     dto: Verify2FACodeDto,
@@ -58,24 +71,62 @@ export class Verify2FACodeUseCase {
     accessToken?: string
     refreshToken?: string
   }> {
-    // 1. Validar código (one-time use, se elimina de Redis)
-    const isValid = await this.twoFactorTokenService.validateCode(
+    const CONTEXT = '2fa-verify'
+    const ATTEMPTS_KEY = `attempts:${CONTEXT}:${dto.token}`
+    const MAX_ATTEMPTS = TWO_FACTOR_CONFIG.rateLimit.verify.maxAttempts
+    const WINDOW_MINUTES = TWO_FACTOR_CONFIG.rateLimit.verify.windowMinutes
+
+    // ---------------------------------------------------------
+    // 1. SEGURIDAD OTP: Control de Intentos (Token Burning)
+    // ---------------------------------------------------------
+
+    // Incrementamos el contador ANTES de validar nada
+    const attempts = await this.rateLimitService.incrementAttempts(
+      ATTEMPTS_KEY,
+      WINDOW_MINUTES,
+    )
+
+    // Si supera 3 intentos, QUEMAMOS el token inmediatamente
+    if (attempts > MAX_ATTEMPTS) {
+      await this.twoFactorTokenService.deleteSession(dto.token) // Borra el token real
+      await this.rateLimitService.resetAttempts(ATTEMPTS_KEY) // Limpia el contador
+
+      throw new BadRequestException(
+        'El código ha expirado por exceso de intentos. Solicita uno nuevo desde el login.',
+      )
+    }
+
+    // ---------------------------------------------------------
+    // 2. VALIDACIÓN DEL CÓDIGO
+    // ---------------------------------------------------------
+
+    const { isValid } = await this.twoFactorTokenService.validateCode(
       dto.userId,
       dto.code,
       dto.token,
     )
 
     if (!isValid) {
-      return {
-        valid: false,
-        message:
-          'Código inválido o expirado. Por favor, solicite un nuevo código.',
-      }
+      const remaining = MAX_ATTEMPTS - attempts
+      throw new BadRequestException(
+        `Código incorrecto o expirado. Te quedan ${remaining} intentos.`,
+      )
     }
 
-    // 2. NUEVO: Si usuario quiere confiar en este dispositivo
+    // ---------------------------------------------------------
+    // 3. PROTOCOLO "TIERRA QUEMADA" (Seguridad)
+    // ---------------------------------------------------------
+
+    // A. Quemar el token usado (Para que no se pueda reusar)
+    await this.twoFactorTokenService.deleteSession(dto.token)
+    await this.rateLimitService.resetAttempts(ATTEMPTS_KEY)
+
+    // ---------------------------------------------------------
+    // 4. Lógica de Negocio (Trusted Device + Tokens JWT)
+    // ---------------------------------------------------------
+
+    // Si usuario quiere confiar en este dispositivo
     if (dto.trustDevice) {
-      // Generar fingerprint si no se proporcionó
       const fingerprint =
         dto.deviceFingerprint ||
         this.deviceFingerprintService.generateFingerprint(
@@ -83,12 +134,10 @@ export class Verify2FACodeUseCase {
           connection.ip,
         )
 
-      // Parsear User-Agent para obtener información del dispositivo
       const deviceInfo = this.deviceFingerprintService.parseUserAgent(
         connection.rawUserAgent,
       )
 
-      // Agregar dispositivo como confiable (TTL: 90 días)
       await this.trustedDeviceRepository.save(dto.userId, fingerprint, {
         browser: deviceInfo.browser,
         os: deviceInfo.os,
@@ -97,14 +146,11 @@ export class Verify2FACodeUseCase {
       })
     }
 
-    // 3. Generar tokens JWT ahora que verificó 2FA
+    // Generar tokens JWT ahora que verificó 2FA
     const user = await this.usersRepository.findById(dto.userId)
 
     if (!user) {
-      return {
-        valid: false,
-        message: 'Usuario no encontrado',
-      }
+      throw new BadRequestException('Usuario no encontrado')
     }
 
     const { accessToken, refreshToken } =

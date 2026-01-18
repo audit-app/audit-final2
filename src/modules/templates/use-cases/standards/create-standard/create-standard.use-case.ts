@@ -7,7 +7,7 @@ import {
   StandardNotFoundException,
   TemplateNotEditableException,
 } from '../../../exceptions'
-import type { CreateStandardDto } from './create-standard.dto'
+import type { CreateStandardDto } from '../../../dtos'
 import type { StandardEntity } from '../../../entities/standard.entity'
 
 /**

@@ -26,6 +26,8 @@ import {
   Generate2FACodeUseCase,
   Verify2FACodeUseCase,
   Resend2FACodeUseCase,
+  Generate2FARateLimitPolicy,
+  Resend2FARateLimitPolicy,
 } from './two-factor'
 
 // ========================================
@@ -36,6 +38,16 @@ import {
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
 } from './password-reset'
+
+// ========================================
+// EMAIL VERIFICATION CONTEXT
+// ========================================
+import {
+  EmailVerificationController,
+  EmailVerificationTokenService,
+  RequestEmailVerificationUseCase,
+  VerifyEmailUseCase,
+} from './email-verification'
 
 // ========================================
 // TRUSTED DEVICES CONTEXT
@@ -63,10 +75,7 @@ import {
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtRefreshStrategy, JwtAuthGuard } from './shared'
-import {
-  RequestResetPasswordRateLimitPolicy,
-  ResetPasswordRateLimitPolicy,
-} from './password-reset/policies'
+import { RequestResetPasswordRateLimitPolicy } from './password-reset/policies'
 import { TokenStorageRepository } from './login/services/token-storage.repository'
 
 @Module({
@@ -109,6 +118,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     AuthController,
     PasswordResetController,
     TwoFactorController,
+    EmailVerificationController,
     SessionsController,
     TrustedDevicesController,
   ],
@@ -128,6 +138,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // ========================================
     TokensService,
     TwoFactorTokenService,
+    EmailVerificationTokenService,
     DeviceFingerprintService,
 
     ConfigService,
@@ -136,8 +147,9 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // Policies
     // ========================================
     LoginRateLimitPolicy,
-    ResetPasswordRateLimitPolicy,
     RequestResetPasswordRateLimitPolicy,
+    Generate2FARateLimitPolicy,
+    Resend2FARateLimitPolicy,
     // ========================================
     // Use Cases
     // ========================================
@@ -154,6 +166,10 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     Generate2FACodeUseCase,
     Verify2FACodeUseCase,
     Resend2FACodeUseCase,
+
+    // Email Verification
+    RequestEmailVerificationUseCase,
+    VerifyEmailUseCase,
 
     // Sessions Management
     ListSessionsUseCase,
@@ -187,8 +203,8 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TrustedDeviceRepository,
     // Exportar services si otros módulos los necesitan
     TokensService,
-
     TwoFactorTokenService,
+    EmailVerificationTokenService,
     DeviceFingerprintService,
     // Exportar guards para uso manual si es necesario
     JwtAuthGuard,

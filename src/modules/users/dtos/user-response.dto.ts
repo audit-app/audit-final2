@@ -1,10 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Role } from '../entities/user.entity'
 
-/**
- * DTO de respuesta para usuario
- * Incluye todos los campos seguros (sin password ni datos de auditoría)
- */
 export class UserResponseDto {
   @ApiProperty({
     description: 'ID único del usuario',
@@ -107,6 +103,13 @@ export class UserResponseDto {
     example: 'Empresa S.A.',
   })
   organizationName: string
+
+  @ApiPropertyOptional({
+    description: 'URL de la imagen de la organización',
+    example: 'https://example.com/images/org-logo.jpg',
+    nullable: true,
+  })
+  organizationImage: string | null
 
   @ApiProperty({
     description: 'Fecha de creación del usuario',

@@ -245,6 +245,7 @@ export class UsersRepository
       isTwoFactorEnabled: user.isTwoFactorEnabled,
       roles: user.roles,
       organizationId: user.organizationId,
+      organizationImage: user.organization?.logoUrl || null,
       organizationName: user.organization?.name || 'Sin organización',
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

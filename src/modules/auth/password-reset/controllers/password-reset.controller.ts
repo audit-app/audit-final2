@@ -1,6 +1,5 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
-import { RealIp } from '@core/decorators/real-ip.decorator'
 import { RequestResetPasswordDto, ResetPasswordDto } from '../dtos'
 import { Public } from '../../shared/decorators'
 import {

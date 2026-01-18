@@ -1,6 +1,7 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { EmailService } from '@core/email'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
+import { Resend2FARateLimitPolicy } from '../../policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 
@@ -8,25 +9,31 @@ import type { IUsersRepository } from '../../../../users/repositories'
  * Use Case: Reenviar código 2FA
  *
  * Responsabilidades:
+ * - Verificar cooldown de 60 segundos (rate limiting)
  * - Verificar que el usuario existe
- * - Generar nuevo código
+ * - Generar nuevo código usando OtpCoreService
  * - Enviar código por email
- * - Devolver nuevo token
+ * - Marcar intento de resend (iniciar nuevo cooldown)
+ * - Devolver nuevo tokenId
  *
- * Seguridad:
+ * Seguridad implementada:
+ * - Cooldown: Espera 60 segundos entre resends
  * - Código expira en 5 minutos (TTL automático)
  * - One-time use (se elimina de Redis después de validar)
  * - Genera nuevo código con nueva expiración
  *
- * NOTA: NO tiene rate limiting porque:
- * - Login ya tiene rate limiting robusto (5 intentos/15min por usuario)
- * - Códigos expiran en 5 minutos (ventana muy corta)
- * - One-time use previene reutilización
+ * IMPORTANTE:
+ * - El usuario puede solicitar un resend dentro de 60 segundos si no le llegó el código
+ * - Cada resend genera un NUEVO tokenId (el anterior sigue válido hasta que expire)
+ * - No se revocan códigos anteriores (expiran automáticamente en 5 minutos)
  *
- * NOTA: NO revoca códigos anteriores porque:
- * - Redis key estructura (auth:2fa:{token}) no permite buscar por userId eficientemente
- * - TTL de 5 minutos hace que códigos viejos expiren automáticamente
- * - Si el usuario necesita un nuevo código, puede generar otro
+ * Flujo:
+ * 1. Verificar cooldown (lanza excepción si debe esperar)
+ * 2. Buscar usuario
+ * 3. Generar nuevo código OTP
+ * 4. Enviar email con código
+ * 5. Marcar intento de resend (cooldown de 60 segundos)
+ * 6. Retornar nuevo tokenId
  */
 @Injectable()
 export class Resend2FACodeUseCase {
@@ -35,29 +42,35 @@ export class Resend2FACodeUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly emailService: EmailService,
+    private readonly resend2FARateLimitPolicy: Resend2FARateLimitPolicy,
   ) {}
 
   /**
-   * Ejecuta el flujo de reenvío de código 2FA
+   * Ejecuta el flujo de reenvío de código 2FA con cooldown
    *
    * @param userId - ID del usuario
-   * @returns Nuevo token y mensaje de confirmación
+   * @returns Nuevo tokenId y mensaje de confirmación
    * @throws NotFoundException si el usuario no existe
+   * @throws TooManyAttemptsException si debe esperar cooldown
    */
   async execute(userId: string): Promise<{ token: string; message: string }> {
-    // 1. Buscar usuario
+    // 1. RATE LIMITING: Verificar cooldown (60 segundos)
+    // Lanza TooManyAttemptsException si debe esperar
+    await this.resend2FARateLimitPolicy.checkCooldownOrThrow(userId)
+
+    // 2. Buscar usuario
     const user = await this.usersRepository.findById(userId)
 
     if (!user) {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    // 2. Generar nuevo código
+    // 3. Generar nuevo código con OtpCoreService
     const { code, token } = await this.twoFactorTokenService.generateCode(
       user.id,
     )
 
-    // 3. Enviar código por email
+    // 4. Enviar código por email
     await this.emailService.sendTwoFactorCode({
       to: user.email,
       userName: user.username,
@@ -65,9 +78,14 @@ export class Resend2FACodeUseCase {
       expiresInMinutes: 5,
     })
 
+    // 5. Marcar intento de resend (iniciar cooldown de 60 segundos)
+    await this.resend2FARateLimitPolicy.markResendAttempt(userId)
+
+    // 6. Retornar nuevo tokenId
     return {
-      token,
-      message: 'Nuevo código 2FA enviado',
+      token, // Nuevo tokenId (el anterior sigue válido hasta expirar)
+      message:
+        'Nuevo código 2FA enviado. Espera 60 segundos antes de solicitar otro.',
     }
   }
 }

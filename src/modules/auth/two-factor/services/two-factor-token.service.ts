@@ -1,161 +1,158 @@
 import { Injectable } from '@nestjs/common'
-import * as crypto from 'crypto'
-import { CacheService } from '@core/cache'
+import { OtpCoreService } from '@core/security'
 import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
 
-interface TwoFactorData {
+/**
+ * Payload que guardamos en el OTP para 2FA
+ */
+interface TwoFactorPayload {
   userId: string
-  code: string
 }
 
 /**
  * Servicio de gestión de códigos 2FA (Two-Factor Authentication)
  *
- * ENFOQUE SIMPLIFICADO (solo Redis, sin JWT):
+ * ENFOQUE HÍBRIDO (OtpCoreService):
  * ===========================================
- * - Token: String aleatorio de 64 caracteres hexadecimales
- * - Código: Número aleatorio de 6 dígitos
+ * - Usa OtpCoreService (genérico) para gestión de sesiones OTP
+ * - TokenId: String aleatorio de 64 caracteres hexadecimales
+ * - Código OTP: Número aleatorio de 6 dígitos
  * - Almacenamiento: Redis con TTL
- * - Key: auth:2fa:{token}
- * - Value: JSON {userId, code}
+ * - Key: auth:2fa-login:{tokenId}
+ * - Value: JSON {code, payload: {userId}}
  * - Un solo uso: Se elimina de Redis después de validación exitosa
  *
- * Ventajas sobre JWT + Redis:
- * - Más simple: una sola fuente de verdad (Redis)
- * - Mismo nivel de seguridad: token aleatorio de 256 bits
- * - Menos dependencias: no necesita JWT secret
- * - Más natural: el token ES la key de Redis directamente
- * - Revocable: código se elimina de Redis al usarse
+ * Ventajas de usar OtpCoreService:
+ * - Consistencia con reset-password y otros flujos OTP
+ * - Reutilización de código probado
+ * - Mantenimiento centralizado
+ * - API limpia y estandarizada
  *
  * Seguridad implementada:
  * - Un solo uso: Código se elimina después de validación exitosa
- * - TTL automático: Códigos expiran en 5 minutos
- * - Comparación timing-safe: Previene timing attacks
+ * - TTL automático: Códigos expiran en 5 minutos (300 segundos)
+ * - Rate limiting robusto (ver políticas)
+ * - Control de intentos (máximo 3)
  *
- * NOTA: Rate limiting de 2FA fue ELIMINADO porque:
- * - Login ya tiene rate limiting robusto (5 intentos/15min por usuario)
- * - Códigos expiran en 5 minutos (ventana muy corta)
- * - One-time use previene reutilización
- * - Dispositivos confiables reducen frecuencia de 2FA
+ * Rate Limiting (ver TWO_FACTOR_CONFIG):
+ * - Generación: Máximo 5 códigos cada 15 minutos
+ * - Resend: Espera 60 segundos entre solicitudes
+ * - Verificación: Máximo 3 intentos, luego se revoca el token
  *
  * Variables de entorno:
  * - TWO_FACTOR_CODE_LENGTH: Longitud del código numérico (default: 6)
- * - TWO_FACTOR_CODE_EXPIRES_IN: Tiempo de expiración (default: '5m')
+ * - TWO_FACTOR_CODE_EXPIRES_IN: Tiempo de expiración en segundos (default: 300)
  */
 @Injectable()
 export class TwoFactorTokenService {
+  private readonly contextPrefix = '2fa-login' // Prefijo para Redis
   private readonly codeLength = TWO_FACTOR_CONFIG.code.length
-  private readonly codeExpiry = TWO_FACTOR_CONFIG.code.expiresIn
+  private readonly codeExpiry = TWO_FACTOR_CONFIG.code.expiresIn // En segundos
 
-  constructor(private readonly cacheService: CacheService) {}
+  constructor(private readonly otpCoreService: OtpCoreService) {}
 
   /**
-   * Genera un código 2FA
+   * Genera un código 2FA usando OtpCoreService
    *
-   * Flujo SIMPLE:
-   * 1. Genera un token aleatorio (256 bits = 64 chars hex)
-   * 2. Genera un código numérico aleatorio (6 dígitos)
-   * 3. Almacena en Redis: auth:2fa:{token} → JSON {userId, code}
-   * 4. Devuelve token y código
+   * Flujo:
+   * 1. Crea sesión OTP con OtpCoreService
+   * 2. Devuelve tokenId (handle) y otpCode (código numérico)
+   *
+   * El OtpCoreService internamente:
+   * - Genera tokenId aleatorio (256 bits = 64 chars hex)
+   * - Genera código numérico aleatorio (6 dígitos)
+   * - Almacena en Redis: auth:2fa-login:{tokenId} → JSON {code, payload: {userId}}
    *
    * @param userId - ID del usuario
-   * @returns Objeto con code (para enviar al usuario) y token (para validación)
+   * @returns Objeto con code (para enviar al usuario) y token (tokenId para validación)
    */
   async generateCode(userId: string): Promise<{ code: string; token: string }> {
-    // Generar token aleatorio (256 bits)
-    const token = crypto.randomBytes(32).toString('hex') // 64 chars
+    const payload: TwoFactorPayload = { userId }
 
-    // Generar código numérico aleatorio
-    const code = this.generateNumericCode()
+    const { tokenId, otpCode } =
+      await this.otpCoreService.createSession<TwoFactorPayload>(
+        this.contextPrefix,
+        payload,
+        this.codeExpiry, // TTL en segundos
+        this.codeLength,
+      )
 
-    // Almacenar en Redis con TTL
-    /*  const ttlSeconds = this.jwtTokenHelper.getExpirySeconds(this.codeExpiry)
-    const key = `auth:2fa:${token}`
-    const data: TwoFactorData = { userId, code }
-    await this.cacheService.setJSON(key, data, ttlSeconds)
- */
-    return { code, token }
+    return {
+      code: otpCode,
+      token: tokenId,
+    }
   }
 
   /**
-   * Valida un código 2FA
+   * Valida un código 2FA usando OtpCoreService
    *
-   * Flujo de validación SIMPLIFICADO:
-   * 1. Obtiene datos de Redis usando el token
-   * 2. Verifica que el userId coincida
-   * 3. Compara el código (timing-safe comparison)
-   * 4. Si es válido, elimina el código de Redis (one-time use)
+   * Flujo de validación:
+   * 1. Llama a OtpCoreService.validateSession() con tokenId y código
+   * 2. Verifica que el userId del payload coincida
+   * 3. Retorna true/false
    *
-   * NOTA: No tiene rate limiting porque:
-   * - Login ya protege con rate limiting robusto
-   * - Códigos expiran en 5 minutos (ventana muy corta)
-   * - One-time use previene reutilización
+   * IMPORTANTE: Este método NO elimina el token automáticamente
+   * El token debe ser eliminado manualmente después de:
+   * - Validación exitosa (después de generar tokens JWT)
+   * - Exceso de intentos fallidos (3 intentos)
+   *
+   * Rate limiting se maneja en el Use Case (Verify2FACodeUseCase)
+   * usando el patrón de reset-password
    *
    * @param userId - ID del usuario
    * @param code - Código numérico a validar
-   * @param token - Token (OBLIGATORIO)
-   * @returns true si el código es válido
+   * @param token - TokenId (OBLIGATORIO)
+   * @returns Objeto con isValid y payload
    */
   async validateCode(
     userId: string,
     code: string,
     token: string,
-  ): Promise<boolean> {
-    try {
-      // 1. Obtener datos de Redis
-      const key = `auth:2fa:${token}`
-      const data = await this.cacheService.getJSON<TwoFactorData>(key)
+  ): Promise<{ isValid: boolean; payload: TwoFactorPayload | null }> {
+    const { isValid, payload } =
+      await this.otpCoreService.validateSession<TwoFactorPayload>(
+        this.contextPrefix,
+        token,
+        code,
+      )
 
-      if (!data) {
-        // Token no existe o expiró
-        return false
-      }
-
-      // 2. Verificar userId
-      if (data.userId !== userId) {
-        return false
-      }
-
-      // 3. Comparar códigos (timing-safe comparison)
-      if (!this.secureCompare(code, data.code)) {
-        return false
-      }
-
-      // 4. Código válido - eliminar de Redis (one-time use)
-      await this.cacheService.del(key)
-
-      return true
-    } catch {
-      return false
-    }
-  }
-
-  /**
-   * Genera un código numérico aleatorio
-   */
-  private generateNumericCode(): string {
-    const max = Math.pow(10, this.codeLength)
-    const code = crypto.randomInt(0, max)
-    return code.toString().padStart(this.codeLength, '0')
-  }
-
-  /**
-   * Comparación segura de strings (timing-safe)
-   * Previene timing attacks
-   */
-  private secureCompare(a: string, b: string): boolean {
-    if (a.length !== b.length) {
-      return false
+    if (!isValid || !payload) {
+      return { isValid: false, payload: null }
     }
 
-    return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b))
+    // Verificar que el userId coincida (seguridad adicional)
+    if (payload.userId !== userId) {
+      return { isValid: false, payload: null }
+    }
+
+    return { isValid: true, payload }
   }
 
   /**
-   * Obtiene el TTL restante de un código
+   * Elimina una sesión 2FA manualmente (Token Burning)
+   *
+   * Casos de uso:
+   * - Después de validación exitosa
+   * - Cuando se exceden los intentos permitidos
+   * - Cuando el usuario solicita un nuevo código (revoca el anterior)
+   *
+   * @param token - TokenId a eliminar
    */
-  async getCodeTTL(token: string): Promise<number> {
-    const key = `auth:2fa:${token}`
-    return await this.cacheService.ttl(key)
+  async deleteSession(token: string): Promise<void> {
+    await this.otpCoreService.deleteSession(this.contextPrefix, token)
+  }
+
+  /**
+   * Obtiene el payload sin validar el OTP
+   * Útil para verificaciones previas o logs
+   *
+   * @param token - TokenId
+   * @returns Payload o null si no existe
+   */
+  async getPayload(token: string): Promise<TwoFactorPayload | null> {
+    return await this.otpCoreService.getPayload<TwoFactorPayload>(
+      this.contextPrefix,
+      token,
+    )
   }
 }

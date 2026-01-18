@@ -14,12 +14,8 @@ export * from './controllers/password-reset.controller'
 export * from './use-cases/request-reset/request-reset-password.use-case'
 export * from './use-cases/password-reset/reset-password.use-case'
 
-// Services
-export * from './services/reset-password-token.service'
-
 // Policies
-export * from './policies/reset-password-rate-limit.policy'
-
+export * from './policies'
 // DTOs
 export * from './dtos/request-reset-password.dto'
 export * from './dtos/reset-password.dto'

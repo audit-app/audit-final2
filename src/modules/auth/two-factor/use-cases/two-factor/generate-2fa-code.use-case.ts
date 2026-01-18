@@ -2,6 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { EmailService } from '@core/email'
 import { UuidValidator } from '@core/validators'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
+import { Generate2FARateLimitPolicy } from '../../policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 
@@ -9,21 +10,25 @@ import type { IUsersRepository } from '../../../../users/repositories'
  * Use Case: Generar código 2FA
  *
  * Responsabilidades:
+ * - Verificar rate limiting (máximo 5 códigos cada 15 minutos)
  * - Buscar usuario por email o ID
- * - Generar código numérico de 6 dígitos
+ * - Generar código numérico de 6 dígitos usando OtpCoreService
  * - Almacenar código en Redis con TTL
  * - Enviar código por email
- * - Devolver token para validación posterior
+ * - Devolver tokenId para validación posterior
  *
- * Seguridad:
+ * Seguridad implementada:
+ * - Rate limiting: Máximo 5 códigos cada 15 minutos por usuario
  * - Código expira en 5 minutos (TTL automático)
  * - One-time use (se elimina de Redis después de validar)
- * - El token sirve para vincular el código con la sesión del usuario
+ * - El tokenId sirve para vincular el código con la sesión del usuario
  *
- * NOTA: NO tiene rate limiting porque:
- * - Login ya tiene rate limiting robusto (5 intentos/15min por usuario)
- * - Códigos expiran en 5 minutos (ventana muy corta)
- * - One-time use previene reutilización
+ * Flujo (similar a request-reset-password):
+ * 1. Verificar rate limiting (lanza excepción si excede límite)
+ * 2. Registrar intento (consumir ficha)
+ * 3. Generar código OTP con OtpCoreService
+ * 4. Enviar email con código
+ * 5. Retornar tokenId al frontend
  */
 @Injectable()
 export class Generate2FACodeUseCase {
@@ -32,14 +37,16 @@ export class Generate2FACodeUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly emailService: EmailService,
+    private readonly generate2FARateLimitPolicy: Generate2FARateLimitPolicy,
   ) {}
 
   /**
-   * Ejecuta el flujo de generación de código 2FA
+   * Ejecuta el flujo de generación de código 2FA con rate limiting
    *
    * @param identifier - Email o userId del usuario
-   * @returns Token y mensaje de confirmación
+   * @returns TokenId y mensaje de confirmación
    * @throws NotFoundException si el usuario no existe
+   * @throws TooManyAttemptsException si excede el límite de generación
    */
   async execute(
     identifier: string,
@@ -56,12 +63,19 @@ export class Generate2FACodeUseCase {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    // 2. Generar código 2FA
+    // 2. RATE LIMITING: Verificar límite de generación
+    // Lanza TooManyAttemptsException si excede el límite
+    await this.generate2FARateLimitPolicy.checkLimitOrThrow(user.id)
+
+    // 3. Registrar intento (consumir ficha)
+    await this.generate2FARateLimitPolicy.registerFailure(user.id)
+
+    // 4. Generar código 2FA con OtpCoreService
     const { code, token } = await this.twoFactorTokenService.generateCode(
       user.id,
     )
 
-    // 3. Enviar código por email
+    // 5. Enviar código por email
     await this.emailService.sendTwoFactorCode({
       to: user.email,
       userName: user.username,
@@ -69,8 +83,9 @@ export class Generate2FACodeUseCase {
       expiresInMinutes: 5, // 5 minutos
     })
 
+    // 6. Retornar tokenId al frontend
     return {
-      token,
+      token, // tokenId para usar en verify
       message: 'Código 2FA enviado al email registrado',
     }
   }

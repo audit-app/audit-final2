@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { StandardsRepository } from '../../../repositories/standards.repository'
 import { TemplatesRepository } from '../../../repositories/templates.repository'
-import { StandardNotFoundException, TemplateNotEditableException } from '../../../exceptions'
+import {
+  StandardNotFoundException,
+  TemplateNotEditableException,
+} from '../../../exceptions'
 import type { StandardEntity } from '../../../entities/standard.entity'
 
 /**
@@ -26,7 +29,9 @@ export class DeactivateStandardUseCase {
     }
 
     // 2. Validar que la plantilla sea editable
-    const template = await this.templatesRepository.findById(standard.templateId)
+    const template = await this.templatesRepository.findById(
+      standard.templateId,
+    )
     if (!template?.isEditable) {
       throw new TemplateNotEditableException(
         standard.templateId,
