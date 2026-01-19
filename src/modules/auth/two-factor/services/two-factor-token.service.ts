@@ -15,12 +15,14 @@ interface TwoFactorPayload {
  * ENFOQUE HÍBRIDO (OtpCoreService):
  * ===========================================
  * - Usa OtpCoreService (genérico) para gestión de sesiones OTP
- * - TokenId: String aleatorio de 64 caracteres hexadecimales
+ * - TokenId: String aleatorio de 64 caracteres hexadecimales (NO es JWT)
  * - Código OTP: Número aleatorio de 6 dígitos
  * - Almacenamiento: Redis con TTL
  * - Key: auth:2fa-login:{tokenId}
  * - Value: JSON {code, payload: {userId}}
  * - Un solo uso: Se elimina de Redis después de validación exitosa
+ *
+ * IMPORTANTE: "token" siempre se refiere a tokenId (64 caracteres), NO a JWT
  *
  * Ventajas de usar OtpCoreService:
  * - Consistencia con reset-password y otros flujos OTP
@@ -32,12 +34,11 @@ interface TwoFactorPayload {
  * - Un solo uso: Código se elimina después de validación exitosa
  * - TTL automático: Códigos expiran en 5 minutos (300 segundos)
  * - Rate limiting robusto (ver políticas)
- * - Control de intentos (máximo 3)
+ * - Control de intentos (máximo 3 intentos de verificación)
  *
  * Rate Limiting (ver TWO_FACTOR_CONFIG):
- * - Generación: Máximo 5 códigos cada 15 minutos
  * - Resend: Espera 60 segundos entre solicitudes
- * - Verificación: Máximo 3 intentos, luego se revoca el token
+ * - Verificación: Máximo 3 intentos, luego se revoca el tokenId
  *
  * Variables de entorno:
  * - TWO_FACTOR_CODE_LENGTH: Longitud del código numérico (default: 6)
@@ -146,13 +147,38 @@ export class TwoFactorTokenService {
    * Obtiene el payload sin validar el OTP
    * Útil para verificaciones previas o logs
    *
-   * @param token - TokenId
+   * @param tokenId - TokenId (64 caracteres hexadecimales)
    * @returns Payload o null si no existe
    */
-  async getPayload(token: string): Promise<TwoFactorPayload | null> {
+  async getPayload(tokenId: string): Promise<TwoFactorPayload | null> {
     return await this.otpCoreService.getPayload<TwoFactorPayload>(
       this.contextPrefix,
-      token,
+      tokenId,
     )
+  }
+
+  /**
+   * Obtiene la sesión completa (código + payload) sin validar
+   * Útil para resend (reenviar el mismo código)
+   *
+   * @param tokenId - TokenId (64 caracteres hexadecimales)
+   * @returns Objeto con código OTP y payload, o null si no existe
+   */
+  async getSession(
+    tokenId: string,
+  ): Promise<{ code: string; payload: TwoFactorPayload } | null> {
+    const session = await this.otpCoreService.getSession<TwoFactorPayload>(
+      this.contextPrefix,
+      tokenId,
+    )
+
+    if (!session) {
+      return null
+    }
+
+    return {
+      code: session.otpCode,
+      payload: session.payload,
+    }
   }
 }

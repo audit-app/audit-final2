@@ -117,7 +117,11 @@ export class LoginUseCase {
 
     // 8. GENERAR TOKENS (Flujo normal o Trusted Device)
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, connection)
+      await this.tokensService.generateTokenPair(
+        user,
+        connection,
+        dto.rememberMe,
+      )
 
     return {
       response: {

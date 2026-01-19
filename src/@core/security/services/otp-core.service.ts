@@ -108,6 +108,26 @@ export class OtpCoreService {
   }
 
   /**
+   * Obtiene la sesión completa (código + payload) sin validar
+   * Útil para resend donde necesitamos reenviar el mismo código
+   */
+  async getSession<T>(
+    contextPrefix: string,
+    tokenId: string,
+  ): Promise<{ otpCode: string; payload: T } | null> {
+    const key = this.buildKey(contextPrefix, tokenId)
+    const storedJson = await this.cacheService.get(key)
+
+    if (!storedJson) return null
+
+    const data = JSON.parse(storedJson) as OtpStorage<T>
+    return {
+      otpCode: data.code,
+      payload: data.payload,
+    }
+  }
+
+  /**
    * Elimina la sesión manualmente (Token Burning)
    */
   async deleteSession(contextPrefix: string, tokenId: string): Promise<void> {

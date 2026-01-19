@@ -1,24 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsString, IsNotEmpty, MaxLength } from 'class-validator'
+import { IsString, IsNotEmpty, MaxLength, MinLength } from 'class-validator'
 
-/**
- * DTO para generar un código 2FA
- *
- * El usuario proporciona su identificador (userId o email)
- * El sistema:
- * 1. Genera un código numérico aleatorio
- * 2. Almacena el código en Redis con TTL
- * 3. Envía el código por email
- * 4. Devuelve un token JWT para validación posterior
- */
 export class Generate2FACodeDto {
   @ApiProperty({
-    description: 'ID del usuario o email',
-    example: 'usuario@example.com',
-    maxLength: 255,
+    description: 'Token ID de reset password (64 caracteres hexadecimales)',
+    example: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a7b8c9d0e1f2',
+    minLength: 64,
+    maxLength: 64,
   })
-  @IsString({ message: 'El identificador debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'El email o ID de usuario es requerido' })
-  @MaxLength(255)
-  identifier: string
+  @IsString({ message: 'El tokenId debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El tokenId es requerido' })
+  @MinLength(64, { message: 'El tokenId debe tener 64 caracteres' })
+  @MaxLength(64, { message: 'El tokenId debe tener 64 caracteres' })
+  tokenId: string
 }

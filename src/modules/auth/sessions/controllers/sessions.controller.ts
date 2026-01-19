@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Req,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common'
 import {
   ApiTags,
@@ -22,8 +23,10 @@ import {
   RevokeAllSessionsUseCase,
 } from '../use-cases'
 import { SessionResponseDto, RevokeSessionDto } from '../dtos'
-import { JwtAuthGuard, Public } from '../../shared'
-import { JwtService } from '@nestjs/jwt'
+import { JwtAuthGuard } from '../../shared'
+
+import { TokensService } from '../../login'
+import { CookieService } from '@core/http/services/cookie.service'
 
 /**
  * SessionsController
@@ -44,7 +47,8 @@ export class SessionsController {
     private readonly listSessionsUseCase: ListSessionsUseCase,
     private readonly revokeSessionUseCase: RevokeSessionUseCase,
     private readonly revokeAllSessionsUseCase: RevokeAllSessionsUseCase,
-    private readonly jwtService: JwtService,
+    private readonly tokensService: TokensService,
+    private readonly cookieService: CookieService,
   ) {}
 
   /**
@@ -75,13 +79,14 @@ export class SessionsController {
   async listSessions(@Req() req: Request): Promise<SessionResponseDto[]> {
     const userId = req.user!.sub
 
-    // Obtener el tokenId actual desde el refresh token (si existe en cookies/headers)
-    // NOTA: El tokenId solo está en el refresh token, no en el access token
-    // Por ahora, pasamos undefined (todas las sesiones se marcan como no actuales)
-    const currentTokenId = this.jwtService.decode(req.cookies.refreshToken)
-      ?.tokenId as string | undefined
+    const token = this.cookieService.getRefreshToken(req)
 
-    return await this.listSessionsUseCase.execute(userId, currentTokenId)
+    if (!token) {
+      throw new UnauthorizedException('Refresh token no encontrado')
+    }
+    const payload = this.tokensService.decodeRefreshToken(token)
+
+    return await this.listSessionsUseCase.execute(userId, payload.tokenId)
   }
 
   /**

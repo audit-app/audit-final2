@@ -1,65 +1,89 @@
 import { Injectable } from '@nestjs/common'
-import { Request, Response } from 'express'
+import { ConfigService } from '@nestjs/config'
+import { Request, Response, CookieOptions } from 'express'
 
-/**
- * Servicio centralizado para manejo de cookies HTTP-only
- *
- * Maneja cookies de forma segura con las mejores prácticas:
- * - httpOnly: true - No accesible desde JavaScript (previene XSS)
- * - secure: true (producción) - Solo sobre HTTPS
- * - sameSite: 'strict' - Protección contra CSRF
- * - maxAge configurab le - Tiempo de expiración
- *
- * Actualmente se usa para:
- * - Refresh tokens (JWT de larga duración)
- */
 @Injectable()
 export class CookieService {
+  private readonly isProduction: boolean
+
+  // Nombres de cookies (Constantes)
   private readonly REFRESH_TOKEN_COOKIE = 'refreshToken'
-  private readonly isProduction = process.env.NODE_ENV === 'production'
+  private readonly TRUSTED_DEVICE_COOKIE = 'trustedDevice'
 
-  /**
-   * Establece una cookie con el refresh token
-   *
-   * @param res - Response de Express
-   * @param refreshToken - Token JWT a almacenar
-   * @param maxAgeMs - Tiempo de expiración en milisegundos (default: 7 días)
-   */
-  setRefreshToken(
-    res: Response,
-    refreshToken: string,
-    maxAgeMs: number = 7 * 24 * 60 * 60 * 1000,
-  ): void {
-    res.cookie(this.REFRESH_TOKEN_COOKIE, refreshToken, {
-      httpOnly: true,
-      secure: this.isProduction,
-      sameSite: 'strict',
-      maxAge: maxAgeMs,
-      path: '/',
-    })
+  constructor(private readonly configService: ConfigService) {
+    // 1. Usamos ConfigService para el entorno
+    this.isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production'
   }
 
-  /**
-   * Elimina la cookie del refresh token
-   *
-   * @param res - Response de Express
-   */
-  clearRefreshToken(res: Response): void {
-    res.clearCookie(this.REFRESH_TOKEN_COOKIE, {
-      httpOnly: true,
-      secure: this.isProduction,
-      sameSite: 'strict',
-      path: '/',
-    })
+  // =================================================================
+  // REFRESH TOKEN
+  // =================================================================
+  setRefreshToken(res: Response, token: string, rememberMe: boolean): void {
+    const options = this.getSafeCookieOptions()
+
+    if (rememberMe) {
+      // 2. Leemos del ENV. Importante: Redis suele configurarse en SEGUNDOS.
+      // Multiplicamos por 1000 para pasar a MILISEGUNDOS para la cookie.
+      const expiresInSeconds = this.configService.get<number>(
+        'JWT_REFRESH_EXPIRATION_TIME',
+        604800,
+      ) // Default 7 días
+      options.maxAge = expiresInSeconds * 1000
+    }
+
+    res.cookie(this.REFRESH_TOKEN_COOKIE, token, options)
   }
 
-  /**
-   * Obtiene el refresh token de la cookie
-   *
-   * @param req - Request de Express
-   * @returns Refresh token si existe, undefined si no
-   */
   getRefreshToken(req: Request): string | undefined {
-    return req.cookies?.[this.REFRESH_TOKEN_COOKIE]
+    return this.getCookieValue(req, this.REFRESH_TOKEN_COOKIE)
+  }
+
+  clearRefreshToken(res: Response): void {
+    // Para borrar, no necesitamos el maxAge, pero sí path y domain si existen
+    const options = this.getSafeCookieOptions()
+    res.clearCookie(this.REFRESH_TOKEN_COOKIE, options)
+  }
+
+  // =================================================================
+  // TRUSTED DEVICE (2FA)
+  // =================================================================
+  setTrustedDeviceToken(res: Response, token: string): void {
+    const options = this.getSafeCookieOptions()
+
+    // 3. Leemos del ENV específico para 2FA
+    // Ej: TWO_FACTOR_TRUSTED_DEVICE_EXPIRATION = 7776000 (90 días en segundos)
+    const expiresInSeconds = this.configService.get<number>(
+      'TWO_FACTOR_TRUSTED_DEVICE_EXPIRATION',
+      7776000,
+    )
+
+    options.maxAge = expiresInSeconds * 1000
+
+    res.cookie(this.TRUSTED_DEVICE_COOKIE, token, options)
+  }
+
+  getTrustedDeviceToken(req: Request): string | undefined {
+    return this.getCookieValue(req, this.TRUSTED_DEVICE_COOKIE)
+  }
+
+  // =================================================================
+  // HELPERS
+  // =================================================================
+
+  private getSafeCookieOptions(): CookieOptions {
+    return {
+      httpOnly: true,
+      secure: this.isProduction,
+      // 4. SameSite: 'Strict' es muy seguro, pero considera 'Lax' si tienes problemas
+      // con enlaces desde correos electrónicos. Para APIs internas, 'Strict' está bien.
+      sameSite: 'strict',
+      path: '/',
+    }
+  }
+
+  private getCookieValue(req: Request, key: string): string | undefined {
+    const value = req.cookies?.[key] as unknown
+    return typeof value === 'string' ? value : undefined
   }
 }

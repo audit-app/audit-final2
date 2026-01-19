@@ -9,7 +9,10 @@ import ms from 'ms'
 import { ConnectionMetadataService } from '@core/common'
 import type { ConnectionMetadata } from '@core/common'
 import { LoggerService } from '@core/logger'
-import { TokenStorageRepository } from './token-storage.repository'
+import {
+  StoredSession,
+  TokenStorageRepository,
+} from './token-storage.repository'
 import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
 import { InvalidTokenException } from '../exceptions'
@@ -37,6 +40,7 @@ export class TokensService {
   async generateTokenPair(
     user: UserEntity,
     connection: ConnectionMetadata,
+    rememberMe: boolean,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     const tokenId = this.tokenStorage.generateTokenId()
 
@@ -73,15 +77,27 @@ export class TokensService {
     const parsedMetadata = this.connectionMetadataService.parse(connection)
 
     // Guardar en Redis (adaptamos ParsedConnectionMetadata a SessionMetadata)
-    await this.tokenStorage.save(user.id, tokenId, ttlSeconds, {
-      ip: parsedMetadata.ip,
-      userAgent: parsedMetadata.userAgent,
-      browser: parsedMetadata.browser,
-      os: parsedMetadata.os,
-      device: parsedMetadata.device,
-    })
+    await this.tokenStorage.save(
+      user.id,
+      tokenId,
+      ttlSeconds,
+      {
+        ip: parsedMetadata.ip,
+        userAgent: parsedMetadata.userAgent,
+        browser: parsedMetadata.browser,
+        os: parsedMetadata.os,
+        device: parsedMetadata.device,
+      },
+      rememberMe,
+    )
 
     return { accessToken, refreshToken }
+  }
+  async getStoredSession(
+    userId: string,
+    tokenId: string,
+  ): Promise<StoredSession | null> {
+    return this.tokenStorage.getSession(userId, tokenId)
   }
 
   // --- BLACKLIST (SOLO PARA ACCESS TOKENS) ---

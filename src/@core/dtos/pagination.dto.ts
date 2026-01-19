@@ -58,9 +58,7 @@ export class PaginationDto {
    */
   @IsOptional()
   @Transform(({ value }) => {
-    if (value === 'true') return true
-    if (value === 'false') return false
-    return Boolean(value)
+    return value === 'true' || value === true || value === 1 || value === '1'
   })
   @IsBoolean()
   all?: boolean = false

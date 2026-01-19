@@ -1,5 +1,7 @@
 import { IsString, IsNotEmpty, MaxLength, IsOptional } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Transform } from 'class-transformer'
+import { IsBoolean } from '@core/i18n'
 
 /**
  * DTO para el login de usuarios
@@ -30,13 +32,14 @@ export class LoginDto {
   password: string
 
   @ApiPropertyOptional({
-    description:
-      'Fingerprint del dispositivo (opcional, para trusted devices). Si no se proporciona, el backend lo generará.',
-    example: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234',
-    maxLength: 64,
+    description: '¿Recuérdame? (opcional)',
+    example: true,
+    default: false,
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(64)
-  deviceFingerprint?: string
+  @Transform(({ value }) => {
+    return value === 'true' || value === true || value === 1 || value === '1'
+  })
+  @IsBoolean()
+  rememberMe: boolean = false
 }

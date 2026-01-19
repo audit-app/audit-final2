@@ -26,7 +26,7 @@ import {
   Generate2FACodeUseCase,
   Verify2FACodeUseCase,
   Resend2FACodeUseCase,
-  Generate2FARateLimitPolicy,
+  // Generate2FARateLimitPolicy, // TODO: Implementar si se necesita rate limiting en generate
   Resend2FARateLimitPolicy,
 } from './two-factor'
 
@@ -150,7 +150,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // ========================================
     LoginRateLimitPolicy,
     RequestResetPasswordRateLimitPolicy,
-    Generate2FARateLimitPolicy,
+    // Generate2FARateLimitPolicy, // TODO: Implementar si se necesita
     Resend2FARateLimitPolicy,
     // ========================================
     // Use Cases

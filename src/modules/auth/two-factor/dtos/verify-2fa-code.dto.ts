@@ -15,16 +15,17 @@ import {
  *
  * El usuario proporciona:
  * 1. userId - ID del usuario que recibió el código
- * 2. code - Código numérico recibido por email
- * 3. token - Token JWT REQUERIDO (vincula sesión con código)
+ * 2. code - Código numérico de 6 dígitos recibido por email
+ * 3. token - TokenId de 64 caracteres (NO es JWT, es el identificador de sesión 2FA)
  *
  * El sistema valida:
- * 1. JWT (firma y expiración) - OBLIGATORIO
- * 2. Código existe en Redis y no ha expirado
- * 3. Código coincide con el tokenId del JWT
- * 4. Elimina el código de Redis (un solo uso)
+ * 1. TokenId existe en Redis (sesión 2FA válida)
+ * 2. Código coincide con el almacenado en Redis
+ * 3. UserId coincide con el del payload
+ * 4. Control de intentos: máximo 3 intentos
+ * 5. Elimina el tokenId de Redis después de validación exitosa (un solo uso)
  *
- * SEGURIDAD: El token es obligatorio para prevenir ataques sin sesión
+ * SEGURIDAD: El tokenId es obligatorio para vincular el código con la sesión del usuario
  */
 export class Verify2FACodeDto {
   @ApiProperty({
@@ -55,16 +56,17 @@ export class Verify2FACodeDto {
 
   @ApiProperty({
     description:
-      'Token JWT requerido para validación (vincula sesión con código)',
-    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      'TokenId de 64 caracteres hexadecimales (NO es JWT, es el identificador de sesión 2FA). ' +
+      'Este tokenId se recibe al hacer login cuando 2FA está habilitado.',
+    example: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd',
     required: true,
-    minLength: 10,
-    maxLength: 1000,
+    minLength: 64,
+    maxLength: 64,
   })
   @IsString({ message: 'El token debe ser una cadena de texto' })
   @IsNotEmpty({ message: 'El token es requerido' })
-  @MinLength(10)
-  @MaxLength(1000)
+  @MinLength(64, { message: 'El tokenId debe tener 64 caracteres' })
+  @MaxLength(64, { message: 'El tokenId debe tener 64 caracteres' })
   token: string
 
   @ApiPropertyOptional({

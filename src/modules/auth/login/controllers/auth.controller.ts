@@ -95,7 +95,7 @@ export class AuthController {
     // Configurar refresh token en HTTP-only cookie (solo si existe)
     // Si requiere 2FA, no hay refreshToken todavía
     if (refreshToken) {
-      this.cookieService.setRefreshToken(res, refreshToken)
+      this.cookieService.setRefreshToken(res, refreshToken, loginDto.rememberMe)
     }
 
     // Retornar solo access token y datos del usuario
@@ -156,7 +156,11 @@ export class AuthController {
     )
 
     // Setear nuevo refresh token (rotation)
-    this.cookieService.setRefreshToken(res, result.refreshToken)
+    this.cookieService.setRefreshToken(
+      res,
+      result.refreshToken,
+      result.rememberMe,
+    )
 
     // Retornar nuevo access token
     return {

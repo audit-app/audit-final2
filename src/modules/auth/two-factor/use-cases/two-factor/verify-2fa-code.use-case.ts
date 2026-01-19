@@ -154,7 +154,11 @@ export class Verify2FACodeUseCase {
     }
 
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, connection)
+      await this.tokensService.generateTokenPair(
+        user,
+        connection,
+        false, // rememberMe: false (no hay opción de recordar en 2FA)
+      )
 
     return {
       valid: true,

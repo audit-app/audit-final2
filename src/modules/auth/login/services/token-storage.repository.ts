@@ -16,6 +16,7 @@ export interface StoredSession extends SessionMetadata {
   userId: string
   createdAt: number
   lastActiveAt: number
+  rememberMe: boolean
 }
 
 /**
@@ -56,6 +57,7 @@ export class TokenStorageRepository {
     tokenId: string,
     ttl: number,
     metadata: SessionMetadata,
+    rememberMe: boolean,
   ): Promise<void> {
     const key = this.getKey(userId, tokenId)
     const setKey = this.getUserSetKey(userId)
@@ -86,6 +88,7 @@ export class TokenStorageRepository {
       tokenId,
       createdAt: Date.now(),
       lastActiveAt: Date.now(),
+      rememberMe,
     }
 
     // 2. Guardar la data real
@@ -206,6 +209,18 @@ export class TokenStorageRepository {
 
     // 6. Ordenar por último uso (más reciente primero)
     return validSessions.sort((a, b) => b.lastActiveAt - a.lastActiveAt)
+  }
+  async getSession(
+    userId: string,
+    tokenId: string,
+  ): Promise<StoredSession | null> {
+    const key = this.getKey(userId, tokenId)
+
+    const setKey = this.getUserSetKey(userId)
+    const inSet = await this.cacheService.sismember(setKey, tokenId)
+    if (!inSet) return null
+
+    return await this.cacheService.getJSON<StoredSession>(key)
   }
 
   // --- BLACKLIST (Global) ---

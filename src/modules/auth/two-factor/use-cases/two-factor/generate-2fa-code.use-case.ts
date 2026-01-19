@@ -2,7 +2,7 @@ import { Injectable, Inject, NotFoundException } from '@nestjs/common'
 import { EmailService } from '@core/email'
 import { UuidValidator } from '@core/validators'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
-import { Generate2FARateLimitPolicy } from '../../policies'
+// import { Generate2FARateLimitPolicy } from '../../policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 
@@ -37,7 +37,7 @@ export class Generate2FACodeUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly emailService: EmailService,
-    private readonly generate2FARateLimitPolicy: Generate2FARateLimitPolicy,
+    // private readonly generate2FARateLimitPolicy: Generate2FARateLimitPolicy,
   ) {}
 
   /**
@@ -65,10 +65,11 @@ export class Generate2FACodeUseCase {
 
     // 2. RATE LIMITING: Verificar límite de generación
     // Lanza TooManyAttemptsException si excede el límite
-    await this.generate2FARateLimitPolicy.checkLimitOrThrow(user.id)
+    // TODO: Implementar Generate2FARateLimitPolicy si se necesita
+    // await this.generate2FARateLimitPolicy.checkLimitOrThrow(user.id)
 
     // 3. Registrar intento (consumir ficha)
-    await this.generate2FARateLimitPolicy.registerFailure(user.id)
+    // await this.generate2FARateLimitPolicy.registerFailure(user.id)
 
     // 4. Generar código 2FA con OtpCoreService
     const { code, token } = await this.twoFactorTokenService.generateCode(

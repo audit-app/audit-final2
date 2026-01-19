@@ -29,18 +29,22 @@ export class RefreshTokenUseCase {
   async execute(
     oldRefreshToken: string,
     connection: ConnectionMetadata,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{
+    accessToken: string
+    refreshToken: string
+    rememberMe: boolean
+  }> {
     // 1. ✅ Verificar y decodificar (CENTRALIZADO en TokensService)
     // El manejo de errores JWT y logs está dentro del servicio
     const payload = this.tokensService.verifyRefreshToken(oldRefreshToken)
 
     // 2. Verificar existencia en Redis (Revocación / Reuso)
-    const isValid = await this.tokensService.validateRefreshToken(
+    const storedSession = await this.tokensService.getStoredSession(
       payload.sub,
       payload.tokenId,
     )
 
-    if (!isValid) {
+    if (!storedSession) {
       // ⚠️ Alerta de Seguridad: Token válido pero revocado
       // El token tiene firma válida pero ya no existe (ya fue usado).
       // Alguien está intentando reusar un token viejo (Replay Attack).
@@ -62,11 +66,11 @@ export class RefreshTokenUseCase {
 
     // 4. ROTATION: Revocar el refresh token viejo
     await this.tokensService.revokeRefreshToken(payload.sub, payload.tokenId)
-
+    const rememberMe = storedSession.rememberMe ?? false
     // 5. Generar nuevo par de tokens
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, connection)
+      await this.tokensService.generateTokenPair(user, connection, rememberMe)
 
-    return { accessToken, refreshToken }
+    return { accessToken, refreshToken, rememberMe }
   }
 }

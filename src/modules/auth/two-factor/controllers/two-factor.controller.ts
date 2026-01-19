@@ -4,13 +4,11 @@ import {
   HttpCode,
   HttpStatus,
   Post,
-  UseGuards,
 } from '@nestjs/common'
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
 import { Generate2FACodeDto, Verify2FACodeDto, Resend2FACodeDto } from '../dtos'
-import { Public, GetUser } from '../../shared/decorators'
-import { JwtAuthGuard } from '../../shared/guards'
+import { Public } from '../../shared/decorators'
 import {
   Generate2FACodeUseCase,
   Verify2FACodeUseCase,
@@ -33,57 +31,6 @@ export class TwoFactorController {
     private readonly verifyUseCase: Verify2FACodeUseCase,
     private readonly resendUseCase: Resend2FACodeUseCase,
   ) {}
-
-  /**
-   * POST /auth/2fa/generate
-   *
-   * Genera un código 2FA y lo envía por email
-   * Devuelve un token JWT para validación posterior
-   *
-   * @param dto - Email o userId
-   * @returns Token JWT y mensaje de confirmación
-   *
-   * @example
-   * ```json
-   * POST /auth/2fa/generate
-   * {
-   *   "identifier": "usuario@example.com"
-   * }
-   * ```
-   */
-  @Public()
-  @Post('generate')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Generar código 2FA' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Código 2FA generado y enviado por email',
-    schema: {
-      properties: {
-        token: {
-          type: 'string',
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        },
-        message: {
-          type: 'string',
-          example: 'Código 2FA enviado al email registrado',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Usuario no encontrado',
-  })
-  @ApiResponse({
-    status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiados intentos de generación',
-  })
-  async generate(
-    @Body() dto: Generate2FACodeDto,
-  ): Promise<{ token: string; message: string }> {
-    return await this.generateUseCase.execute(dto.identifier)
-  }
 
   /**
    * POST /auth/2fa/verify
@@ -144,53 +91,55 @@ export class TwoFactorController {
   /**
    * POST /auth/2fa/resend
    *
-   * Reenvía un código 2FA
-   * Revoca el código anterior y genera uno nuevo
+   * Reenvía el MISMO código 2FA existente
+   * NO genera un nuevo código, reenvía el que ya existe en Redis
    *
-   * @param userId - ID del usuario autenticado
-   * @returns Nuevo token JWT
+   * @param dto - DTO con tokenId (64 caracteres)
+   * @returns Mensaje de confirmación (el tokenId NO cambia)
    *
    * @example
    * ```json
    * POST /auth/2fa/resend
-   * Authorization: Bearer <access-token>
+   * {
+   *   "tokenId": "a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd"
+   * }
    * ```
    */
+  @Public()
   @Post('resend')
   @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: 'Reenviar código 2FA' })
+  @ApiOperation({
+    summary: 'Reenviar código 2FA existente',
+    description:
+      'Reenvía el MISMO código 2FA por email. NO genera un nuevo código ni tokenId. ' +
+      'El usuario debe usar el mismo tokenId que recibió originalmente.',
+  })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Nuevo código 2FA enviado',
+    description: 'Código 2FA reenviado (mismo código)',
     schema: {
       properties: {
-        token: {
-          type: 'string',
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        },
         message: {
           type: 'string',
-          example: 'Nuevo código 2FA enviado',
+          example:
+            'Código 2FA reenviado. Espera 60 segundos antes de solicitar otro.',
         },
       },
     },
   })
   @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
+    status: HttpStatus.BAD_REQUEST,
+    description: 'TokenId inválido o expirado',
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
-    description: 'Usuario no encontrado',
+    description: 'Usuario no encontrado o sesión 2FA expirada',
   })
   @ApiResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
-    description: 'Demasiados intentos de reenvío',
+    description: 'Debe esperar 60 segundos antes de reenviar',
   })
-  async resend(
-    @GetUser('sub') userId: string,
-  ): Promise<{ token: string; message: string }> {
-    return await this.resendUseCase.execute(userId)
+  async resend(@Body() dto: Resend2FACodeDto): Promise<{ message: string }> {
+    return await this.resendUseCase.execute(dto.tokenId)
   }
 }
