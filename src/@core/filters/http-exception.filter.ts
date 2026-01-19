@@ -8,23 +8,45 @@ import {
 import { Request, Response } from 'express'
 import { LoggerService } from '../logger/logger.service'
 
+// 1. Definimos una interfaz para el Error de DB (Postgres/TypeORM)
+interface DatabaseError extends Error {
+  code?: string
+  detail?: string
+  table?: string
+  constraint?: string
+}
+
+// 2. Tipado estricto para la respuesta
 interface ErrorResponse {
   statusCode: number
   timestamp: string
   path: string
   method: string
-  message: string
+  message: string | string[]
   error?: string
-  errors?: string[] // Array de errores de validación simples
-  validationErrors?: unknown // Errores de validación complejos (ej: import Excel)
-  summary?: unknown // Resumen de validación (ej: import Excel)
+  errors?: string[]
+  validationErrors?: Record<string, unknown>
+  summary?: Record<string, unknown>
   details?: unknown
 }
 
-/**
- * Filtro global de excepciones que captura todos los errores
- * de la aplicación, los loguea y formatea la respuesta al cliente
- */
+// 3. Interfaz interna para el resultado del parsing
+interface ParsedException {
+  statusCode: number
+  message: string | string[]
+  error: string
+  details?: unknown
+  validationErrors?: Record<string, unknown>
+  summary?: Record<string, unknown>
+}
+
+// 4. Interfaz para el contexto de usuario en logs
+interface UserContext {
+  userId: string
+  userEmail: string
+  userName: string
+}
+
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   constructor(private readonly logger: LoggerService) {}
@@ -35,102 +57,95 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>()
 
     // Determinar el status code y mensaje
-    const { statusCode, message, error, details, validationErrors, summary } =
-      this.parseException(exception)
+    const parsed = this.parseException(exception)
 
-    // Construir contexto de usuario
-    const user = request.user as any
-    const userContext = user
+    // AQUI ESTA LA MEJORA PRINCIPAL:
+    // Ya no usamos 'as any'. TypeScript sabe que request.user es JwtPayload | undefined
+    // gracias a tu archivo de declaración.
+    const user = request.user
+
+    const userContext: UserContext | undefined = user
       ? {
-          userId: user.sub as string,
-          userEmail: user.email as string,
-          userName: user.username as string,
+          userId: user.sub, // TypeScript ahora valida que 'sub' exista en JwtPayload
+          userEmail: user.email, // TypeScript valida 'email'
+          userName: user.username, // TypeScript valida 'username'
         }
       : undefined
 
     // Loguear la excepción
+    this.logException(exception, parsed, request, userContext)
+
+    // Construir respuesta de error
+    const errorResponse: ErrorResponse = {
+      statusCode: parsed.statusCode,
+      timestamp: new Date().toISOString(),
+      path: request.url,
+      method: request.method,
+      message: Array.isArray(parsed.message)
+        ? 'Error de validación'
+        : parsed.message,
+      error: parsed.error,
+    }
+
+    // Asignación condicional limpia
+    if (parsed.validationErrors)
+      errorResponse.validationErrors = parsed.validationErrors
+    if (Array.isArray(parsed.message)) errorResponse.errors = parsed.message
+    if (parsed.summary) errorResponse.summary = parsed.summary
+
+    // Detalles solo en desarrollo
+    if (parsed.details && process.env.NODE_ENV !== 'production') {
+      errorResponse.details = parsed.details
+    }
+
+    response.status(parsed.statusCode).json(errorResponse)
+  }
+
+  /**
+   * Lógica de Log separada para mantener el catch limpio
+   */
+  private logException(
+    exception: unknown,
+    parsed: ParsedException,
+    request: Request,
+    userContext: UserContext | undefined,
+  ): void {
+    const logData = {
+      statusCode: parsed.statusCode,
+      path: request.url,
+      method: request.method,
+      user: userContext,
+    }
+
     if (exception instanceof Error) {
       this.logger.logException(exception, {
         req: request,
         user: userContext,
-        additionalData: {
-          statusCode,
-          path: request.url,
-          method: request.method,
-        },
+        additionalData: logData,
       })
     } else {
-      // Si no es un Error, loguear como unhandled
       this.logger.logUnhandledException(
         new Error(
           typeof exception === 'string' ? exception : 'Unknown exception',
         ),
         {
           originalException: exception,
-          statusCode,
-          path: request.url,
-          method: request.method,
-          user: userContext,
+          ...logData,
         },
       )
     }
-
-    // Construir respuesta de error
-    const errorResponse: ErrorResponse = {
-      statusCode,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      // Si message es un array (errores de validación), mover a campo 'errors'
-      message: Array.isArray(message) ? 'Error de validación' : message,
-      error,
-    }
-
-    // Si hay errores de validación complejos (ej: import Excel)
-    if (validationErrors) {
-      errorResponse.validationErrors = validationErrors
-    }
-    // Si message era un array simple, agregarlo en campo 'errors'
-    else if (Array.isArray(message)) {
-      errorResponse.errors = message
-    }
-
-    // Si hay summary de validación (ej: import Excel)
-    if (summary) {
-      errorResponse.summary = summary
-    }
-
-    // Agregar detalles solo en desarrollo
-    if (details && process.env.NODE_ENV !== 'production') {
-      errorResponse.details = details
-    }
-
-    // Enviar respuesta
-    response.status(statusCode).json(errorResponse)
   }
 
-  /**
-   * Parsea la excepción y extrae información útil
-   */
-  private parseException(exception: unknown): {
-    statusCode: number
-    message: string | string[]
-    error: string
-    details?: unknown
-    validationErrors?: unknown
-    summary?: unknown
-  } {
-    // HttpException de NestJS
+  private parseException(exception: unknown): ParsedException {
+    // 1. HttpException de NestJS
     if (exception instanceof HttpException) {
       const status = exception.getStatus()
       const response = exception.getResponse()
 
-      // Si la respuesta es un objeto con mensaje
       if (typeof response === 'object' && response !== null) {
         const responseObj = response as Record<string, unknown>
 
-        // Detectar si es un error de validación complejo (import Excel)
-        // Tiene 'errors' como objeto (no array) y 'summary'
+        // Detección de errores complejos (Excel, imports masivos)
         const hasComplexValidation =
           responseObj.errors &&
           typeof responseObj.errors === 'object' &&
@@ -138,34 +153,28 @@ export class HttpExceptionFilter implements ExceptionFilter {
           responseObj.summary
 
         if (hasComplexValidation) {
-          // Caso especial: errores de importación de Excel
           return {
             statusCode: status,
             message: (responseObj.message as string) || exception.message,
             error: (responseObj.error as string) || exception.name,
-            validationErrors: responseObj.errors,
-            summary: responseObj.summary,
+            validationErrors: responseObj.errors as Record<string, unknown>,
+            summary: responseObj.summary as Record<string, unknown>,
           }
         }
 
-        // Caso normal: extraer información adicional para details (no duplicar)
+        // Extracción segura de detalles
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { message, error, statusCode: _, ...additionalInfo } = responseObj
-        const hasAdditionalInfo = Object.keys(additionalInfo).length > 0
+        const { message, error, statusCode, ...additionalInfo } = responseObj
 
         return {
           statusCode: status,
-          message:
-            (responseObj.message as string | string[]) || exception.message,
-          error: (responseObj.error as string) || exception.name,
+          message: (message as string | string[]) || exception.message,
+          error: (error as string) || exception.name,
           details:
-            process.env.NODE_ENV !== 'production' && hasAdditionalInfo
-              ? additionalInfo
-              : undefined,
+            Object.keys(additionalInfo).length > 0 ? additionalInfo : undefined,
         }
       }
 
-      // Si la respuesta es un string
       return {
         statusCode: status,
         message: typeof response === 'string' ? response : exception.message,
@@ -173,122 +182,83 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    // Error de base de datos (TypeORM QueryFailedError)
+    // 2. Error de Base de Datos
     if (this.isDatabaseError(exception)) {
-      return this.parseDatabaseError(exception as Error & { code?: string })
+      return this.parseDatabaseError(exception)
     }
 
-    // Error estándar de JavaScript
+    // 3. Error Genérico (Standard JS Error)
     if (exception instanceof Error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-        message: exception.message || 'Internal server error',
-        error: exception.name || 'Error',
+        message: exception.message,
+        error: exception.name,
         details:
           process.env.NODE_ENV !== 'production'
-            ? {
-                stack: exception.stack,
-              }
+            ? { stack: exception.stack }
             : undefined,
       }
     }
 
-    // Excepción desconocida
+    // 4. Fallback absoluto
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
       error: 'UnknownError',
-      details: process.env.NODE_ENV !== 'production' ? exception : undefined,
     }
   }
 
   /**
-   * Verifica si el error es un QueryFailedError de TypeORM
+   * Type Guard: Le dice a TypeScript que si esto devuelve true,
+   * la variable es de tipo DatabaseError
    */
-  private isDatabaseError(exception: unknown): boolean {
+  private isDatabaseError(exception: unknown): exception is DatabaseError {
     return (
       exception instanceof Error &&
-      exception.name === 'QueryFailedError' &&
-      'code' in exception
+      (exception.name === 'QueryFailedError' || 'code' in exception)
     )
   }
 
-  /**
-   * Parsea errores de base de datos y los convierte en respuestas HTTP apropiadas
-   */
-  private parseDatabaseError(exception: Error & { code?: string }): {
-    statusCode: number
-    message: string
-    error: string
-    details?: unknown
-  } {
+  private parseDatabaseError(exception: DatabaseError): ParsedException {
     const code = exception.code
 
-    // Error de constraint única (duplicate key)
-    // PostgreSQL code: 23505
-    if (code === '23505') {
-      return {
-        statusCode: HttpStatus.CONFLICT,
-        message:
-          'Ya existe un registro con los datos proporcionados. Por favor, verifica email, username o CI.',
-        error: 'Conflict',
-        details:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                originalError: exception.message,
-                code,
-              }
-            : undefined,
-      }
-    }
-
-    // Error de foreign key constraint
-    // PostgreSQL code: 23503
-    if (code === '23503') {
-      return {
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: 'El recurso referenciado no existe',
-        error: 'ForeignKeyViolation',
-        details:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                originalError: exception.message,
-                code,
-              }
-            : undefined,
-      }
-    }
-
-    // Error de violación de constraint NOT NULL
-    // PostgreSQL code: 23502
-    if (code === '23502') {
-      return {
-        statusCode: HttpStatus.BAD_REQUEST,
-        message: 'Faltan datos requeridos',
-        error: 'NotNullViolation',
-        details:
-          process.env.NODE_ENV !== 'production'
-            ? {
-                originalError: exception.message,
-                code,
-              }
-            : undefined,
-      }
-    }
-
-    // Otros errores de base de datos
-    return {
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-      message: 'Error de base de datos',
+    const baseError = {
       error: 'DatabaseError',
       details:
         process.env.NODE_ENV !== 'production'
-          ? {
-              originalError: exception.message,
-              code,
-              stack: exception.stack,
-            }
+          ? { originalError: exception.message, code, table: exception.table }
           : undefined,
+    }
+
+    switch (code) {
+      case '23505': // Unique constraint
+        return {
+          ...baseError,
+          statusCode: HttpStatus.CONFLICT,
+          message:
+            'Ya existe un registro con los datos proporcionados (Duplicado).',
+          error: 'Conflict',
+        }
+      case '23503': // Foreign key
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'El registro referenciado no existe o no es válido.',
+          error: 'ForeignKeyViolation',
+        }
+      case '23502': // Not null
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Faltan datos obligatorios para completar la operación.',
+          error: 'NotNullViolation',
+        }
+      default:
+        return {
+          ...baseError,
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Error interno de base de datos.',
+        }
     }
   }
 }

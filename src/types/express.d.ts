@@ -1,4 +1,4 @@
-import type { JwtPayload } from '../modules/auth/interfaces'
+import type { JwtPayload } from '../modules/auth/shared/interfaces'
 
 /**
  * Extensión de tipos de Express para incluir usuario autenticado
