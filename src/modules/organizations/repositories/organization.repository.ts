@@ -37,15 +37,6 @@ export class OrganizationRepository
     })
   }
 
-  async countActiveUsers(organizationId: string): Promise<number> {
-    return await this.getRepo()
-      .createQueryBuilder('org')
-      .leftJoin('org.users', 'users')
-      .where('org.id = :id', { id: organizationId })
-      .andWhere('user.isActive = :isActive', { isActive: true })
-      .getCount()
-  }
-
   async paginateOrganizations(
     query: FindOrganizationsDto,
   ): Promise<PaginatedData<OrganizationEntity>> {

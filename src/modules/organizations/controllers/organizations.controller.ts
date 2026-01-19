@@ -142,6 +142,10 @@ export class OrganizationsController {
   })
   @ApiOkResponse(OrganizationResponseDto, 'Logo subido exitosamente')
   @ApiNotFoundResponse('Organización no encontrada')
+  @ApiRemoveWithMessage({
+    summary: 'Subir el logo de una organización ',
+    description: 'Subir el logo de una organización ',
+  })
   @ApiStandardResponses()
   async uploadLogo(
     @Param() { id }: UuidParamDto,
@@ -156,7 +160,12 @@ export class OrganizationsController {
 
   @Delete(':id/image')
   @ApiNotFoundResponse('Organizacion no encontrado')
-  @ApiStandardResponses()
+  @ResponseMessage('Logo eliminado exitosamente')
+  @ApiRemoveWithMessage({
+    summary: 'Eliminar el logo de una organización ',
+    description:
+      'Elimina el logo de una organización y retorna un mensaje de confirmación.',
+  })
   async deleteProfileImage(@Param() { id }: UuidParamDto) {
     return await this.deleteLogoUseCase.execute(id)
   }
