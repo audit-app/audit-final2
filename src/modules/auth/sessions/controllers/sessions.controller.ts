@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  UseGuards,
 } from '@nestjs/common'
 import {
   ApiTags,
@@ -21,6 +22,8 @@ import {
   RevokeAllSessionsUseCase,
 } from '../use-cases'
 import { SessionResponseDto, RevokeSessionDto } from '../dtos'
+import { JwtAuthGuard, Public } from '../../shared'
+import { JwtService } from '@nestjs/jwt'
 
 /**
  * SessionsController
@@ -32,14 +35,16 @@ import { SessionResponseDto, RevokeSessionDto } from '../dtos'
  * - DELETE /auth/sessions/:id - Revocar una sesión específica
  * - DELETE /auth/sessions - Revocar todas las sesiones
  */
+@UseGuards(JwtAuthGuard)
 @ApiTags('Sessions')
 @Controller('auth/sessions')
-@ApiBearerAuth() // Requiere autenticación
+@ApiBearerAuth()
 export class SessionsController {
   constructor(
     private readonly listSessionsUseCase: ListSessionsUseCase,
     private readonly revokeSessionUseCase: RevokeSessionUseCase,
     private readonly revokeAllSessionsUseCase: RevokeAllSessionsUseCase,
+    private readonly jwtService: JwtService,
   ) {}
 
   /**
@@ -57,6 +62,7 @@ export class SessionsController {
    * Authorization: Bearer {access_token}
    * ```
    */
+
   @Get()
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Sesiones activas obtenidas exitosamente')
@@ -67,12 +73,13 @@ export class SessionsController {
     type: [SessionResponseDto],
   })
   async listSessions(@Req() req: Request): Promise<SessionResponseDto[]> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     // Obtener el tokenId actual desde el refresh token (si existe en cookies/headers)
     // NOTA: El tokenId solo está en el refresh token, no en el access token
     // Por ahora, pasamos undefined (todas las sesiones se marcan como no actuales)
-    const currentTokenId = undefined // TODO: Extraer del refresh token si es necesario
+    const currentTokenId = this.jwtService.decode(req.cookies.refreshToken)
+      ?.tokenId as string | undefined
 
     return await this.listSessionsUseCase.execute(userId, currentTokenId)
   }
@@ -119,7 +126,7 @@ export class SessionsController {
     @Req() req: Request,
     @Body() dto: RevokeSessionDto,
   ): Promise<{ message: string }> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     return await this.revokeSessionUseCase.execute(userId, dto.sessionId)
   }
@@ -163,7 +170,7 @@ export class SessionsController {
   async revokeAllSessions(
     @Req() req: Request,
   ): Promise<{ message: string; count: number }> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     return await this.revokeAllSessionsUseCase.execute(userId)
   }

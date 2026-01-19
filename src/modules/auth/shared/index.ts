@@ -15,8 +15,7 @@
 export * from './guards/jwt-auth.guard'
 
 // Strategies
-export * from './strategies/jwt.strategy'
-export * from './strategies/jwt-refresh.strategy'
+export * from './strategies/'
 
 // Decorators
 export * from './decorators/public.decorator'

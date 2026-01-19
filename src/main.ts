@@ -57,10 +57,13 @@ async function bootstrap() {
     .setDescription(
       'API de auditorías, plantillas, frameworks de madurez y gestión de usuarios',
     )
+    .addBearerAuth()
     .setVersion('1.0')
     .addTag('Auth', 'Autenticación JWT con refresh tokens')
-    .addTag('organizations', 'Gestión de organizaciones')
+    .addTag('Sessions', 'Control de Sesiones')
+    .addTag('Password Reset', 'Restablecimiento de Contraseña')
     .addTag('users', 'Gestión de usuarios')
+    .addTag('organizations', 'Gestión de organizaciones')
     .addTag('notifications', 'Sistema de notificaciones')
     .addTag('templates', 'Gestión de plantillas (ISO 27001, ISO 9001, etc.)')
     .addTag('standards', 'Gestión de normas con estructura jerárquica')

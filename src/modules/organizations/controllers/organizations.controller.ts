@@ -45,6 +45,7 @@ import { UploadLogoUseCase } from '../use-cases/upload-logo'
 import { RemoveOrganizationUseCase } from '../use-cases/remove-organization'
 import { ActivateOrganizationUseCase } from '../use-cases/activate-organization'
 import { DeactivateOrganizationWithUsersUseCase } from '../use-cases/deactivate-organization-with-users'
+import { DeleteLogoUseCase } from '../use-cases'
 
 @ApiTags('organizations')
 @Controller('organizations')
@@ -58,6 +59,7 @@ export class OrganizationsController {
     private readonly removeOrganizationUseCase: RemoveOrganizationUseCase,
     private readonly deactivateOrganizationWithUsersUseCase: DeactivateOrganizationWithUsersUseCase,
     private readonly activateOrganizationUseCase: ActivateOrganizationUseCase,
+    private readonly deleteLogoUseCase: DeleteLogoUseCase,
   ) {}
 
   @Post()
@@ -152,6 +154,12 @@ export class OrganizationsController {
     return await this.uploadLogoUseCase.execute(id, file)
   }
 
+  @Delete(':id/image')
+  @ApiNotFoundResponse('Organizacion no encontrado')
+  @ApiStandardResponses()
+  async deleteProfileImage(@Param() { id }: UuidParamDto) {
+    return await this.deleteLogoUseCase.execute(id)
+  }
   // OPCIÓN 1: Devolver entidad actualizada
   // @Patch(':id/deactivate')
   // @ApiCustom(OrganizationResponseDto, {

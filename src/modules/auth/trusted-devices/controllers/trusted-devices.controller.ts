@@ -70,7 +70,7 @@ export class TrustedDevicesController {
     type: [TrustedDeviceResponseDto],
   })
   async listDevices(@Req() req: Request): Promise<TrustedDeviceResponseDto[]> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     return await this.listTrustedDevicesUseCase.execute(userId)
   }
@@ -118,7 +118,7 @@ export class TrustedDevicesController {
     @Req() req: Request,
     @Body() dto: RevokeDeviceDto,
   ): Promise<{ message: string }> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     return await this.revokeTrustedDeviceUseCase.execute(
       userId,
@@ -166,7 +166,7 @@ export class TrustedDevicesController {
   async revokeAllDevices(
     @Req() req: Request,
   ): Promise<{ message: string; count: number }> {
-    const userId = req.user.sub
+    const userId = req.user!.sub
 
     return await this.revokeAllTrustedDevicesUseCase.execute(userId)
   }

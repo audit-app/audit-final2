@@ -14,7 +14,12 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger'
 import type { Request, Response } from 'express'
 import { CookieService } from '@core/http/services/cookie.service'
 import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
@@ -27,8 +32,6 @@ import { JwtAuthGuard } from '../../shared'
 import { NavigationService } from '../../shared/services'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
-import { UserResponseDto } from '../../../users/dtos'
-
 @UseGuards(JwtAuthGuard)
 @ApiTags('Auth')
 @Controller('auth')
@@ -180,6 +183,7 @@ export class AuthController {
    * Cookie: refreshToken=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
    * ```
    */
+  @ApiBearerAuth()
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Logout de usuario' })
