@@ -44,7 +44,7 @@ export class PublishTemplateUseCase {
     }
 
     // 2. Buscar si existe un template PUBLISHED con el mismo nombre (diferente versión)
-    const publishedTemplates = await this.templatesRepository.findAll({
+    const publishedTemplates = await this.templatesRepository.findAllTemplates({
       where: {
         name: template.name,
         status: TemplateStatus.PUBLISHED,

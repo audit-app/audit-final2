@@ -1,10 +1,15 @@
 import { BaseRepository } from '@core/repositories'
 import { OrganizationEntity } from '../entities'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { FindOptionsWhere, ILike, IsNull, Not, Repository } from 'typeorm'
 import { TransactionService, AuditService } from '@core/database'
 import { IOrganizationRepository } from './organization-repository.interface'
 import { Injectable } from '@nestjs/common'
+import {
+  FindOrganizationsDto,
+  ORGANIZATION_SEARCH_FIELDS,
+} from '../use-cases/find-organizations-with-filters'
+import { PaginatedData } from '@core/dtos'
 
 @Injectable()
 export class OrganizationRepository
@@ -41,59 +46,40 @@ export class OrganizationRepository
       .getCount()
   }
 
-  async hardDelete(id: string): Promise<void> {
-    await this.getRepo().delete(id)
-  }
+  async paginateOrganizations(
+    query: FindOrganizationsDto,
+  ): Promise<PaginatedData<OrganizationEntity>> {
+    const { search, isActive, hasLogo } = query
 
-  /**
-   * Busca organizaciones con filtros personalizados
-   * Retorna tupla con [data, total]
-   */
-  async findWithFilters(
-    filters: import('./organization-repository.interface').OrganizationFilters,
-    page?: number,
-    limit?: number,
-    sortBy: string = 'createdAt',
-    sortOrder: 'ASC' | 'DESC' = 'DESC',
-  ): Promise<[OrganizationEntity[], number]> {
-    const queryBuilder = this.getRepo()
-      .createQueryBuilder('org')
-      .leftJoinAndSelect('org.users', 'users')
+    // 1. Filtros Base (AND)
+    const baseFilter: FindOptionsWhere<OrganizationEntity> = {}
 
-    // Filtro de búsqueda de texto
-    if (filters.search) {
-      const searchTerm = `%${filters.search}%`
-      queryBuilder.andWhere(
-        '(org.name ILIKE :search OR org.nit ILIKE :search OR org.description ILIKE :search OR org.email ILIKE :search)',
-        { search: searchTerm },
-      )
+    if (isActive !== undefined) {
+      baseFilter.isActive = isActive
     }
 
-    // Filtro por estado activo
-    if (filters.isActive !== undefined) {
-      queryBuilder.andWhere('org.isActive = :isActive', {
-        isActive: filters.isActive,
-      })
+    // Lógica para hasLogo usando operadores de TypeORM
+    if (hasLogo !== undefined) {
+      baseFilter.logoUrl = hasLogo ? Not(IsNull()) : IsNull()
     }
 
-    // Filtro por logo
-    if (filters.hasLogo !== undefined) {
-      if (filters.hasLogo) {
-        queryBuilder.andWhere('org.logoUrl IS NOT NULL')
-      } else {
-        queryBuilder.andWhere('org.logoUrl IS NULL')
-      }
+    // 2. Lógica de Búsqueda (OR) + Filtros Base
+    let where:
+      | FindOptionsWhere<OrganizationEntity>
+      | FindOptionsWhere<OrganizationEntity>[] = baseFilter
+
+    if (search) {
+      const searchTerm = ILike(`%${search}%`)
+
+      where = ORGANIZATION_SEARCH_FIELDS.map((field) => ({
+        ...baseFilter,
+        [field]: searchTerm,
+      }))
     }
 
-    // Ordenamiento
-    queryBuilder.orderBy(`org.${sortBy}`, sortOrder)
-
-    // Paginación (si se proporciona)
-    if (page !== undefined && limit !== undefined) {
-      const skip = (page - 1) * limit
-      queryBuilder.skip(skip).take(limit)
-    }
-
-    return await queryBuilder.getManyAndCount()
+    // 3. Delegar al BaseRepository
+    return await this.paginate(query, {
+      where,
+    })
   }
 }

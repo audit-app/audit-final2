@@ -172,4 +172,16 @@ export class TemplatesRepository
 
     return await qb.getManyAndCount()
   }
+
+  /**
+   * Busca todos los templates con opciones de filtrado
+   *
+   * @param options - Opciones de búsqueda de TypeORM
+   * @returns Lista de templates
+   */
+  async findAllTemplates(
+    options?: Parameters<typeof this.findAll>[0],
+  ): Promise<TemplateEntity[]> {
+    return await this.findAll(options)
+  }
 }

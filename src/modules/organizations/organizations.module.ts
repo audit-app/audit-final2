@@ -5,12 +5,12 @@ import { OrganizationFactory } from './factories/organization.factory'
 import {
   CreateOrganizationUseCase,
   UpdateOrganizationUseCase,
-  FindAllOrganizationsUseCase,
   FindOrganizationByIdUseCase,
   FindOrganizationsWithFiltersUseCase,
   UploadLogoUseCase,
   RemoveOrganizationUseCase,
   ActivateOrganizationUseCase,
+  DeleteLogoUseCase,
   DeactivateOrganizationWithUsersUseCase,
 } from './use-cases'
 
@@ -21,12 +21,12 @@ import {
     // Use Cases
     CreateOrganizationUseCase,
     UpdateOrganizationUseCase,
-    FindAllOrganizationsUseCase,
     FindOrganizationByIdUseCase,
     FindOrganizationsWithFiltersUseCase,
     UploadLogoUseCase,
     RemoveOrganizationUseCase,
     ActivateOrganizationUseCase,
+    DeleteLogoUseCase,
     // Infrastructure
     OrganizationValidator,
     OrganizationFactory,

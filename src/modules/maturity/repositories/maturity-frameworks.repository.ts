@@ -86,4 +86,16 @@ export class MaturityFrameworksRepository
     framework.isActive = isActive
     return await this.getRepo().save(framework)
   }
+
+  /**
+   * Busca todos los frameworks con opciones de filtrado
+   *
+   * @param options - Opciones de búsqueda de TypeORM
+   * @returns Lista de frameworks
+   */
+  async findAllFrameworks(
+    options?: Parameters<typeof this.findAll>[0],
+  ): Promise<MaturityFrameworkEntity[]> {
+    return await this.findAll(options)
+  }
 }

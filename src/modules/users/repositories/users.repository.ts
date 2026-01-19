@@ -6,7 +6,7 @@ import { BaseRepository } from '@core/repositories/base.repository'
 import { UserEntity } from '../entities/user.entity'
 import { IUsersRepository } from './users-repository.interface'
 import { PaginatedData } from '@core/dtos'
-import { FindUsersDto } from '../use-cases/find-all-users'
+import { FindUsersDto, USER_SEARCH_FIELDS } from '../use-cases/find-all-users'
 import { ArrayContains } from 'typeorm'
 @Injectable()
 export class UsersRepository
@@ -187,22 +187,14 @@ export class UsersRepository
     const baseFilter: FindOptionsWhere<UserEntity> = {}
     if (isActive !== undefined) baseFilter.isActive = isActive
     if (organizationId) baseFilter.organizationId = organizationId
-    if (role) baseFilter.roles = ArrayContains([role]) // Si role no es undefined
+    if (role) baseFilter.roles = ArrayContains([role])
 
     let where: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[] =
       baseFilter
 
     if (search) {
       const searchTerm = ILike(`%${search}%`)
-      const searchFields: Array<keyof UserEntity> = [
-        'names',
-        'lastNames',
-        'email',
-        'username',
-        'ci',
-      ]
-
-      where = searchFields.map((field) => ({
+      where = USER_SEARCH_FIELDS.map((field) => ({
         ...baseFilter,
         [field]: searchTerm,
       }))

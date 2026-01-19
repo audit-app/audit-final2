@@ -48,4 +48,12 @@ export class OrganizationEntity extends BaseEntity {
   deactivate() {
     this.isActive = false
   }
+
+  updateLogo(logoUrl: string) {
+    this.logoUrl = logoUrl
+  }
+
+  removeLogo() {
+    this.logoUrl = null
+  }
 }

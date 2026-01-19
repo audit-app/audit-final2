@@ -2,9 +2,9 @@ import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { FilesService, FileType } from '@core/files'
 import { OrganizationEntity } from '../../entities/organization.entity'
-import { OrganizationNotFoundException } from '../../exceptions'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
 import type { IOrganizationRepository } from '../../repositories'
+import { OrganizationValidator } from '../../validators'
 
 /**
  * Caso de uso: Subir logo de organización
@@ -21,6 +21,7 @@ export class UploadLogoUseCase {
     @Inject(ORGANIZATION_REPOSITORY)
     private readonly organizationRepository: IOrganizationRepository,
     private readonly filesService: FilesService,
+    private readonly organizationValidator: OrganizationValidator,
   ) {}
 
   @Transactional()
@@ -28,13 +29,9 @@ export class UploadLogoUseCase {
     id: string,
     file: Express.Multer.File,
   ): Promise<OrganizationEntity> {
-    // 1. Verificar que la organización existe y está activa
-    const organization = await this.organizationRepository.findById(id)
-    if (!organization) {
-      throw new OrganizationNotFoundException(id)
-    }
+    const organization =
+      await this.organizationValidator.validateAndGetOrganization(id)
 
-    // 2. Subir nuevo logo (reemplaza el anterior si existe)
     const uploadResult = await this.filesService.replaceFile(
       organization.logoUrl,
       {
@@ -51,8 +48,7 @@ export class UploadLogoUseCase {
       },
     )
 
-    // 3. Actualizar organización con nueva URL
-    organization.logoUrl = uploadResult.filePath
+    organization.updateLogo(uploadResult.filePath)
     return await this.organizationRepository.save(organization)
   }
 }

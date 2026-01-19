@@ -3,10 +3,7 @@ import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 import { OrganizationEntity } from '../../entities/organization.entity'
 import { FindOrganizationsDto } from './find-organizations.dto'
 import { ORGANIZATION_REPOSITORY } from '../../tokens'
-import type {
-  IOrganizationRepository,
-  OrganizationFilters,
-} from '../../repositories'
+import type { IOrganizationRepository } from '../../repositories'
 
 /**
  * Caso de uso: Buscar organizaciones con filtros y paginación
@@ -24,47 +21,22 @@ export class FindOrganizationsWithFiltersUseCase {
   ) {}
 
   async execute(
-    query: FindOrganizationsDto,
+    dto: FindOrganizationsDto,
   ): Promise<PaginatedResponse<OrganizationEntity>> {
-    const {
-      page = 1,
-      limit = 10,
-      all = false,
-      sortBy = 'createdAt',
-      sortOrder = 'DESC',
-      search,
-      isActive,
-      hasLogo,
-    } = query
+    // 1. Obtener Entidades del Repo
+    const { data, total } =
+      await this.organizationRepository.paginateOrganizations(dto)
 
-    // Construir filtros
-    const filters: OrganizationFilters = {
-      search,
-      isActive,
-      hasLogo,
-    }
-
-    // Si all=true, devolver todos los registros
-    if (all) {
-      const [data] = await this.organizationRepository.findWithFilters(
-        filters,
-        undefined,
-        undefined,
-        sortBy,
-        sortOrder,
-      )
+    // 3. Devolver respuesta paginada
+    if (dto.all) {
       return PaginatedResponseBuilder.createAll(data)
     }
 
-    // Paginación normal
-    const [data, total] = await this.organizationRepository.findWithFilters(
-      filters,
-      page,
-      limit,
-      sortBy,
-      sortOrder,
+    return PaginatedResponseBuilder.create(
+      data,
+      total,
+      dto.page || 1,
+      dto.limit || 10,
     )
-
-    return PaginatedResponseBuilder.create(data, total, page, limit)
   }
 }

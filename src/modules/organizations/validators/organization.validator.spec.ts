@@ -7,16 +7,12 @@ import { OrganizationEntity } from '../entities/organization.entity'
 import {
   NameAlreadyExistsException,
   NitAlreadyExistsException,
-  OrganizationHasActiveUsersException,
   OrganizationNotFoundException,
 } from '../exceptions'
-import { USERS_REPOSITORY } from '../../users/tokens'
-import type { IUsersRepository } from '../../users/repositories'
 
 describe('OrganizationValidator', () => {
   let validator: OrganizationValidator
   let repository: jest.Mocked<IOrganizationRepository>
-  let usersRepository: jest.Mocked<IUsersRepository>
 
   const mockOrganization: OrganizationEntity = {
     id: '1',
@@ -40,10 +36,6 @@ describe('OrganizationValidator', () => {
       findById: jest.fn(),
     }
 
-    const mockUsersRepository: Partial<jest.Mocked<IUsersRepository>> = {
-      countUsersByOrganization: jest.fn(),
-    }
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         OrganizationValidator,
@@ -51,16 +43,11 @@ describe('OrganizationValidator', () => {
           provide: ORGANIZATION_REPOSITORY,
           useValue: mockRepository,
         },
-        {
-          provide: USERS_REPOSITORY,
-          useValue: mockUsersRepository,
-        },
       ],
     }).compile()
 
     validator = module.get<OrganizationValidator>(OrganizationValidator)
     repository = module.get(ORGANIZATION_REPOSITORY)
-    usersRepository = module.get(USERS_REPOSITORY)
   })
 
   afterEach(() => {
@@ -154,25 +141,29 @@ describe('OrganizationValidator', () => {
     })
   })
 
-  describe('ensureOrganizationExists', () => {
-    it('should pass when organization exists', async () => {
+  describe('validateAndGetOrganization', () => {
+    it('should return organization when it exists', async () => {
       // Arrange
       repository.findById.mockResolvedValue(mockOrganization)
-      // Act & Assert
-      await expect(
-        validator.ensureOrganizationExists('1'),
-      ).resolves.not.toThrow()
 
+      // Act
+      const result = await validator.validateAndGetOrganization('1')
+
+      // Assert
+      expect(result).toEqual(mockOrganization)
       expect(repository.findById).toHaveBeenCalledWith('1')
     })
+
     it('should throw OrganizationNotFoundException when organization does not exist', async () => {
       // Arrange
       repository.findById.mockResolvedValue(null)
 
       // Act & Assert
-      await expect(validator.ensureOrganizationExists('2')).rejects.toThrow(
-        OrganizationNotFoundException,
-      )
+      await expect(
+        validator.validateAndGetOrganization('2'),
+      ).rejects.toThrow(OrganizationNotFoundException)
+
+      expect(repository.findById).toHaveBeenCalledWith('2')
     })
   })
 
@@ -226,30 +217,5 @@ describe('OrganizationValidator', () => {
         ),
       ).resolves.not.toThrow()
     })
-  })
-
-  describe('validateCanBeDeactivated', () => {
-    it('should pass when organization has no active users', async () => {
-      // Arrange
-      usersRepository.countUsersByOrganization.mockResolvedValue(0)
-
-      // Act & Assert
-      await expect(
-        validator.validateCanBeDeactivated('1'),
-      ).resolves.not.toThrow()
-
-      expect(usersRepository.countUsersByOrganization).toHaveBeenCalledWith('1')
-    })
-  })
-  it('should throw OrganizationHasActiveUsersException when organization has active users', async () => {
-    // Arrange
-    usersRepository.countUsersByOrganization.mockResolvedValue(5)
-
-    // Act & Assert
-    await expect(validator.validateCanBeDeactivated('1')).rejects.toThrow(
-      OrganizationHasActiveUsersException,
-    )
-
-    expect(usersRepository.countUsersByOrganization).toHaveBeenCalledWith('1')
   })
 })

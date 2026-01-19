@@ -29,14 +29,14 @@ export class FindFrameworksUseCase {
         return await this.frameworksRepository.findActive()
       }
       // Si se buscan inactivos
-      return await this.frameworksRepository.findAll({
+      return await this.frameworksRepository.findAllFrameworks({
         where: { isActive: false },
         order: { name: 'ASC' },
       })
     }
 
     // Sin filtros, devolver todos
-    return await this.frameworksRepository.findAll({
+    return await this.frameworksRepository.findAllFrameworks({
       order: { name: 'ASC' },
     })
   }

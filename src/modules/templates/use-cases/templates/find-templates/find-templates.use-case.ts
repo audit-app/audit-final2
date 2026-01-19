@@ -30,6 +30,6 @@ export class FindTemplatesUseCase {
     }
 
     // Sin filtro, retornar todos
-    return await this.templatesRepository.findAll()
+    return await this.templatesRepository.findAllTemplates()
   }
 }

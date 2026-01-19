@@ -24,7 +24,6 @@ export class FindAllUsersUseCase {
     const dtos = entities.map((user) => this.mapToDto(user))
 
     // 3. Devolver respuesta paginada
-    // Nota: Si usas tu builder, asegúrate que acepte los DTOs ya mapeados
     if (dto.all) {
       return PaginatedResponseBuilder.createAll(dtos)
     }

@@ -15,6 +15,8 @@ import {
   ActivateUserUseCase,
   VerifyEmailUseCase,
   ResendInvitationUseCase,
+  TwoFactorActivateUserUseCase,
+  TwoFactorDeactivateUserUseCase,
 } from './use-cases'
 
 @Module({
@@ -35,6 +37,8 @@ import {
     ResendInvitationUseCase,
     // Services
     EmailVerificationService,
+    TwoFactorActivateUserUseCase,
+    TwoFactorDeactivateUserUseCase,
     // Infrastructure
     UserValidator,
     UserFactory,

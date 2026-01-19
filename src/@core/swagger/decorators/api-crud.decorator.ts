@@ -16,7 +16,7 @@ import {
   ApiPaginatedResponse,
 } from './api-responses.decorator'
 import { buildPaginatedOperation } from '../helpers/api-operation.helper'
-import { StandardResponseDto } from '@core/dtos'
+import { ApiStandardResponseDto } from '@core/dtos'
 
 interface CrudOperationOptions<T> {
   /** Tipo de respuesta (DTO) */
@@ -349,7 +349,7 @@ export function ApiUpdateWithMessage(options?: {
   const decorators = [
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary, description }),
-    ApiOkResponse(StandardResponseDto, 'Recurso actualizado exitosamente'),
+    ApiOkResponse(ApiStandardResponseDto, 'Recurso actualizado exitosamente'),
     ApiNotFoundResponse('Recurso no encontrado'),
     ApiStandardResponses(),
   ]
@@ -399,7 +399,7 @@ export function ApiRemoveWithMessage(options?: {
   const decorators = [
     HttpCode(HttpStatus.OK),
     ApiOperation({ summary, description }),
-    ApiOkResponse(StandardResponseDto, 'Recurso eliminado exitosamente'),
+    ApiOkResponse(ApiStandardResponseDto, 'Recurso eliminado exitosamente'),
     ApiNotFoundResponse('Recurso no encontrado'),
     ApiStandardResponses(),
   ]

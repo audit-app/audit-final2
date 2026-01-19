@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
 
 /**
- * DTO de Swagger para documentar la estructura estándar de respuestas exitosas
+ * DTO de Swagger para documentar la estructura estándar de respuestas exitosas de la API
  *
  * Este DTO representa el formato generado automáticamente por el TransformInterceptor.
  * NO se usa en código - solo para documentación de Swagger.
@@ -19,7 +19,7 @@ import { ApiProperty } from '@nestjs/swagger'
  * }
  * ```
  */
-export class StandardResponseDto {
+export class ApiStandardResponseDto {
   @ApiProperty({
     description: 'Indica si la operación fue exitosa',
     example: true,

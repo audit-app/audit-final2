@@ -16,12 +16,13 @@ export const USER_SORTABLE_FIELDS: (keyof UserEntity)[] = [
   'ci',
   'phone',
   'names',
+  'updatedAt',
 ]
 
 /**
  * Campos en los que busca el parámetro 'search'
  */
-export const USER_SEARCH_FIELDS = [
+export const USER_SEARCH_FIELDS: (keyof UserEntity)[] = [
   'names',
   'lastNames',
   'email',

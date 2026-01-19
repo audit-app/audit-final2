@@ -1,5 +1,3 @@
-// Use Cases & DTOs - Exports internos del módulo
-// Cada use-case exporta su caso de uso y su DTO (si tiene)
 export * from './create-user'
 export * from './update-user'
 export * from './find-all-users'
@@ -11,3 +9,5 @@ export * from './remove-user'
 export * from './activate-user'
 export * from './verify-email'
 export * from './resend-invitation'
+export * from './2fa-activate-user'
+export * from './2fa-deactivate-user'

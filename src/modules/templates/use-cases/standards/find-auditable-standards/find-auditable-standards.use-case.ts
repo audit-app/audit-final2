@@ -12,7 +12,7 @@ export class FindAuditableStandardsUseCase {
   constructor(private readonly standardsRepository: StandardsRepository) {}
 
   async execute(templateId: string): Promise<StandardEntity[]> {
-    return await this.standardsRepository.findAll({
+    return await this.standardsRepository.findAllStandards({
       where: {
         templateId,
         isAuditable: true,

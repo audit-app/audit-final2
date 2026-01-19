@@ -1,5 +1,6 @@
 import { IBaseRepository } from '@core/repositories'
 import { OrganizationEntity } from '../entities'
+import { PaginatedData } from '@core/dtos'
 
 export interface OrganizationFilters {
   search?: string
@@ -10,11 +11,7 @@ export interface OrganizationFilters {
 export interface IOrganizationRepository extends IBaseRepository<OrganizationEntity> {
   findByNit(nit: string): Promise<OrganizationEntity | null>
   findByName(name: string): Promise<OrganizationEntity | null>
-  findWithFilters(
+  paginateOrganizations(
     filters: OrganizationFilters,
-    page?: number,
-    limit?: number,
-    sortBy?: string,
-    sortOrder?: 'ASC' | 'DESC',
-  ): Promise<[OrganizationEntity[], number]>
+  ): Promise<PaginatedData<OrganizationEntity>>
 }

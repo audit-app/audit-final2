@@ -155,4 +155,16 @@ export class StandardsRepository
       where: { parentId },
     })
   }
+
+  /**
+   * Busca todos los standards con opciones de filtrado
+   *
+   * @param options - Opciones de búsqueda de TypeORM
+   * @returns Lista de standards
+   */
+  async findAllStandards(
+    options?: Parameters<typeof this.findAll>[0],
+  ): Promise<StandardEntity[]> {
+    return await this.findAll(options)
+  }
 }

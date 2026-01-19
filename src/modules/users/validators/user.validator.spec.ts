@@ -9,22 +9,19 @@ import {
 } from '../exceptions'
 import type { IUsersRepository } from '../repositories'
 import { USERS_REPOSITORY } from '../tokens'
-import type { IOrganizationRepository } from '../../organizations'
-import { ORGANIZATION_REPOSITORY } from '../../organizations'
 import { createMock } from '@core/testing'
-import { Role } from '../entities'
+import { Role, UserEntity } from '../entities'
 
 /**
- * ✅ UNIT TESTS - UserValidator (con PersistenceModule)
+ * ✅ UNIT TESTS - UserValidator
  *
  * Testing approach:
- * - Mock USERS_REPOSITORY y ORGANIZATION_REPOSITORY
+ * - Mock USERS_REPOSITORY
  * - Enfoque: Probar lógica de validación y que se lancen las excepciones correctas
  */
 describe('UserValidator', () => {
   let validator: UserValidator
   let mockRepository: jest.Mocked<IUsersRepository>
-  let mockOrganizationRepository: jest.Mocked<IOrganizationRepository>
 
   beforeEach(async () => {
     mockRepository = createMock<IUsersRepository>({
@@ -34,20 +31,12 @@ describe('UserValidator', () => {
       findById: jest.fn(),
     })
 
-    mockOrganizationRepository = createMock<IOrganizationRepository>({
-      existsActiveById: jest.fn(),
-    })
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserValidator,
         {
           provide: USERS_REPOSITORY,
           useValue: mockRepository,
-        },
-        {
-          provide: ORGANIZATION_REPOSITORY,
-          useValue: mockOrganizationRepository,
         },
       ],
     }).compile()
@@ -323,19 +312,21 @@ describe('UserValidator', () => {
     })
   })
 
-  describe('ensureUserExists', () => {
-    it('should pass when user exists', async () => {
+  describe('validateAndGetUser', () => {
+    it('should return user when user exists', async () => {
       // Arrange
-      mockRepository.findById.mockResolvedValue({
+      const mockUser = {
         id: 'user-123',
         email: 'test@test.com',
-      } as any)
+      } as any
 
-      // Act & Assert
-      await expect(
-        validator.ensureUserExists('user-123'),
-      ).resolves.not.toThrow()
+      mockRepository.findById.mockResolvedValue(mockUser)
 
+      // Act
+      const result = await validator.validateAndGetUser('user-123')
+
+      // Assert
+      expect(result).toEqual(mockUser)
       expect(mockRepository.findById).toHaveBeenCalledWith('user-123')
     })
 
@@ -345,7 +336,7 @@ describe('UserValidator', () => {
 
       // Act & Assert
       await expect(
-        validator.ensureUserExists('nonexistent-id'),
+        validator.validateAndGetUser('nonexistent-id'),
       ).rejects.toThrow(UserNotFoundException)
 
       expect(mockRepository.findById).toHaveBeenCalledWith('nonexistent-id')

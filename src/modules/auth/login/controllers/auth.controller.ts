@@ -259,7 +259,25 @@ export class AuthController {
     )
 
     return {
-      ...profile,
+      id: profile.id,
+      names: profile.names,
+      lastNames: profile.lastNames,
+      email: profile.email,
+      username: profile.username,
+      ci: profile.ci,
+      phone: profile.phone,
+      address: profile.address,
+      image: profile.image,
+      isActive: profile.isActive,
+      emailVerified: profile.emailVerified,
+      emailVerifiedAt: profile.emailVerifiedAt,
+      isTwoFactorEnabled: profile.isTwoFactorEnabled,
+      roles: profile.roles,
+      organizationId: profile.organizationId,
+      organizationName: profile.organization?.name || 'Sin organización',
+      organizationImage: profile.organization?.logoUrl || null,
+      createdAt: profile.createdAt,
+      updatedAt: profile.updatedAt,
       navigation,
     }
   }

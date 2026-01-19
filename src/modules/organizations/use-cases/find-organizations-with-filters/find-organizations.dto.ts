@@ -2,11 +2,12 @@ import { IsOptional, IsString, IsBoolean, IsIn } from 'class-validator'
 import { PaginationDto } from '@core/dtos'
 import { Transform } from 'class-transformer'
 import { ApiPropertyOptional } from '@nestjs/swagger'
+import { OrganizationEntity } from '../../entities'
 
 /**
  * Campos por los que se puede ordenar la lista de organizaciones
  */
-export const ORGANIZATION_SORTABLE_FIELDS = [
+export const ORGANIZATION_SORTABLE_FIELDS: (keyof OrganizationEntity)[] = [
   'name',
   'nit',
   'createdAt',
@@ -17,33 +18,13 @@ export const ORGANIZATION_SORTABLE_FIELDS = [
 /**
  * Campos en los que busca el parámetro 'search'
  */
-export const ORGANIZATION_SEARCH_FIELDS = [
+export const ORGANIZATION_SEARCH_FIELDS: (keyof OrganizationEntity)[] = [
   'name',
   'nit',
   'description',
   'email',
 ]
 
-/**
- * DTO para buscar organizaciones con filtros específicos
- *
- * Extiende PaginationDto para heredar:
- * - page
- * - limit
- * - all
- * - sortBy
- * - sortOrder
- *
- * Y agrega filtros específicos de organizaciones
- *
- * @example
- * ```
- * GET /organizations?page=1&limit=10&search=empresa&isActive=true
- * GET /organizations?all=true  // Todas las organizaciones
- * GET /organizations?page=2&limit=20&sortBy=createdAt&sortOrder=ASC
- * GET /organizations?search=coca&hasLogo=true  // Con logo
- * ```
- */
 export class FindOrganizationsDto extends PaginationDto {
   /**
    * Búsqueda de texto libre

@@ -44,6 +44,8 @@ import {
   VerifyEmailUseCase,
   UserVerifyEmailDto,
   ResendInvitationUseCase,
+  TwoFactorActivateUserUseCase,
+  TwoFactorDeactivateUserUseCase,
 } from '../use-cases'
 import { UploadAvatar } from '@core/files'
 import { UserResponseDto } from '../dtos/user-response.dto'
@@ -64,6 +66,8 @@ export class UsersController {
     private readonly deactivateUserUseCase: DeactivateUserUseCase,
     private readonly verifyEmailUseCase: VerifyEmailUseCase,
     private readonly resendInvitationUseCase: ResendInvitationUseCase,
+    private readonly twoFactorActivateUserUseCase: TwoFactorActivateUserUseCase,
+    private readonly twoFactorDeactivateUserUseCase: TwoFactorDeactivateUserUseCase,
   ) {}
 
   @Post()
@@ -196,18 +200,6 @@ export class UsersController {
     await this.deactivateUserUseCase.execute(id)
   }
 
-  // OPCIÓN 1: Devolver entidad actualizada
-  // @Patch(':id/activate')
-  // @ApiCustom(UserResponseDto, {
-  //   summary: 'Activar un usuario',
-  //   description:
-  //     'Cambia el estado del usuario a ACTIVE y retorna el usuario actualizado.',
-  // })
-  // async activate(@Param() { id }: UuidParamDto) {
-  //   return await this.activateUserUseCase.execute(id)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/activate')
   @ResponseMessage('Usuario activado exitosamente')
   @ApiUpdateWithMessage({
@@ -217,6 +209,28 @@ export class UsersController {
   })
   async activate(@Param() { id }: UuidParamDto) {
     await this.activateUserUseCase.execute(id)
+  }
+
+  @Patch(':id/2fa/activate')
+  @ResponseMessage('two factor activado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Activar 2FA de un usuario',
+    description:
+      'Cambia el estado del 2fa de un usuario a ACTIVE y retorna un mensaje de confirmación.',
+  })
+  async activate2fa(@Param() { id }: UuidParamDto) {
+    await this.twoFactorActivateUserUseCase.execute(id)
+  }
+
+  @Patch(':id/2fa/deactivate')
+  @ResponseMessage('two factor activado exitosamente')
+  @ApiUpdateWithMessage({
+    summary: 'Desactivar 2fa un usuario',
+    description:
+      'Cambia el estado del 2fa de un usuario a INACTIVE y retorna un mensaje de confirmación.',
+  })
+  async deactivate2fa(@Param() { id }: UuidParamDto) {
+    await this.twoFactorDeactivateUserUseCase.execute(id)
   }
 
   @Post('verify-email')

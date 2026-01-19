@@ -12,7 +12,7 @@ export class FindStandardChildrenUseCase {
   constructor(private readonly standardsRepository: StandardsRepository) {}
 
   async execute(parentId: string): Promise<StandardEntity[]> {
-    return await this.standardsRepository.findAll({
+    return await this.standardsRepository.findAllStandards({
       where: { parentId },
       relations: ['children'],
       order: { order: 'ASC' },

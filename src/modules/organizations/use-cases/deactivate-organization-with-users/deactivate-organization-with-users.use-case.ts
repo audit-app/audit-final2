@@ -23,18 +23,8 @@ export class DeactivateOrganizationWithUsersUseCase {
       await this.organizationValidator.validateAndGetOrganization(
         organizationId,
       )
-    // 2. Obtener TODOS los usuarios de la organización (activos e inactivos)
-    const users = await this.usersRepository.findByOrganization(organizationId)
+    await this.usersRepository.deactivateUsersByOrganization(organizationId)
 
-    // 3. Suspender todos los usuarios activos
-    for (const user of users) {
-      if (user.isActive) {
-        user.isActive = false
-        await this.usersRepository.save(user)
-      }
-    }
-
-    // 4. Desactivar la organización
     organization.deactivate()
     await this.organizationRepository.save(organization)
   }
