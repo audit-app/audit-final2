@@ -75,6 +75,7 @@ import {
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtRefreshStrategy, JwtAuthGuard } from './shared'
+import { NavigationService } from './shared/services'
 import { RequestResetPasswordRateLimitPolicy } from './password-reset/policies'
 import { TokenStorageRepository } from './login/services/token-storage.repository'
 
@@ -140,6 +141,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TwoFactorTokenService,
     EmailVerificationTokenService,
     DeviceFingerprintService,
+    NavigationService,
 
     ConfigService,
 
@@ -206,6 +208,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TwoFactorTokenService,
     EmailVerificationTokenService,
     DeviceFingerprintService,
+    NavigationService,
     // Exportar guards para uso manual si es necesario
     JwtAuthGuard,
   ],

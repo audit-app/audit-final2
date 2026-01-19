@@ -25,24 +25,26 @@ import {
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { ResponseMessage } from '@core/decorators'
-import {
-  CreateOrganizationDto,
-  UpdateOrganizationDto,
-  FindOrganizationsDto,
-  OrganizationResponseDto,
-  ORGANIZATION_SORTABLE_FIELDS,
-  ORGANIZATION_SEARCH_FIELDS,
-} from '../dtos'
+import { OrganizationResponseDto } from '../dtos'
 import {
   CreateOrganizationUseCase,
+  CreateOrganizationDto,
+} from '../use-cases/create-organization'
+import {
   UpdateOrganizationUseCase,
-  FindOrganizationByIdUseCase,
+  UpdateOrganizationDto,
+} from '../use-cases/update-organization'
+import {
   FindOrganizationsWithFiltersUseCase,
-  UploadLogoUseCase,
-  RemoveOrganizationUseCase,
-  ActivateOrganizationUseCase,
-  DeactivateOrganizationWithUsersUseCase,
-} from '../use-cases'
+  FindOrganizationsDto,
+  ORGANIZATION_SORTABLE_FIELDS,
+  ORGANIZATION_SEARCH_FIELDS,
+} from '../use-cases/find-organizations-with-filters'
+import { FindOrganizationByIdUseCase } from '../use-cases/find-organization-by-id'
+import { UploadLogoUseCase } from '../use-cases/upload-logo'
+import { RemoveOrganizationUseCase } from '../use-cases/remove-organization'
+import { ActivateOrganizationUseCase } from '../use-cases/activate-organization'
+import { DeactivateOrganizationWithUsersUseCase } from '../use-cases/deactivate-organization-with-users'
 
 @ApiTags('organizations')
 @Controller('organizations')

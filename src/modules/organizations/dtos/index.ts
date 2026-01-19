@@ -1,8 +1,7 @@
-export { CreateOrganizationDto } from './create-organization.dto'
-export { UpdateOrganizationDto } from './update-organization.dto'
-export {
-  FindOrganizationsDto,
-  ORGANIZATION_SORTABLE_FIELDS,
-  ORGANIZATION_SEARCH_FIELDS,
-} from './find-organizations.dto'
-export { OrganizationResponseDto } from './organization-response.dto'
+// DTOs compartidos (usados en múltiples lugares)
+export * from './organization-response.dto'
+
+// DTOs específicos ahora están en sus respectivos use-cases:
+// - CreateOrganizationDto → use-cases/create-organization/
+// - UpdateOrganizationDto → use-cases/update-organization/
+// - FindOrganizationsDto → use-cases/find-organizations-with-filters/

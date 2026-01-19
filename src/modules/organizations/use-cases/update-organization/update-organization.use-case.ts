@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { Transactional } from '@core/database'
-import { UpdateOrganizationDto } from '../../dtos'
+import { UpdateOrganizationDto } from './update-organization.dto'
 import { OrganizationEntity } from '../../entities/organization.entity'
 import { OrganizationValidator } from '../../validators/organization.validator'
 import { OrganizationFactory } from '../../factories/organization.factory'

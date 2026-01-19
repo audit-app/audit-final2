@@ -42,7 +42,7 @@ import {
   RemoveUserUseCase,
   ActivateUserUseCase,
   VerifyEmailUseCase,
-  VerifyEmailDto,
+  UserVerifyEmailDto,
   ResendInvitationUseCase,
 } from '../use-cases'
 import { UploadAvatar } from '@core/files'
@@ -237,7 +237,7 @@ export class UsersController {
     description:
       'Token inválido/expirado o contraseña no cumple requisitos de seguridad',
   })
-  async verifyEmail(@Body() dto: VerifyEmailDto) {
+  async verifyEmail(@Body() dto: UserVerifyEmailDto) {
     return await this.verifyEmailUseCase.execute(dto)
   }
 

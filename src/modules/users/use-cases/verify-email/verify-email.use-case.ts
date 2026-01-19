@@ -5,7 +5,7 @@ import { UserEntity } from '../../entities/user.entity'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
 import { EmailVerificationService } from '../../services'
-import { VerifyEmailDto } from './verify-email.dto'
+import { UserVerifyEmailDto } from './verify-email.dto'
 
 /**
  * Caso de uso: Verificar email de usuario y establecer contraseña inicial
@@ -41,7 +41,7 @@ export class VerifyEmailUseCase {
    * @throws {BadRequestException} Si el token es inválido, expiró o el email ya fue verificado
    */
   @Transactional()
-  async execute(dto: VerifyEmailDto): Promise<UserEntity> {
+  async execute(dto: UserVerifyEmailDto): Promise<UserEntity> {
     // 1. Consumir token (busca, valida y revoca automáticamente)
     const tokenData = await this.emailVerificationService.consumeToken(
       dto.token,

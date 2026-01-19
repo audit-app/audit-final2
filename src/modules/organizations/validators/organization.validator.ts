@@ -4,19 +4,15 @@ import { ORGANIZATION_REPOSITORY } from '../tokens'
 import {
   NameAlreadyExistsException,
   NitAlreadyExistsException,
-  OrganizationHasActiveUsersException,
   OrganizationNotFoundException,
 } from '../exceptions'
-import { USERS_REPOSITORY } from '../../users/tokens'
-import type { IUsersRepository } from '../../users/repositories'
+import { OrganizationEntity } from '../entities'
 
 @Injectable()
 export class OrganizationValidator {
   constructor(
     @Inject(ORGANIZATION_REPOSITORY)
     private readonly organizationRepository: IOrganizationRepository,
-    @Inject(USERS_REPOSITORY)
-    private readonly userRepository: IUsersRepository,
   ) {}
 
   async validateUniqueNit(nit: string, excludeId?: string): Promise<void> {
@@ -35,12 +31,15 @@ export class OrganizationValidator {
     }
   }
 
-  async ensureOrganizationExists(organizationId: string): Promise<void> {
+  async validateAndGetOrganization(
+    organizationId: string,
+  ): Promise<OrganizationEntity> {
     const organization =
       await this.organizationRepository.findById(organizationId)
     if (!organization) {
       throw new OrganizationNotFoundException(organizationId)
     }
+    return organization
   }
 
   async validateUniqueConstraints(
@@ -52,14 +51,5 @@ export class OrganizationValidator {
       this.validateUniqueName(name, excludeId),
       this.validateUniqueNit(nit, excludeId),
     ])
-  }
-
-  async validateCanBeDeactivated(organizationId: string): Promise<void> {
-    const activeUsersCount =
-      await this.userRepository.countUsersByOrganization(organizationId)
-
-    if (activeUsersCount > 0) {
-      throw new OrganizationHasActiveUsersException()
-    }
   }
 }

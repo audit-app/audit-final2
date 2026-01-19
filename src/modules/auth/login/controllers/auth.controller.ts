@@ -18,12 +18,13 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger'
 import type { Request, Response } from 'express'
 import { CookieService } from '@core/http/services/cookie.service'
 import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
-import { LoginDto, LoginResponseDto } from '../dtos'
+import { LoginDto, LoginResponseDto, MeResponseDto } from '../dtos'
 import { Public, GetUser, GetToken } from '../../shared/decorators'
 import type { JwtPayload } from '../../shared/interfaces'
 import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
 import { TrustedDeviceRepository } from '../../trusted-devices'
 import { JwtAuthGuard } from '../../shared'
+import { NavigationService } from '../../shared/services'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
 import { UserResponseDto } from '../../../users/dtos'
@@ -38,6 +39,7 @@ export class AuthController {
     private readonly logoutUseCase: LogoutUseCase,
     private readonly cookieService: CookieService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
+    private readonly navigationService: NavigationService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
   ) {}
@@ -213,10 +215,10 @@ export class AuthController {
    * GET /auth/me
    *
    * Obtiene el perfil del usuario autenticado
-   * Retorna toda la información del usuario incluyendo organización
+   * Retorna toda la información del usuario incluyendo organización y rutas de navegación
    *
    * @param user - Usuario autenticado (del JWT)
-   * @returns Perfil completo del usuario
+   * @returns Perfil completo del usuario con navegación
    *
    * @example
    * ```
@@ -227,14 +229,14 @@ export class AuthController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Obtener perfil del usuario autenticado',
+    summary: 'Obtener perfil del usuario autenticado con navegación',
     description:
-      'Retorna la información completa del usuario actual incluyendo datos de su organización',
+      'Retorna la información completa del usuario actual incluyendo datos de su organización y rutas de navegación basadas en sus roles',
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Perfil del usuario',
-    type: UserResponseDto,
+    description: 'Perfil del usuario con navegación',
+    type: MeResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -244,14 +246,22 @@ export class AuthController {
     status: HttpStatus.NOT_FOUND,
     description: 'Usuario no encontrado',
   })
-  async getProfile(@GetUser() user: JwtPayload): Promise<UserResponseDto> {
+  async getProfile(@GetUser() user: JwtPayload): Promise<MeResponseDto> {
     const profile = await this.usersRepository.getProfile(user.sub)
 
     if (!profile) {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    return profile
+    // Obtener rutas de navegación según los roles del usuario
+    const navigation = this.navigationService.getNavigationForUser(
+      profile.roles,
+    )
+
+    return {
+      ...profile,
+      navigation,
+    }
   }
 
   /**

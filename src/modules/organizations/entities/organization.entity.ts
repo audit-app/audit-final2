@@ -40,4 +40,12 @@ export class OrganizationEntity extends BaseEntity {
 
   @OneToMany(() => UserEntity, (user) => user.organization)
   users: UserEntity[]
+
+  activate() {
+    this.isActive = true
+  }
+
+  deactivate() {
+    this.isActive = false
+  }
 }

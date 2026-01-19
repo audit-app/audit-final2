@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { OrganizationEntity } from '../entities/organization.entity'
-import { CreateOrganizationDto, UpdateOrganizationDto } from '../dtos'
+import { CreateOrganizationDto } from '../use-cases/create-organization/create-organization.dto'
+import { UpdateOrganizationDto } from '../use-cases/update-organization/update-organization.dto'
 
 /**
  * Factory para crear y actualizar entidades de Organization

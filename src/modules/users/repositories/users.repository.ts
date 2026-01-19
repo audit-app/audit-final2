@@ -8,7 +8,6 @@ import { IUsersRepository } from './users-repository.interface'
 import { PaginatedData } from '@core/dtos'
 import { FindUsersDto } from '../use-cases/find-all-users'
 import { ArrayContains } from 'typeorm'
-import { UserResponseDto } from '../dtos'
 @Injectable()
 export class UsersRepository
   extends BaseRepository<UserEntity>
@@ -181,25 +180,20 @@ export class UsersRepository
    * @param query - DTO con filtros y opciones de paginación
    * @returns Datos crudos mapeados { data, total }
    */
-  async paginateUsers(
-    query: FindUsersDto,
-  ): Promise<PaginatedData<UserResponseDto>> {
+  async paginateUsers(query: FindUsersDto): Promise<PaginatedData<UserEntity>> {
     const { search, isActive, organizationId, role } = query
 
-    // 1. Definimos los filtros fijos (AND)
+    // 1. Construir Filtros WHERE
     const baseFilter: FindOptionsWhere<UserEntity> = {}
-
     if (isActive !== undefined) baseFilter.isActive = isActive
     if (organizationId) baseFilter.organizationId = organizationId
+    if (role) baseFilter.roles = ArrayContains([role]) // Si role no es undefined
 
-    // 2. Definimos la lógica de búsqueda (OR) combinada con el filtro base
-    // Si hay búsqueda, creamos un array de condiciones. Si no, usamos solo el baseFilter.
     let where: FindOptionsWhere<UserEntity> | FindOptionsWhere<UserEntity>[] =
       baseFilter
 
     if (search) {
       const searchTerm = ILike(`%${search}%`)
-      // Campos donde queremos buscar
       const searchFields: Array<keyof UserEntity> = [
         'names',
         'lastNames',
@@ -213,26 +207,18 @@ export class UsersRepository
         [field]: searchTerm,
       }))
     }
-    if (role) {
-      baseFilter.roles = ArrayContains([role])
-    }
 
-    return this.paginateWithMapper<UserResponseDto>(
-      query,
-      (user) => this.mapToDto(user),
-      {
-        where,
-        relations: { organization: true },
-      },
-    )
+    return await this.paginate(query, {
+      where,
+      relations: { organization: true },
+    })
   }
-
   /**
    * Obtiene el perfil completo de un usuario por su ID
    * @param userId - ID del usuario
    * @returns Perfil del usuario como DTO o null si no existe
    */
-  async getProfile(userId: string): Promise<UserResponseDto | null> {
+  async getProfile(userId: string): Promise<UserEntity | null> {
     const user = await this.getRepo().findOne({
       where: { id: userId },
       relations: { organization: true },
@@ -241,36 +227,15 @@ export class UsersRepository
     if (!user) {
       return null
     }
-
-    return this.mapToDto(user)
+    return user
   }
 
-  /**
-   * Mapea UserEntity a UserResponseDto
-   * @param user - Entidad de usuario
-   * @returns DTO de respuesta del usuario
-   */
-  private mapToDto(user: UserEntity): UserResponseDto {
-    return {
-      id: user.id,
-      names: user.names,
-      lastNames: user.lastNames,
-      email: user.email,
-      username: user.username,
-      ci: user.ci,
-      phone: user.phone,
-      address: user.address,
-      image: user.image,
-      isActive: user.isActive,
-      emailVerified: user.emailVerified,
-      emailVerifiedAt: user.emailVerifiedAt,
-      isTwoFactorEnabled: user.isTwoFactorEnabled,
-      roles: user.roles,
-      organizationId: user.organizationId,
-      organizationImage: user.organization?.logoUrl || null,
-      organizationName: user.organization?.name || 'Sin organización',
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    }
+  async deactivateUsersByOrganization(
+    organizationId: string,
+  ): Promise<boolean> {
+    return await this.update(
+      { organizationId: organizationId, isActive: true },
+      { isActive: false },
+    )
   }
 }

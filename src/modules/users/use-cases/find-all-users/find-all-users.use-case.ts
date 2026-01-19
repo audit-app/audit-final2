@@ -4,14 +4,8 @@ import type { IUsersRepository } from '../../repositories'
 import { FindUsersDto } from './find-all-users.dto'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 import { UserResponseDto } from '../../dtos'
+import { UserEntity } from '../../entities'
 
-/**
- * Caso de uso: Obtener todos los usuarios
- *
- * RESPONSABILIDAD: Coordinar la obtención de datos y construcción de la respuesta
- * - El repository obtiene los datos crudos { data, total }
- * - El use case construye la respuesta HTTP con metadata de paginación
- */
 @Injectable()
 export class FindAllUsersUseCase {
   constructor(
@@ -20,22 +14,50 @@ export class FindAllUsersUseCase {
   ) {}
 
   async execute(
-    findUsersDto: FindUsersDto,
+    dto: FindUsersDto,
   ): Promise<PaginatedResponse<UserResponseDto>> {
-    // 1. Obtener datos crudos del repositorio
-    const result = await this.usersRepository.paginateUsers(findUsersDto)
+    // 1. Obtener Entidades del Repo
+    const { data: entities, total } =
+      await this.usersRepository.paginateUsers(dto)
 
-    // 2. Si se pidió "all", usar createAll (metadata especial)
-    if (findUsersDto.all) {
-      return PaginatedResponseBuilder.createAll(result.data)
+    // 2. Mapear Entidad -> DTO (Aquí está la lógica de presentación)
+    const dtos = entities.map((user) => this.mapToDto(user))
+
+    // 3. Devolver respuesta paginada
+    // Nota: Si usas tu builder, asegúrate que acepte los DTOs ya mapeados
+    if (dto.all) {
+      return PaginatedResponseBuilder.createAll(dtos)
     }
 
-    // 3. Construir respuesta paginada normal con metadata
     return PaginatedResponseBuilder.create(
-      result.data,
-      result.total,
-      findUsersDto.page || 1,
-      findUsersDto.limit || 10,
+      dtos,
+      total,
+      dto.page || 1,
+      dto.limit || 10,
     )
+  }
+
+  private mapToDto(user: UserEntity): UserResponseDto {
+    return {
+      id: user.id,
+      names: user.names,
+      lastNames: user.lastNames,
+      email: user.email,
+      username: user.username,
+      ci: user.ci,
+      phone: user.phone,
+      address: user.address,
+      image: user.image,
+      isActive: user.isActive,
+      emailVerified: user.emailVerified,
+      emailVerifiedAt: user.emailVerifiedAt,
+      isTwoFactorEnabled: user.isTwoFactorEnabled,
+      roles: user.roles,
+      organizationId: user.organizationId,
+      organizationImage: user.organization?.logoUrl || null,
+      organizationName: user.organization?.name || 'Sin organización',
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    }
   }
 }

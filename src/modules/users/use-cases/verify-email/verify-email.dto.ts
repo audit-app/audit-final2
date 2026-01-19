@@ -3,9 +3,9 @@ import { ApiProperty } from '@nestjs/swagger'
 import { USER_CONSTRAINTS } from '../../constants/user-schema.constants'
 
 /**
- * DTO para verificar email y establecer contraseña inicial
+ * DTO para verificar email y establecer contraseña inicial (Users module)
  */
-export class VerifyEmailDto {
+export class UserVerifyEmailDto {
   @ApiProperty({
     description: 'Token de verificación enviado por email',
     example: '550e8400-e29b-41d4-a716-446655440000',

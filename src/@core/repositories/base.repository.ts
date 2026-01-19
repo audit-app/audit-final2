@@ -5,6 +5,7 @@ import {
   type FindOneOptions,
   type FindOptionsWhere,
   type Repository,
+  FindOptionsOrder,
   In,
 } from 'typeorm'
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
@@ -46,11 +47,11 @@ export abstract class BaseRepository<
   }
 
   // ---------- Métodos de creación ----------
-  create(data: DeepPartial<T>): T {
+  protected create(data: DeepPartial<T>): T {
     return this.getRepo().create(data)
   }
 
-  createMany(data: DeepPartial<T>[]): T[] {
+  protected createMany(data: DeepPartial<T>[]): T[] {
     return this.getRepo().create(data)
   }
 
@@ -92,12 +93,12 @@ export abstract class BaseRepository<
     } as FindManyOptions<T>)
   }
 
-  async findAll(options?: FindManyOptions<T>): Promise<T[]> {
+  protected async findAll(options?: FindManyOptions<T>): Promise<T[]> {
     return await this.getRepo().find(options)
   }
 
   // Búsqueda genérica
-  async findOne(
+  protected async findOne(
     where: FindOptionsWhere<T>,
     options?: FindOneOptions<T>,
   ): Promise<T | null> {
@@ -107,7 +108,7 @@ export abstract class BaseRepository<
     })
   }
 
-  async findWhere(
+  protected async findWhere(
     where: FindOptionsWhere<T>,
     options?: FindManyOptions<T>,
   ): Promise<T[]> {
@@ -117,73 +118,41 @@ export abstract class BaseRepository<
     })
   }
 
-  async count(where?: FindOptionsWhere<T>): Promise<number> {
+  protected async count(where?: FindOptionsWhere<T>): Promise<number> {
     return await this.getRepo().count({ where })
   }
 
-  async exists(where: FindOptionsWhere<T>): Promise<boolean> {
+  protected async exists(where: FindOptionsWhere<T>): Promise<boolean> {
     const count = await this.count(where)
     return count > 0
   }
 
-  /**
-   * Paginación básica sin filtros personalizados
-   *
-   * RESPONSABILIDAD: Solo obtener datos de la BD
-   * La construcción de la respuesta HTTP se hace en el use case
-   *
-   * @param query - DTO de paginación (page, limit, all, sortBy, sortOrder)
-   * @returns Datos crudos { data, total }
-   */
-  async paginate(query: PaginationDto): Promise<PaginatedData<T>> {
-    return this.paginateWithOptions(query)
-  }
-
-  /**
-   * Paginación con opciones personalizadas de TypeORM
-   *
-   * RESPONSABILIDAD: Solo obtener datos de la BD
-   * Permite agregar filtros WHERE, relaciones, selects personalizados, etc.
-   * La construcción de la respuesta HTTP se hace en el use case
-   *
-   * @param query - DTO de paginación
-   * @param options - Opciones de TypeORM (where, relations, select, etc.)
-   * @returns Datos crudos { data, total }
-   *
-   * @example
-   * ```typescript
-   * // En UserRepository
-   * async paginateUsers(dto: FindUsersDto) {
-   *   return super.paginateWithOptions(dto, {
-   *     where: { status: UserStatus.ACTIVE },
-   *     relations: ['organization'],
-   *   })
-   * }
-   * ```
-   */
-  protected async paginateWithOptions(
+  protected async paginate(
     query: PaginationDto,
     options?: FindManyOptions<T>,
   ): Promise<PaginatedData<T>> {
     const { page = 1, limit = 10, all = false, sortBy, sortOrder } = query
 
-    const findOptions: FindManyOptions<T> = {
-      ...options,
-      order: sortBy
-        ? { [sortBy]: sortOrder || 'DESC' }
-        : options?.order || undefined,
-    } as FindManyOptions<T>
+    let order: FindOptionsOrder<T> =
+      (options?.order as FindOptionsOrder<T>) || {}
 
-    // Si all=true, devolver todos los registros
-    if (all) {
-      const allRecords = await this.findAll(findOptions)
-      return {
-        data: allRecords,
-        total: allRecords.length,
+    if (sortBy) {
+      order = {
+        ...order,
+        [sortBy as keyof T]: sortOrder || 'DESC',
       }
     }
 
-    // Paginación normal
+    const findOptions: FindManyOptions<T> = {
+      ...options,
+      order,
+    }
+
+    if (all) {
+      const allRecords = await this.findAll(findOptions)
+      return { data: allRecords, total: allRecords.length }
+    }
+
     const skip = (page - 1) * limit
     const [data, total] = await this.getRepo().findAndCount({
       ...findOptions,
@@ -194,62 +163,19 @@ export abstract class BaseRepository<
     return { data, total }
   }
 
-  /**
-   * Paginación con mapeo a DTO
-   *
-   * RESPONSABILIDAD: Solo obtener datos de la BD y mapearlos
-   * Permite transformar los resultados a un tipo diferente.
-   * Útil para convertir entidades a DTOs de respuesta.
-   * La construcción de la respuesta HTTP se hace en el use case
-   *
-   * @param query - DTO de paginación
-   * @param mapper - Función de mapeo de T a R
-   * @param options - Opciones de TypeORM (opcional)
-   * @returns Datos crudos mapeados { data, total }
-   *
-   * @example
-   * ```typescript
-   * // En UserRepository
-   * async paginateUsers(dto: FindUsersDto) {
-   *   return super.paginateWithMapper<UserResponseDto>(
-   *     dto,
-   *     (user) => this.mapToDto(user),
-   *     {
-   *       where: { status: UserStatus.ACTIVE },
-   *       relations: ['organization'],
-   *     }
-   *   )
-   * }
-   * ```
-   */
-  protected async paginateWithMapper<R>(
-    query: PaginationDto,
-    mapper: (entity: T) => R,
-    options?: FindManyOptions<T>,
-  ): Promise<PaginatedData<R>> {
-    // Obtener datos paginados (entidades)
-    const result = await this.paginateWithOptions(query, options)
-
-    // Mapear los datos
-    const mappedData = result.data.map(mapper)
-
-    // Retornar datos mapeados con total
-    return {
-      data: mappedData,
-      total: result.total,
-    }
-  }
-
   // ---------- Métodos de actualización ----------
+
   async update(
-    id: string,
+    criteria: string | number | FindOptionsWhere<T>,
     partialEntity: QueryDeepPartialEntity<T>,
   ): Promise<boolean> {
-    // Aplicar auditoría (updatedBy)
     const auditData = this.auditService.getUpdateAudit()
     const dataWithAudit = { ...partialEntity, ...auditData }
 
-    const result = await this.getRepo().update(id, dataWithAudit)
+    // Ejecución
+    const result = await this.getRepo().update(criteria, dataWithAudit)
+
+    // Tu mapeo estándar a booleano
     return (result.affected ?? 0) > 0
   }
 
