@@ -25,6 +25,7 @@ import { AuthModule } from './modules/auth/auth.module'
 import { AuthorizationModule } from './modules/authorization/authorization.module'
 import { PermissionsGuard } from './modules/authorization/guards/permissions.guard'
 import { TemplatesModule } from './modules/templates/templates.module'
+import { StandardsModule } from './modules/standards/standards.module'
 import { MaturityModule } from './modules/maturity/maturity.module'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 
@@ -63,7 +64,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     // Feature modules
     OrganizationsModule,
     UsersModule,
-    TemplatesModule,
+    TemplatesModule, // Must be imported before StandardsModule (dependency)
+    StandardsModule,
     MaturityModule,
   ],
   controllers: [AppController],

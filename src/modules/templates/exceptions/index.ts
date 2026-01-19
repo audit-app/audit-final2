@@ -1,5 +1,3 @@
 export * from './template-not-found.exception'
 export * from './template-already-exists.exception'
 export * from './template-not-editable.exception'
-export * from './standard-not-found.exception'
-export * from './standard-has-children.exception'

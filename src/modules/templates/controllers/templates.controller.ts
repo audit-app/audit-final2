@@ -43,6 +43,7 @@ import {
   TEMPLATE_SEARCH_FIELDS,
   CreateTemplateDto,
   UpdateTemplateDto,
+  CloneTemplateDto,
 } from '../dtos'
 import {
   CreateTemplateUseCase,
@@ -55,8 +56,7 @@ import {
   ArchiveTemplateUseCase,
   CloneTemplateUseCase,
 } from '../use-cases/templates'
-import { CloneTemplateDto } from '../use-cases/templates/clone-template/clone-template.dto'
-import { TemplateImportService } from '../services/template-import.service'
+import { TemplateImportService } from '../shared/services/template-import.service'
 import { TemplateStatus } from '../constants/template-status.enum'
 
 @ApiTags('templates')

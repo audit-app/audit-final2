@@ -1,13 +1,11 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 // Entities
 import { TemplateEntity } from './entities/template.entity'
-import { StandardEntity } from './entities/standard.entity'
 
 // Repositories
 import { TemplatesRepository } from './repositories/templates.repository'
-import { StandardsRepository } from './repositories/standards.repository'
 
 // Use Cases - Templates
 import {
@@ -22,35 +20,24 @@ import {
   CloneTemplateUseCase,
 } from './use-cases/templates'
 
-// Use Cases - Standards
-import {
-  CreateStandardUseCase,
-  UpdateStandardUseCase,
-  DeleteStandardUseCase,
-  FindStandardUseCase,
-  FindAllStandardsUseCase,
-  FindStandardsByTemplateUseCase,
-  FindStandardsTreeUseCase,
-  FindStandardChildrenUseCase,
-  FindAuditableStandardsUseCase,
-  ActivateStandardUseCase,
-  DeactivateStandardUseCase,
-} from './use-cases/standards'
-
 // Controllers
 import { TemplatesController } from './controllers/templates.controller'
-import { StandardsController } from './controllers/standards.controller'
 
 // Services
-import { TemplateImportService } from './services/template-import.service'
+import { TemplateImportService } from './shared/services/template-import.service'
+
+// Import StandardsModule to access StandardsRepository (circular dependency)
+import { StandardsModule } from '../standards/standards.module'
 
 @Module({
-  imports: [TypeOrmModule.forFeature([TemplateEntity, StandardEntity])],
-  controllers: [TemplatesController, StandardsController],
+  imports: [
+    TypeOrmModule.forFeature([TemplateEntity]),
+    forwardRef(() => StandardsModule), // Use forwardRef to break circular dependency
+  ],
+  controllers: [TemplatesController],
   providers: [
     // Repositories
     TemplatesRepository,
-    StandardsRepository,
 
     // Services
     TemplateImportService,
@@ -65,31 +52,18 @@ import { TemplateImportService } from './services/template-import.service'
     PublishTemplateUseCase,
     ArchiveTemplateUseCase,
     CloneTemplateUseCase,
-
-    // Standard Use Cases
-    CreateStandardUseCase,
-    UpdateStandardUseCase,
-    DeleteStandardUseCase,
-    FindStandardUseCase,
-    FindAllStandardsUseCase,
-    FindStandardsByTemplateUseCase,
-    FindStandardsTreeUseCase,
-    FindStandardChildrenUseCase,
-    FindAuditableStandardsUseCase,
-    ActivateStandardUseCase,
-    DeactivateStandardUseCase,
   ],
   exports: [
-    // Repositories (por si otros módulos los necesitan)
+    // Repositories (for other modules, e.g., StandardsModule)
     TemplatesRepository,
-    StandardsRepository,
 
-    // Use Cases (por si otros módulos los necesitan)
+    // Use Cases (for other modules if needed)
     FindTemplateUseCase,
     FindTemplatesUseCase,
     FindTemplatesWithFiltersUseCase,
-    FindStandardsByTemplateUseCase,
-    FindStandardsTreeUseCase,
+
+    // Services (for StandardsModule to use)
+    TemplateImportService,
   ],
 })
 export class TemplatesModule {}

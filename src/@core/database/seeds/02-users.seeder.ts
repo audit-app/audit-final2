@@ -50,7 +50,7 @@ export default class UsersSeeder implements Seeder {
       {
         names: 'Carlos',
         lastNames: 'Administrador',
-        email: 'admin@gmail.com',
+        email: 'nostemlucas@gmail.com',
         username: 'admin',
         ci: '1234567',
         password: hashedPassword,
@@ -67,7 +67,7 @@ export default class UsersSeeder implements Seeder {
       {
         names: 'María',
         lastNames: 'Gerente López',
-        email: 'maria.gerente@auditcorp.bo',
+        email: 'limoontes@gmail.com',
         username: 'mgerente',
         ci: '2345678',
         password: hashedPassword,

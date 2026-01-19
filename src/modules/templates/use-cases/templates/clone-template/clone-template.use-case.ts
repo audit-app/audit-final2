@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { TemplatesRepository } from '../../../repositories/templates.repository'
-import { StandardsRepository } from '../../../repositories/standards.repository'
+import { StandardsRepository } from '../../../../standards/repositories/standards.repository'
 import {
   TemplateNotFoundException,
   TemplateAlreadyExistsException,
 } from '../../../exceptions'
 import { TemplateStatus } from '../../../constants/template-status.enum'
-import type { CloneTemplateDto } from './clone-template.dto'
+import type { CloneTemplateDto } from '../../../dtos/clone-template.dto'
 import type { TemplateEntity } from '../../../entities/template.entity'
 
 /**

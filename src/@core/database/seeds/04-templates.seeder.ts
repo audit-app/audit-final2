@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm'
 import { Seeder } from 'typeorm-extension'
 import { TemplateEntity } from '../../../modules/templates/entities/template.entity'
-import { StandardEntity } from '../../../modules/templates/entities/standard.entity'
+import { StandardEntity } from '../../../modules/standards/entities/standard.entity'
 import {
   ISO27001Template,
   ASFITemplate,
