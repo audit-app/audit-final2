@@ -50,7 +50,7 @@ export default class UsersSeeder implements Seeder {
       {
         names: 'Carlos',
         lastNames: 'Administrador',
-        email: 'nostemlucas@gmail.com',
+        email: 'admin@gmail.com',
         username: 'admin',
         ci: '1234567',
         password: hashedPassword,
@@ -214,7 +214,7 @@ export default class UsersSeeder implements Seeder {
     ]
 
     for (const userData of users) {
-      const user = userRepository.create({ ...userData })
+      const user = userRepository.create({ ...userData, emailVerified: true })
       await userRepository.save(user)
       console.log(
         `  ✓ Created user: ${userData.email} (${userData.roles.join(', ')}) - Status: ${userData.status}`,
