@@ -13,8 +13,11 @@ interface ErrorResponse {
   timestamp: string
   path: string
   method: string
-  message: string | string[]
+  message: string
   error?: string
+  errors?: string[] // Array de errores de validación simples
+  validationErrors?: unknown // Errores de validación complejos (ej: import Excel)
+  summary?: unknown // Resumen de validación (ej: import Excel)
   details?: unknown
 }
 
@@ -32,15 +35,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>()
 
     // Determinar el status code y mensaje
-    const { statusCode, message, error, details } =
+    const { statusCode, message, error, details, validationErrors, summary } =
       this.parseException(exception)
 
     // Construir contexto de usuario
-    const userContext = request.user
+    const user = request.user as any
+    const userContext = user
       ? {
-          userId: request.user.sub,
-          userEmail: request.user.email,
-          userName: request.user.username,
+          userId: user.sub as string,
+          userEmail: user.email as string,
+          userName: user.username as string,
         }
       : undefined
 
@@ -77,8 +81,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
       timestamp: new Date().toISOString(),
       path: request.url,
       method: request.method,
-      message,
+      // Si message es un array (errores de validación), mover a campo 'errors'
+      message: Array.isArray(message) ? 'Error de validación' : message,
       error,
+    }
+
+    // Si hay errores de validación complejos (ej: import Excel)
+    if (validationErrors) {
+      errorResponse.validationErrors = validationErrors
+    }
+    // Si message era un array simple, agregarlo en campo 'errors'
+    else if (Array.isArray(message)) {
+      errorResponse.errors = message
+    }
+
+    // Si hay summary de validación (ej: import Excel)
+    if (summary) {
+      errorResponse.summary = summary
     }
 
     // Agregar detalles solo en desarrollo
@@ -98,6 +117,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     message: string | string[]
     error: string
     details?: unknown
+    validationErrors?: unknown
+    summary?: unknown
   } {
     // HttpException de NestJS
     if (exception instanceof HttpException) {
@@ -108,7 +129,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
       if (typeof response === 'object' && response !== null) {
         const responseObj = response as Record<string, unknown>
 
-        // Extraer solo información adicional para details (no duplicar)
+        // Detectar si es un error de validación complejo (import Excel)
+        // Tiene 'errors' como objeto (no array) y 'summary'
+        const hasComplexValidation =
+          responseObj.errors &&
+          typeof responseObj.errors === 'object' &&
+          !Array.isArray(responseObj.errors) &&
+          responseObj.summary
+
+        if (hasComplexValidation) {
+          // Caso especial: errores de importación de Excel
+          return {
+            statusCode: status,
+            message: (responseObj.message as string) || exception.message,
+            error: (responseObj.error as string) || exception.name,
+            validationErrors: responseObj.errors,
+            summary: responseObj.summary,
+          }
+        }
+
+        // Caso normal: extraer información adicional para details (no duplicar)
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { message, error, statusCode: _, ...additionalInfo } = responseObj
         const hasAdditionalInfo = Object.keys(additionalInfo).length > 0
