@@ -89,7 +89,7 @@ export class Resend2FACodeUseCase {
     await this.emailService.sendTwoFactorCode({
       to: user.email,
       userName: user.username,
-      code, // MISMO código que ya existe en Redis
+      code,
       expiresInMinutes: 5,
     })
 

@@ -29,7 +29,7 @@ export class ListTrustedDevicesUseCase {
    */
   async execute(userId: string): Promise<TrustedDeviceResponseDto[]> {
     // 1. Obtener todos los dispositivos confiables del usuario desde Redis
-    const devices = await this.trustedDeviceRepository.getUserDevices(userId)
+    const devices = await this.trustedDeviceRepository.findAllByUser(userId)
 
     // 2. Mapear a DTO (ya vienen con la estructura correcta)
     return devices.map((device) => ({
@@ -37,6 +37,7 @@ export class ListTrustedDevicesUseCase {
       browser: device.browser,
       os: device.os,
       device: device.device,
+      id: device.id,
       ip: device.ip,
       createdAt: device.createdAt,
       lastUsedAt: device.lastUsedAt,

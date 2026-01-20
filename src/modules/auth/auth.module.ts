@@ -23,7 +23,6 @@ import {
 import {
   TwoFactorController,
   TwoFactorTokenService,
-  Generate2FACodeUseCase,
   Verify2FACodeUseCase,
   Resend2FACodeUseCase,
   // Generate2FARateLimitPolicy, // TODO: Implementar si se necesita rate limiting en generate
@@ -75,7 +74,7 @@ import {
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtAuthGuard } from './shared'
-import { NavigationService } from './shared/services'
+import { NavigationService } from '@shared'
 import { RequestResetPasswordRateLimitPolicy } from './password-reset/policies'
 import { TokenStorageRepository } from './login/services/token-storage.repository'
 
@@ -165,7 +164,6 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     ResetPasswordUseCase,
 
     // Two-Factor Authentication
-    Generate2FACodeUseCase,
     Verify2FACodeUseCase,
     Resend2FACodeUseCase,
 

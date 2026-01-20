@@ -30,7 +30,7 @@ export class ListSessionsUseCase {
     currentTokenId?: string,
   ): Promise<SessionResponseDto[]> {
     // 1. Obtener todas las sesiones del usuario desde Redis
-    const sessions = await this.tokenStorage.getUserSessions(userId)
+    const sessions = await this.tokenStorage.findAllByUser(userId)
 
     // 2. Mapear a DTO y marcar la sesión actual
     return sessions.map((session) => ({

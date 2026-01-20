@@ -51,7 +51,13 @@ export class NavigationItemDto {
     example: 'danger',
     required: false,
   })
-  badgeVariant?: 'primary' | 'secondary' | 'success' | 'danger' | 'warning' | 'info'
+  badgeVariant?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'danger'
+    | 'warning'
+    | 'info'
 
   @ApiProperty({
     description: 'Si el item está deshabilitado',

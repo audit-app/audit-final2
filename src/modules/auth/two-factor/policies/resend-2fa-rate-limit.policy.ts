@@ -6,10 +6,6 @@ import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attem
 /**
  * Política de Rate Limiting para reenvío de códigos 2FA
  *
- * DIFERENCIA CLAVE vs otras políticas:
- * - No extiende BaseRateLimitPolicy porque usa lógica de COOLDOWN en lugar de conteo de intentos
- * - Usa TTL de Redis para implementar "espera 60 segundos"
- *
  * Protege contra:
  * - Spam de resends
  * - Flooding de emails
@@ -18,8 +14,8 @@ import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attem
  * Límites:
  * - Espera 60 segundos entre cada resend (cooldown)
  *
- * Uso:
- * - Resend2FACodeUseCase
+ * Implementación simplificada: Usa RateLimitService directamente
+ * para cooldown (TTL de Redis)
  *
  * Flujo:
  * 1. Usuario solicita resend
@@ -60,14 +56,12 @@ export class Resend2FARateLimitPolicy {
    */
   async markResendAttempt(userId: string): Promise<void> {
     const key = this.getKey(userId)
-    const prefixedKey = this.getPrefixedKey(key)
 
-    // Guardamos un valor dummy (1) con TTL
+    // Incrementamos a 1 y establecemos TTL
     // La existencia de la key indica que el usuario está en cooldown
-    await this.rateLimitService['cacheService'].set(
-      prefixedKey,
-      '1',
-      this.cooldownSeconds,
+    await this.rateLimitService.incrementAttempts(
+      key,
+      this.cooldownSeconds / 60, // Convertir segundos a minutos
     )
   }
 
@@ -83,9 +77,5 @@ export class Resend2FARateLimitPolicy {
 
   private getKey(userId: string): string {
     return `${this.contextPrefix}:${userId.toLowerCase().trim()}`
-  }
-
-  private getPrefixedKey(key: string): string {
-    return `rate-limit:${key}`
   }
 }

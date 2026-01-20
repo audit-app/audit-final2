@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Role } from '../../../users/entities/user.entity'
+import { Role } from '../../../modules/users/entities/user.entity'
 import { NavigationItemDto } from '../dtos/navigation-item.dto'
 import { getNavigationForRole } from '../config/navigation.config'
 

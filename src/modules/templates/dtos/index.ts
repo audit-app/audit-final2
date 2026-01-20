@@ -6,4 +6,7 @@ export * from './template-response.dto'
 export * from './find-templates.dto'
 
 // Re-export constants from find-templates.dto
-export { TEMPLATE_SORTABLE_FIELDS, TEMPLATE_SEARCH_FIELDS } from './find-templates.dto'
+export {
+  TEMPLATE_SORTABLE_FIELDS,
+  TEMPLATE_SEARCH_FIELDS,
+} from './find-templates.dto'

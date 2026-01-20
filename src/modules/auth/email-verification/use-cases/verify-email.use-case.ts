@@ -4,38 +4,39 @@ import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
 
 /**
- * Use Case: Verificar email con token JWT
+ * Use Case: Verificar email con tokenId
  *
  * Responsabilidades:
- * - Validar token JWT
- * - Verificar que el token no esté usado (one-time use)
+ * - Validar tokenId (64 caracteres hex)
+ * - Verificar que el token exista en Redis (no expirado)
  * - Verificar que el usuario existe
  * - Verificar que el email no esté ya verificado
  * - Marcar email como verificado
- * - Marcar token como usado (one-time use)
+ * - Eliminar token de Redis (one-time use)
  * - Retornar mensaje de confirmación
  *
  * Seguridad:
- * - JWT con firma diferente (EMAIL_VERIFICATION_JWT_SECRET)
- * - One-time use (se marca como usado en Redis)
- * - Expira en 7 días
+ * - TokenId aleatorio de 256 bits (64 chars hex)
+ * - Almacenado en Redis con TTL de 7 días
+ * - One-time use (se elimina de Redis después de usar)
  * - Throttler global protege el endpoint
  *
  * Validaciones:
- * - Token JWT válido (firma + expiración)
- * - Token no usado previamente
+ * - TokenId existe en Redis (no expirado)
  * - Usuario existe
+ * - Email del token coincide con email actual del usuario
  * - Email no verificado previamente
  *
  * Flujo:
- * 1. Validar token JWT
- * 2. Si inválido/expirado/usado → lanzar excepción
+ * 1. Validar tokenId con OtpCoreService
+ * 2. Si inválido/expirado → lanzar excepción
  * 3. Buscar usuario por userId del payload
  * 4. Verificar que el usuario existe
- * 5. Verificar que el email no esté ya verificado
- * 6. Marcar email como verificado (emailVerified = true, emailVerifiedAt = now)
- * 7. Marcar token como usado (one-time use)
- * 8. Retornar mensaje de confirmación
+ * 5. Verificar que el email del token coincida con el actual
+ * 6. Verificar que el email no esté ya verificado
+ * 7. Marcar email como verificado (emailVerified = true, emailVerifiedAt = now)
+ * 8. Eliminar token de Redis (one-time use)
+ * 9. Retornar mensaje de confirmación
  */
 @Injectable()
 export class VerifyEmailUseCase {
@@ -48,12 +49,12 @@ export class VerifyEmailUseCase {
   /**
    * Ejecuta el flujo de verificación de email
    *
-   * @param token - Token JWT de verificación
+   * @param token - TokenId de 64 caracteres hexadecimales
    * @returns Mensaje de confirmación
    * @throws BadRequestException si el token es inválido o el email ya está verificado
    */
   async execute(token: string): Promise<{ message: string }> {
-    // 1. Validar token JWT
+    // 1. Validar tokenId con OtpCoreService
     const payload =
       await this.emailVerificationTokenService.validateToken(token)
 

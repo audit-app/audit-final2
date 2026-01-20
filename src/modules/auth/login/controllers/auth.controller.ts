@@ -1,13 +1,11 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
   Inject,
   NotFoundException,
-  Param,
   Post,
   Req,
   Res,
@@ -27,9 +25,8 @@ import { LoginDto, LoginResponseDto, MeResponseDto } from '../dtos'
 import { Public, GetUser, GetToken } from '../../shared/decorators'
 import type { JwtPayload } from '../../shared/interfaces'
 import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
-import { TrustedDeviceRepository } from '../../trusted-devices'
 import { JwtAuthGuard } from '../../shared'
-import { NavigationService } from '../../shared/services'
+import { NavigationService } from '@shared'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
 @UseGuards(JwtAuthGuard)
@@ -41,7 +38,6 @@ export class AuthController {
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
     private readonly cookieService: CookieService,
-    private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly navigationService: NavigationService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
@@ -85,11 +81,16 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @ConnectionInfo() connection: ConnectionMetadata,
+    @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDto> {
+    // Leer cookie de trusted device (si existe)
+    const deviceId = this.cookieService.getTrustedDeviceToken(req)
+
     const { response, refreshToken } = await this.loginUseCase.execute(
       loginDto,
       connection,
+      deviceId, // Pasar deviceId al use case
     )
 
     // Configurar refresh token en HTTP-only cookie (solo si existe)
@@ -287,161 +288,6 @@ export class AuthController {
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
       navigation,
-    }
-  }
-
-  /**
-   * GET /auth/trusted-devices
-   *
-   * Obtiene la lista de dispositivos marcados como confiables para el usuario autenticado
-   * Estos dispositivos tienen bypass automático de 2FA por 90 días
-   *
-   * @param user - Usuario autenticado (del JWT)
-   * @returns Lista de dispositivos con metadata (browser, os, IP, fechas)
-   *
-   * @example
-   * ```
-   * GET /auth/trusted-devices
-   * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   * ```
-   */
-  @Get('trusted-devices')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Listar dispositivos confiables',
-    description:
-      'Obtiene la lista de dispositivos marcados como confiables para bypass de 2FA',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Lista de dispositivos confiables',
-    schema: {
-      type: 'array',
-      items: {
-        properties: {
-          fingerprint: { type: 'string', example: 'a1b2c3d4...' },
-          browser: { type: 'string', example: 'Chrome' },
-          os: { type: 'string', example: 'Windows' },
-          device: { type: 'string', example: 'Desktop' },
-          ip: { type: 'string', example: '192.168.1.1' },
-          createdAt: { type: 'string', example: '2024-01-15T10:30:00.000Z' },
-          lastUsedAt: { type: 'string', example: '2024-01-20T15:45:00.000Z' },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
-  async getTrustedDevices(@GetUser() user: JwtPayload) {
-    return await this.trustedDeviceRepository.getUserDevices(user.sub)
-  }
-
-  /**
-   * DELETE /auth/trusted-devices/:fingerprint
-   *
-   * Elimina un dispositivo específico de la lista de confiables
-   * El usuario necesitará 2FA nuevamente en ese dispositivo
-   *
-   * @param user - Usuario autenticado (del JWT)
-   * @param fingerprint - Hash SHA-256 del dispositivo
-   *
-   * @example
-   * ```
-   * DELETE /auth/trusted-devices/a1b2c3d4e5f6...
-   * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   * ```
-   */
-  @Delete('trusted-devices/:fingerprint')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Eliminar dispositivo confiable específico',
-    description:
-      'Elimina un dispositivo de la lista de confiables. El próximo login requerirá 2FA nuevamente.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Dispositivo eliminado exitosamente',
-    schema: {
-      properties: {
-        message: {
-          type: 'string',
-          example: 'Dispositivo eliminado exitosamente',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Dispositivo no encontrado',
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
-  async removeTrustedDevice(
-    @GetUser() user: JwtPayload,
-    @Param('fingerprint') fingerprint: string,
-  ) {
-    const removed = await this.trustedDeviceRepository.delete(
-      user.sub,
-      fingerprint,
-    )
-
-    if (!removed) {
-      throw new NotFoundException('Dispositivo no encontrado')
-    }
-
-    return {
-      message: 'Dispositivo eliminado exitosamente',
-    }
-  }
-
-  /**
-   * DELETE /auth/trusted-devices
-   *
-   * Elimina TODOS los dispositivos confiables del usuario
-   * Útil cuando quiere forzar 2FA en todos los dispositivos
-   *
-   * @param user - Usuario autenticado (del JWT)
-   *
-   * @example
-   * ```
-   * DELETE /auth/trusted-devices
-   * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-   * ```
-   */
-  @Delete('trusted-devices')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Eliminar TODOS los dispositivos confiables',
-    description:
-      'Revoca todos los dispositivos confiables del usuario. Requiere 2FA en todos los próximos logins.',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Todos los dispositivos fueron eliminados',
-    schema: {
-      properties: {
-        message: {
-          type: 'string',
-          example: '3 dispositivo(s) eliminado(s) exitosamente',
-        },
-        count: { type: 'number', example: 3 },
-      },
-    },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
-  async revokeAllTrustedDevices(@GetUser() user: JwtPayload) {
-    const count = await this.trustedDeviceRepository.deleteAllForUser(user.sub)
-
-    return {
-      message: `${count} dispositivo(s) eliminado(s) exitosamente`,
-      count,
     }
   }
 }

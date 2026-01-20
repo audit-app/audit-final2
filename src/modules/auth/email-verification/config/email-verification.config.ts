@@ -2,43 +2,35 @@
  * Configuración de Email Verification
  *
  * Variables de entorno:
- * - EMAIL_VERIFICATION_JWT_SECRET: Secret para firmar JWTs (REQUERIDO, diferente a JWT_SECRET)
  * - EMAIL_VERIFICATION_EXPIRES_IN: Tiempo de expiración del token (default: '7d')
  *
- * ESTRATEGIA: JWT Puro (sin Redis para almacenar sesión)
- * =======================================================
- * A diferencia de 2FA y reset-password, la verificación de email:
- * - Es menos sensible (no expone contraseñas)
- * - Se envía UNA sola vez al registrarse
- * - El usuario tiene 7 días para verificar
- * - No requiere rate limiting complejo (Throttler global es suficiente)
+ * ESTRATEGIA UNIFICADA: Usa OtpCoreService (igual que 2FA y reset-password)
+ * ===========================================================================
+ * - TokenId: String aleatorio de 64 caracteres hexadecimales
+ * - Payload: { userId, email }
+ * - Almacenamiento: Redis con TTL de 7 días
+ * - Key: auth:email-verification:{tokenId}
+ * - Value: JSON { code: 'N/A', payload: {userId, email} }
+ * - One-time use: Se elimina de Redis después de validar
  *
- * Cómo funciona:
- * 1. Al registrarse → Generar JWT con userId + email (TTL: 7 días)
- * 2. Enviar enlace con JWT al email del usuario
- * 3. Usuario hace clic → Validar JWT
- * 4. Si JWT válido → Marcar email como verificado
- * 5. One-time use: Marcar token como usado en Redis (prevenir reutilización)
+ * IMPORTANTE: A diferencia de 2FA, NO se genera código OTP visible
+ * Solo usamos el tokenId como identificador único en el enlace del email
  *
- * Ventajas del JWT:
- * - Stateless: No necesita Redis para almacenar sesión
- * - Auto-expirable: El JWT expira solo después de 7 días
- * - Firma criptográfica: No se puede falsificar
- * - Contiene datos: userId, email, iat, exp
+ * Ventajas de unificar con OtpCoreService:
+ * - Reutilización de código probado
+ * - Consistencia con otros flujos (2FA, reset-password)
+ * - Elimina dependencia de jsonwebtoken
+ * - Simplifica la lógica (no necesita JWT signing/verification)
+ * - Mantenimiento centralizado
  *
- * Redis solo para:
- * - Marcar tokens como usados (one-time use)
- * - TTL igual al del JWT (7 días)
- *
- * Seguridad:
- * - Firma diferente a los access tokens (EMAIL_VERIFICATION_JWT_SECRET)
- * - One-time use (se marca como usado en Redis)
- * - Expira en 7 días
+ * Seguridad implementada:
+ * - TokenId aleatorio de 256 bits (64 chars hex)
+ * - One-time use (se elimina de Redis después de validar)
+ * - Expira en 7 días (TTL automático)
  * - Throttler global protege el endpoint
  */
 export const EMAIL_VERIFICATION_CONFIG = {
   jwt: {
-    secret: process.env.EMAIL_VERIFICATION_JWT_SECRET || '',
     expiresIn: process.env.EMAIL_VERIFICATION_EXPIRES_IN || '7d', // 7 días
   },
 } as const

@@ -10,13 +10,14 @@ import type { IUsersRepository } from '../../../users/repositories'
  * Responsabilidades:
  * - Buscar usuario por email
  * - Verificar que el email no esté ya verificado
- * - Generar token JWT de verificación
+ * - Generar tokenId de verificación (64 caracteres hex)
  * - Enviar email con enlace de verificación
  * - Retornar mensaje de confirmación
  *
  * Seguridad:
- * - Token JWT válido por 7 días
- * - One-time use (se marca como usado después de verificar)
+ * - TokenId aleatorio de 256 bits (64 chars hex)
+ * - Válido por 7 días (TTL en Redis)
+ * - One-time use (se elimina de Redis después de verificar)
  * - Throttler global protege el endpoint
  * - No revela si el usuario existe (respuesta genérica)
  *
@@ -24,7 +25,7 @@ import type { IUsersRepository } from '../../../users/repositories'
  * 1. Buscar usuario por email
  * 2. Si no existe → retornar mensaje genérico (evitar enumeración)
  * 3. Si email ya verificado → retornar mensaje genérico
- * 4. Generar token JWT
+ * 4. Generar tokenId con OtpCoreService
  * 5. Enviar email con enlace de verificación
  * 6. Retornar mensaje de confirmación
  */
@@ -91,7 +92,7 @@ export class RequestEmailVerificationUseCase {
    * NOTA: El frontend debe configurar esta URL base
    * Aquí usamos una variable de entorno o un default
    *
-   * @param token - Token JWT
+   * @param token - TokenId de 64 caracteres hexadecimales
    * @returns Enlace completo de verificación
    */
   private buildVerificationLink(token: string): string {

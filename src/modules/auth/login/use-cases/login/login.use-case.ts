@@ -3,8 +3,11 @@ import { PasswordHashService } from '@core/security'
 import { EmailService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
-// import { TwoFactorTokenService } from '../../../two-factor'
-// import { TrustedDeviceRepository, DeviceFingerprintService } from '../../../trusted-devices'
+import { TwoFactorTokenService } from '../../../two-factor'
+import {
+  TrustedDeviceRepository,
+  DeviceFingerprintService,
+} from '../../../trusted-devices'
 import { LoginRateLimitPolicy } from '../../policies'
 import type { LoginDto, LoginResponseDto } from '../../dtos'
 import {
@@ -23,17 +26,17 @@ export class LoginUseCase {
     private readonly usersRepository: IUsersRepository,
     private readonly passwordHashService: PasswordHashService,
     private readonly tokensService: TokensService,
-    // Ahora esta policy hereda de BaseRateLimitPolicy y solo pide el identificador
     private readonly loginRateLimitPolicy: LoginRateLimitPolicy,
-    // private readonly twoFactorTokenService: TwoFactorTokenService,
-    // private readonly trustedDeviceRepository: TrustedDeviceRepository,
-    // private readonly deviceFingerprintService: DeviceFingerprintService,
+    private readonly twoFactorTokenService: TwoFactorTokenService,
+    private readonly trustedDeviceRepository: TrustedDeviceRepository,
+    private readonly deviceFingerprintService: DeviceFingerprintService,
     private readonly emailService: EmailService,
   ) {}
 
   async execute(
     dto: LoginDto,
     connection: ConnectionMetadata,
+    deviceId?: string, // UUID del dispositivo confiable (de la cookie)
   ): Promise<{
     response: LoginResponseDto
     refreshToken?: string
@@ -92,28 +95,57 @@ export class LoginUseCase {
     await this.loginRateLimitPolicy.clearRecords(user.email)
 
     // -----------------------------------------------------------------------
-    // 7. LÓGICA DE 2FA (Pendiente de descomentar e integrar)
+    // 7. LÓGICA DE 2FA
     // -----------------------------------------------------------------------
-    /*
     if (user.isTwoFactorEnabled) {
-      const userAgent = connection.userAgent || 'unknown';
-      const ip = connection.ip;
+      const userAgent = connection.rawUserAgent || 'unknown'
+      const ip = connection.ip
 
-      const fingerprint = dto.deviceFingerprint || 
-        this.deviceFingerprintService.generateFingerprint(userAgent, ip);
+      // Generar fingerprint actual del dispositivo
+      const currentFingerprint =
+        this.deviceFingerprintService.generateFingerprint(userAgent, ip)
 
-      const isTrusted = await this.trustedDeviceRepository.isTrusted(user.id, fingerprint);
+      // Verificar si el dispositivo es confiable usando el deviceId (UUID) de la cookie
+      let isTrusted = false
+      if (deviceId) {
+        // El navegador envió una cookie con deviceId (UUID) - verificar si es válido
+        isTrusted = await this.trustedDeviceRepository.validateDevice(
+          user.id,
+          deviceId,
+          currentFingerprint,
+        )
+      }
 
       if (!isTrusted) {
-         // Generar código y enviar email...
-         // Retornar respuesta require2FA...
-         return { ... }
+        // Dispositivo no confiable -> Requiere 2FA
+        // Generar código OTP y token temporal (propagando rememberMe)
+        const { code, token } = await this.twoFactorTokenService.generateCode(
+          user.id,
+          dto.rememberMe, // Propagar rememberMe al payload de Redis
+        )
+
+        // Enviar código por email
+        await this.emailService.sendTwoFactorCode({
+          to: user.email,
+          userName: user.username,
+          code,
+          expiresInMinutes: 5,
+        })
+
+        // Retornar respuesta indicando que requiere 2FA
+        // NO incluye datos del usuario (usar /auth/me después de verificar 2FA)
+        return {
+          response: {
+            accessToken: '', // Vacío hasta que verifique el código 2FA
+            require2FA: true,
+            twoFactorToken: token, // Token de 64 caracteres para validación
+          },
+          // NO se genera refreshToken hasta verificar 2FA
+        }
       }
-      
-      // Si es trusted, actualizamos fecha y seguimos al token generation
-      await this.trustedDeviceRepository.updateLastUsed(user.id, fingerprint);
+
+      // Si es trusted, validateDevice ya actualizó el lastUsedAt
     }
-    */
 
     // 8. GENERAR TOKENS (Flujo normal o Trusted Device)
     const { accessToken, refreshToken } =
@@ -123,18 +155,11 @@ export class LoginUseCase {
         dto.rememberMe,
       )
 
+    // Retornar solo accessToken
+    // El frontend debe llamar a /auth/me para obtener los datos del usuario
     return {
       response: {
         accessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          fullName: user.fullName,
-          roles: user.roles,
-          organizationId: user.organizationId,
-          status: user.isActive,
-        },
       },
       refreshToken,
     }

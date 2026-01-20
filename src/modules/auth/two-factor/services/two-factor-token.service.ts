@@ -7,6 +7,7 @@ import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
  */
 interface TwoFactorPayload {
   userId: string
+  rememberMe: boolean // Propagar remember me para generar tokens correctamente
 }
 
 /**
@@ -62,19 +63,23 @@ export class TwoFactorTokenService {
    * El OtpCoreService internamente:
    * - Genera tokenId aleatorio (256 bits = 64 chars hex)
    * - Genera código numérico aleatorio (6 dígitos)
-   * - Almacena en Redis: auth:2fa-login:{tokenId} → JSON {code, payload: {userId}}
+   * - Almacena en Redis: auth:2fa-login:{tokenId} → JSON {code, payload: {userId, rememberMe}}
    *
    * @param userId - ID del usuario
+   * @param rememberMe - Si el usuario marcó "Recuérdame" en el login
    * @returns Objeto con code (para enviar al usuario) y token (tokenId para validación)
    */
-  async generateCode(userId: string): Promise<{ code: string; token: string }> {
-    const payload: TwoFactorPayload = { userId }
+  async generateCode(
+    userId: string,
+    rememberMe: boolean = false,
+  ): Promise<{ code: string; token: string }> {
+    const payload: TwoFactorPayload = { userId, rememberMe }
 
     const { tokenId, otpCode } =
       await this.otpCoreService.createSession<TwoFactorPayload>(
         this.contextPrefix,
         payload,
-        this.codeExpiry, // TTL en segundos
+        this.codeExpiry,
         this.codeLength,
       )
 
@@ -89,8 +94,8 @@ export class TwoFactorTokenService {
    *
    * Flujo de validación:
    * 1. Llama a OtpCoreService.validateSession() con tokenId y código
-   * 2. Verifica que el userId del payload coincida
-   * 3. Retorna true/false
+   * 2. Extrae el userId del payload almacenado en Redis
+   * 3. Retorna isValid y payload con userId
    *
    * IMPORTANTE: Este método NO elimina el token automáticamente
    * El token debe ser eliminado manualmente después de:
@@ -100,15 +105,18 @@ export class TwoFactorTokenService {
    * Rate limiting se maneja en el Use Case (Verify2FACodeUseCase)
    * usando el patrón de reset-password
    *
-   * @param userId - ID del usuario
-   * @param code - Código numérico a validar
-   * @param token - TokenId (OBLIGATORIO)
-   * @returns Objeto con isValid y payload
+   * SEGURIDAD:
+   * - NO requiere userId desde el frontend (más seguro)
+   * - El userId está almacenado en el payload de Redis
+   * - No se puede manipular el userId desde el cliente
+   *
+   * @param token - TokenId de 64 caracteres
+   * @param code - Código numérico de 6 dígitos a validar
+   * @returns Objeto con isValid y payload (contiene userId)
    */
   async validateCode(
-    userId: string,
-    code: string,
     token: string,
+    code: string,
   ): Promise<{ isValid: boolean; payload: TwoFactorPayload | null }> {
     const { isValid, payload } =
       await this.otpCoreService.validateSession<TwoFactorPayload>(
@@ -118,11 +126,6 @@ export class TwoFactorTokenService {
       )
 
     if (!isValid || !payload) {
-      return { isValid: false, payload: null }
-    }
-
-    // Verificar que el userId coincida (seguridad adicional)
-    if (payload.userId !== userId) {
       return { isValid: false, payload: null }
     }
 

@@ -59,6 +59,7 @@ export default class UsersSeeder implements Seeder {
         roles: [Role.ADMIN],
         status: true,
         organizationId: org1.id,
+        isTwoFactorEnabled: false,
       },
 
       // ========================================
@@ -67,7 +68,7 @@ export default class UsersSeeder implements Seeder {
       {
         names: 'María',
         lastNames: 'Gerente López',
-        email: 'limoontes@gmail.com',
+        email: 'admin1@gmail.com',
         username: 'mgerente',
         ci: '2345678',
         password: hashedPassword,
@@ -76,11 +77,12 @@ export default class UsersSeeder implements Seeder {
         roles: [Role.GERENTE],
         status: true,
         organizationId: org1.id,
+        isTwoFactorEnabled: true,
       },
       {
         names: 'Jorge',
         lastNames: 'Gerente Pérez',
-        email: 'jorge.gerente@consultoria.bo',
+        email: 'admin2@gmail.com',
         username: 'jgerente',
         ci: '3456789',
         password: hashedPassword,
@@ -89,6 +91,7 @@ export default class UsersSeeder implements Seeder {
         roles: [Role.GERENTE],
         status: true,
         organizationId: org2.id,
+        isTwoFactorEnabled: true,
       },
 
       // ========================================

@@ -1,12 +1,10 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { CacheService } from '@core/cache'
+import { OtpCoreService } from '@core/security'
 import { EMAIL_VERIFICATION_CONFIG } from '../config/email-verification.config'
 import ms from 'ms'
-import { sign, verify, decode, SignOptions } from 'jsonwebtoken'
 
 /**
- * Payload del JWT de verificación de email
+ * Payload almacenado en Redis para verificación de email
  */
 interface EmailVerificationPayload {
   userId: string
@@ -16,189 +14,120 @@ interface EmailVerificationPayload {
 /**
  * Servicio de gestión de tokens de verificación de email
  *
- * ESTRATEGIA: JWT Puro con One-Time Use
- * ==========================================
- * - Token: JWT firmado con EMAIL_VERIFICATION_JWT_SECRET
- * - Payload: { userId, email, iat, exp }
- * - TTL: 7 días (configurable)
- * - One-time use: Se marca como usado en Redis después de verificar
- * - Redis key: auth:email-verification:used:{jti}
- * - Redis TTL: Igual al del JWT (7 días)
+ * ESTRATEGIA UNIFICADA: Usa OtpCoreService (igual que 2FA y reset-password)
+ * ===========================================================================
+ * - TokenId: String aleatorio de 64 caracteres hexadecimales
+ * - Payload: { userId, email }
+ * - Almacenamiento: Redis con TTL de 7 días
+ * - Key: auth:email-verification:{tokenId}
+ * - Value: JSON { code: 'N/A', payload: {userId, email} }
+ * - One-time use: Se elimina de Redis después de validar
  *
- * Ventajas sobre OtpCoreService:
- * - Más simple para verificación de email
- * - Stateless (el token contiene todos los datos)
- * - Auto-expirable (no necesita limpieza manual)
- * - Firma criptográfica diferente (más seguro)
+ * IMPORTANTE: A diferencia de 2FA, NO se genera código OTP visible
+ * Solo usamos el tokenId como identificador único en el enlace del email
+ *
+ * Ventajas de unificar con OtpCoreService:
+ * - Reutilización de código probado
+ * - Consistencia con otros flujos (2FA, reset-password)
+ * - Elimina dependencia de jsonwebtoken
+ * - Simplifica la lógica (no necesita JWT signing/verification)
+ * - Mantenimiento centralizado
  *
  * Seguridad implementada:
- * - Firma diferente a access tokens (EMAIL_VERIFICATION_JWT_SECRET)
- * - One-time use (se marca como usado en Redis)
- * - Expira en 7 días
+ * - TokenId aleatorio de 256 bits (64 chars hex)
+ * - One-time use (se elimina de Redis después de validar)
+ * - Expira en 7 días (TTL automático)
  * - Throttler global protege el endpoint
  *
  * Variables de entorno:
- * - EMAIL_VERIFICATION_JWT_SECRET: Secret para firmar JWTs (REQUERIDO)
  * - EMAIL_VERIFICATION_EXPIRES_IN: Tiempo de expiración (default: '7d')
  */
 @Injectable()
 export class EmailVerificationTokenService {
-  private readonly secret = EMAIL_VERIFICATION_CONFIG.jwt.secret
+  private readonly contextPrefix = 'email-verification'
   private readonly expiresIn = EMAIL_VERIFICATION_CONFIG.jwt.expiresIn
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly cacheService: CacheService,
-  ) {}
+  constructor(private readonly otpCoreService: OtpCoreService) {}
 
   /**
-   * Genera un token JWT de verificación de email
+   * Genera un token de verificación de email usando OtpCoreService
    *
-   * El JWT contiene:
-   * - userId: ID del usuario
-   * - email: Email a verificar
-   * - iat: Timestamp de emisión
-   * - exp: Timestamp de expiración
-   * - jti: ID único del token (para one-time use)
+   * Flujo:
+   * 1. Crea sesión OTP con OtpCoreService (sin código visible)
+   * 2. Devuelve tokenId (identificador único para el enlace)
+   *
+   * El OtpCoreService internamente:
+   * - Genera tokenId aleatorio (256 bits = 64 chars hex)
+   * - Almacena en Redis: auth:email-verification:{tokenId} → JSON {code: 'N/A', payload: {userId, email}}
+   * - TTL: 7 días
    *
    * @param userId - ID del usuario
    * @param email - Email del usuario
-   * @returns Token JWT (string)
+   * @returns TokenId (string de 64 caracteres para usar en URL)
    */
-  generateToken(userId: string, email: string): string {
-    const payload: Record<string, unknown> = {
-      userId,
-      email,
-      jti: this.generateJti(), // ID único para one-time use
-    }
+  async generateToken(userId: string, email: string): Promise<string> {
+    const payload: EmailVerificationPayload = { userId, email }
+    const ttlSeconds = this.getExpirySeconds()
 
-    // Asegurarse de que el secret sea válido
-    if (!this.secret) {
-      throw new Error('EMAIL_VERIFICATION_JWT_SECRET is not configured')
-    }
+    // NO necesitamos código OTP, solo el tokenId
+    // OtpCoreService genera un código dummy internamente
+    const { tokenId } =
+      await this.otpCoreService.createSession<EmailVerificationPayload>(
+        this.contextPrefix,
+        payload,
+        ttlSeconds,
+        0, // otpLength: 0 (no necesitamos código visible)
+      )
 
-    const options: SignOptions = {
-      expiresIn: this.expiresIn as any, // '7d' es válido según JWT spec
-    }
-
-    return sign(payload, this.secret, options)
+    return tokenId
   }
 
   /**
-   * Valida un token JWT de verificación de email
+   * Valida un token de verificación de email usando OtpCoreService
    *
-   * Verificaciones:
-   * 1. JWT válido (firma correcta)
-   * 2. JWT no expirado
-   * 3. Token no usado previamente (one-time use)
+   * Flujo de validación:
+   * 1. Obtiene payload de Redis usando tokenId
+   * 2. Si existe → retorna payload
+   * 3. Si no existe → retorna null (expiró o no existe)
    *
-   * @param token - Token JWT a validar
-   * @returns Payload si es válido, null si es inválido
+   * IMPORTANTE: Este método NO elimina el token automáticamente
+   * El token debe ser eliminado manualmente con deleteToken() después de
+   * verificar el email (one-time use)
+   *
+   * @param token - TokenId (64 caracteres hex)
+   * @returns Payload {userId, email} o null si es inválido
    */
   async validateToken(token: string): Promise<EmailVerificationPayload | null> {
-    try {
-      // 1. Verificar JWT (firma + expiración)
-      const payload = verify(token, this.secret) as
-        | (EmailVerificationPayload & { jti: string })
-        | undefined
+    // Obtener payload sin validar código OTP (no lo necesitamos)
+    const payload =
+      await this.otpCoreService.getPayload<EmailVerificationPayload>(
+        this.contextPrefix,
+        token,
+      )
 
-      if (!payload) {
-        return null
-      }
-
-      // 2. Verificar si el token ya fue usado (one-time use)
-      const jti = payload.jti
-      const isUsed = await this.isTokenUsed(jti)
-
-      if (isUsed) {
-        return null // Token ya fue usado
-      }
-
-      return {
-        userId: payload.userId,
-        email: payload.email,
-      }
-    } catch {
-      // JWT inválido o expirado
-      return null
-    }
+    return payload
   }
 
   /**
-   * Marca un token como usado (one-time use)
+   * Marca un token como usado (one-time use) eliminándolo de Redis
    *
-   * Guarda el JTI en Redis con el TTL del JWT
-   * para prevenir reutilización del mismo token
+   * IMPORTANTE: Este método reemplaza markTokenAsUsed() anterior
+   * Ya no necesitamos marcar tokens usados en una key separada,
+   * simplemente eliminamos la sesión de Redis
    *
-   * @param token - Token JWT a marcar como usado
+   * @param token - TokenId a eliminar
    */
   async markTokenAsUsed(token: string): Promise<void> {
-    try {
-      const payload = decode(token) as {
-        jti: string
-        exp: number
-      } | null
-
-      if (!payload || !payload.jti) {
-        return
-      }
-
-      const jti = payload.jti
-      const exp = payload.exp // Unix timestamp
-      const now = Math.floor(Date.now() / 1000)
-      const ttl = exp - now // Segundos restantes hasta la expiración
-
-      if (ttl > 0) {
-        const key = this.buildUsedTokenKey(jti)
-        await this.cacheService.set(key, '1', ttl)
-      }
-    } catch {
-      // Si falla, no bloqueamos el flujo
-    }
-  }
-
-  /**
-   * Verifica si un token ya fue usado
-   *
-   * @param jti - ID único del token (JWT ID)
-   * @returns true si el token ya fue usado
-   */
-  private async isTokenUsed(jti: string): Promise<boolean> {
-    const key = this.buildUsedTokenKey(jti)
-    const value = await this.cacheService.get(key)
-    return value !== null
-  }
-
-  /**
-   * Genera un ID único para el JWT (JTI - JWT ID)
-   *
-   * Usado para implementar one-time use
-   *
-   * @returns ID único (timestamp + random)
-   */
-  private generateJti(): string {
-    const timestamp = Date.now()
-    const random = Math.random().toString(36).substring(2, 15)
-    return `${timestamp}-${random}`
-  }
-
-  /**
-   * Construye la key de Redis para tokens usados
-   *
-   * @param jti - ID único del token
-   * @returns Key de Redis
-   */
-  private buildUsedTokenKey(jti: string): string {
-    return `auth:email-verification:used:${jti}`
+    await this.otpCoreService.deleteSession(this.contextPrefix, token)
   }
 
   /**
    * Obtiene el tiempo de expiración en segundos
    *
-   * @returns Segundos de expiración
+   * @returns Segundos de expiración (default: 7 días = 604800 segundos)
    */
   getExpirySeconds(): number {
     const milliseconds = ms(this.expiresIn as ms.StringValue)
-    return milliseconds / 1000
+    return Math.floor(milliseconds / 1000)
   }
 }

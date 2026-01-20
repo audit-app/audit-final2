@@ -24,26 +24,23 @@ export class RevokeTrustedDeviceUseCase {
    * Ejecuta la revocación de un dispositivo confiable
    *
    * @param userId - ID del usuario autenticado
-   * @param fingerprint - Fingerprint del dispositivo a revocar
-   * @returns Mensaje de confirmación
-   * @throws NotFoundException si el dispositivo no existe o no pertenece al usuario
+   * @param deviceId - UUID del dispositivo (NO el fingerprint)
    */
   async execute(
     userId: string,
-    fingerprint: string,
+    deviceId: string, // <--- CAMBIO: Recibimos el UUID
   ): Promise<{ message: string }> {
-    // 1. Validar que el dispositivo existe y pertenece al usuario
-    const isTrusted = await this.trustedDeviceRepository.isTrusted(
+    // OPTIMIZACIÓN:
+    // En lugar de preguntar "existe?" y luego "borrar" (2 llamadas a Redis),
+    // intentamos borrar directamente. El repositorio abstracto devuelve true/false.
+    const wasDeleted = await this.trustedDeviceRepository.delete(
       userId,
-      fingerprint,
+      deviceId,
     )
 
-    if (!isTrusted) {
+    if (!wasDeleted) {
       throw new NotFoundException('Dispositivo no encontrado o ya fue revocado')
     }
-
-    // 2. Revocar el dispositivo (eliminar de Redis)
-    await this.trustedDeviceRepository.delete(userId, fingerprint)
 
     return {
       message:

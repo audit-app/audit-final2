@@ -159,9 +159,9 @@ describe('OrganizationValidator', () => {
       repository.findById.mockResolvedValue(null)
 
       // Act & Assert
-      await expect(
-        validator.validateAndGetOrganization('2'),
-      ).rejects.toThrow(OrganizationNotFoundException)
+      await expect(validator.validateAndGetOrganization('2')).rejects.toThrow(
+        OrganizationNotFoundException,
+      )
 
       expect(repository.findById).toHaveBeenCalledWith('2')
     })

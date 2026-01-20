@@ -53,7 +53,7 @@ export class RequestResetPasswordUseCase {
 
     // 3. Registrar el intento (Consumir una "ficha")
     // Lo hacemos antes de enviar para prevenir abuso si el email falla.
-    await this.requestResetPasswordRateLimitPolicy.registerFailure(email)
+    await this.requestResetPasswordRateLimitPolicy.registerAttempt(email)
 
     // 4. Generar sesión OTP (Usando el servicio genérico)
     // Contexto: 'reset-pw' (debe coincidir con el que uses al validar)

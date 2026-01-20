@@ -10,13 +10,12 @@ import { ConnectionMetadataService } from '@core/common'
 import type { ConnectionMetadata } from '@core/common'
 import { LoggerService } from '@core/logger'
 import {
-  StoredSession,
   TokenStorageRepository,
+  StoredSession, // Importamos la interfaz desde el nuevo repo
 } from './token-storage.repository'
 import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
 import { InvalidTokenException } from '../exceptions'
-import { TimeUtil } from '@core/utils'
 import { LOGIN_CONFIG } from '../config/login.config'
 
 @Injectable()
@@ -25,6 +24,7 @@ export class TokensService {
   private readonly refreshTokenExpires: string
   private readonly refreshTokenSecret: string
   private readonly jwtSecret: string
+
   constructor(
     private readonly jwtService: JwtService,
     private readonly tokenStorage: TokenStorageRepository,
@@ -42,8 +42,10 @@ export class TokensService {
     connection: ConnectionMetadata,
     rememberMe: boolean,
   ): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Generamos ID usando el helper del repo
     const tokenId = this.tokenStorage.generateTokenId()
 
+    // 2. Preparamos Payloads
     const accessPayload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -57,102 +59,93 @@ export class TokensService {
       tokenId,
     }
 
-    // UNIFICACIÓN: Usamos jwtService para AMBOS.
-    // NestJS permite sobrescribir 'secret' y 'expiresIn' en cada llamada.
+    // 3. Firmamos Tokens en paralelo
     const [accessToken, refreshToken] = await Promise.all([
-      // 1. Access Token (Usa el secret por defecto del JwtModule)
       this.jwtService.signAsync(accessPayload, {
         expiresIn: this.accessTokenExpires as ms.StringValue,
       }),
-
-      // 2. Refresh Token (Sobrescribimos con SU propio secret y tiempo)
       this.jwtService.signAsync(refreshPayload, {
-        secret: this.refreshTokenSecret, // <--- IMPORTANTE: Secret específico
-        expiresIn: this.refreshTokenExpires as ms.StringValue, // <--- IMPORTANTE: Tiempo específico
+        secret: this.refreshTokenSecret,
+        expiresIn: this.refreshTokenExpires as ms.StringValue,
       }),
     ])
 
-    // Parsear metadata de conexión usando el servicio centralizado
-    const ttlSeconds = TimeUtil.toSeconds(this.refreshTokenExpires)
+    // 4. Parsear metadata
     const parsedMetadata = this.connectionMetadataService.parse(connection)
 
-    // Guardar en Redis (adaptamos ParsedConnectionMetadata a SessionMetadata)
-    await this.tokenStorage.save(
-      user.id,
+    // 5. Construir el objeto de sesión COMPLETO
+    // El repositorio espera el objeto listo para guardar (T)
+    const sessionData: StoredSession = {
       tokenId,
-      ttlSeconds,
-      {
-        ip: parsedMetadata.ip,
-        userAgent: parsedMetadata.userAgent,
-        browser: parsedMetadata.browser,
-        os: parsedMetadata.os,
-        device: parsedMetadata.device,
-      },
+      userId: user.id,
+      ip: parsedMetadata.ip,
+      userAgent: parsedMetadata.userAgent,
+      browser: parsedMetadata.browser,
+      os: parsedMetadata.os,
+      device: parsedMetadata.device,
+      createdAt: Date.now(),
+      lastActiveAt: Date.now(),
       rememberMe,
-    )
+    }
+
+    // 6. Guardar en Redis
+    // NOTA: Ya no pasamos TTL aquí, el repositorio usa su configuración interna
+    await this.tokenStorage.save(user.id, sessionData)
 
     return { accessToken, refreshToken }
   }
+
   async getStoredSession(
     userId: string,
     tokenId: string,
   ): Promise<StoredSession | null> {
-    return this.tokenStorage.getSession(userId, tokenId)
+    // CAMBIO: Usamos 'findOne' que viene de la clase abstracta
+    return this.tokenStorage.findOne(userId, tokenId)
   }
 
-  // --- BLACKLIST (SOLO PARA ACCESS TOKENS) ---
+  // --- BLACKLIST (Access Tokens - Stateless) ---
   async blacklistAccessToken(token: string, userId: string): Promise<void> {
-    // Access Tokens son stateless, por eso necesitamos Blacklist.
     const decoded = this.jwtService.decode<JwtPayload>(token)
-
     if (!decoded?.exp) return
 
     const now = Math.floor(Date.now() / 1000)
     const ttlSeconds = decoded.exp - now
 
     if (ttlSeconds > 0) {
-      // Guardamos en Redis: "Este token específico está prohibido"
       await this.tokenStorage.blacklistToken(token, userId, ttlSeconds)
     }
   }
 
-  // --- REVOCACIÓN (SOLO PARA REFRESH TOKENS) ---
+  // --- REVOCACIÓN (Refresh Tokens - Stateful) ---
   async revokeRefreshToken(userId: string, tokenId: string): Promise<void> {
-    // Refresh Tokens son stateful, simplemente los borramos.
+    // CAMBIO: El método delete ahora viene de la clase abstracta
     await this.tokenStorage.delete(userId, tokenId)
   }
 
-  // Helpers públicos
+  async revokeAllUserTokens(userId: string): Promise<void> {
+    // CAMBIO: El método deleteAllForUser ahora viene de la clase abstracta
+    await this.tokenStorage.deleteAllForUser(userId)
+  }
+
+  // Helpers de validación
   async validateRefreshToken(
     userId: string,
     tokenId: string,
   ): Promise<boolean> {
+    // CAMBIO: validate viene de la clase abstracta (verifica Set + JSON)
     return this.tokenStorage.validate(userId, tokenId)
-  }
-
-  async revokeAllUserTokens(userId: string): Promise<void> {
-    await this.tokenStorage.deleteAllForUser(userId)
   }
 
   async isTokenBlacklisted(token: string): Promise<boolean> {
     return this.tokenStorage.isBlacklisted(token)
   }
 
-  //METODOS JWT RAW
+  // --- METODOS DE UTILERÍA JWT ---
 
   decodeRefreshToken(refreshToken: string): JwtRefreshPayload {
     return this.jwtService.decode(refreshToken)
   }
 
-  // --- VERIFICACIÓN CENTRALIZADA DE TOKENS ---
-
-  /**
-   * Verifica un Refresh Token centralizando el manejo de errores y logs
-   *
-   * @param token - Refresh token a verificar
-   * @returns Payload decodificado del token
-   * @throws InvalidTokenException si el token es inválido o expirado
-   */
   verifyRefreshToken(token: string): JwtRefreshPayload {
     try {
       return this.jwtService.verify<JwtRefreshPayload>(token, {
@@ -164,13 +157,6 @@ export class TokensService {
     }
   }
 
-  /**
-   * Verifica un Access Token (útil para logout, validaciones manuales)
-   *
-   * @param token - Access token a verificar
-   * @returns Payload decodificado del token
-   * @throws InvalidTokenException si el token es inválido o expirado
-   */
   verifyAccessToken(token: string): JwtPayload {
     try {
       return this.jwtService.verify<JwtPayload>(token, {
@@ -182,33 +168,20 @@ export class TokensService {
     }
   }
 
-  // --- MANEJO CENTRALIZADO DE ERRORES JWT ---
-
-  /**
-   * Helper privado para manejar errores de JWT de forma consistente
-   * Centraliza los logs para no repetir la lógica en cada método
-   *
-   * @param error - Error capturado de jwtService.verify
-   * @param context - Contexto para los logs (método que llamó)
-   */
   private handleJwtError(error: unknown, context: string): void {
     if (error instanceof TokenExpiredError) {
-      // Token expirado (caso normal, nivel WARN)
       this.logger.warn(
         `Token expirado: ${error.expiredAt.toISOString()}`,
         context,
       )
     } else if (error instanceof JsonWebTokenError) {
-      // Firma inválida o token malformado (caso raro, nivel ERROR)
       this.logger.error(error, undefined, `${context}.InvalidSignature`)
     } else if (error instanceof NotBeforeError) {
-      // Token del futuro - relojes desincronizados (nivel WARN)
       this.logger.warn(
         `Token not active yet (nbf: ${error.date.toISOString()})`,
         context,
       )
     } else {
-      // Error desconocido
       this.logger.error(
         error instanceof Error ? error : new Error(String(error)),
         undefined,

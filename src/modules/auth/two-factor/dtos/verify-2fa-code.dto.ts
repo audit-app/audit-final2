@@ -13,30 +13,39 @@ import {
 /**
  * DTO para verificar un código 2FA
  *
- * El usuario proporciona:
- * 1. userId - ID del usuario que recibió el código
+ * El frontend solo envía:
+ * 1. token - TokenId de 64 caracteres (contiene el userId en el payload de Redis)
  * 2. code - Código numérico de 6 dígitos recibido por email
- * 3. token - TokenId de 64 caracteres (NO es JWT, es el identificador de sesión 2FA)
+ * 3. trustDevice - (Opcional) Si quiere confiar en este dispositivo
  *
  * El sistema valida:
  * 1. TokenId existe en Redis (sesión 2FA válida)
  * 2. Código coincide con el almacenado en Redis
- * 3. UserId coincide con el del payload
+ * 3. Extrae userId del payload almacenado en Redis
  * 4. Control de intentos: máximo 3 intentos
  * 5. Elimina el tokenId de Redis después de validación exitosa (un solo uso)
  *
- * SEGURIDAD: El tokenId es obligatorio para vincular el código con la sesión del usuario
+ * SEGURIDAD:
+ * - El userId NO se envía desde el frontend (más seguro)
+ * - El userId está vinculado al token en el backend
+ * - No se puede manipular el userId desde el cliente
  */
 export class Verify2FACodeDto {
   @ApiProperty({
-    description: 'ID del usuario',
-    example: '550e8400-e29b-41d4-a716-446655440000',
-    maxLength: 255,
+    description:
+      'TokenId de 64 caracteres hexadecimales (NO es JWT, es el identificador de sesión 2FA). ' +
+      'Este tokenId se recibe al hacer login cuando 2FA está habilitado. ' +
+      'Contiene el userId en el payload almacenado en Redis.',
+    example: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd',
+    required: true,
+    minLength: 64,
+    maxLength: 64,
   })
-  @IsString({ message: 'El userId debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'El userId es requerido' })
-  @MaxLength(255)
-  userId: string
+  @IsString({ message: 'El token debe ser una cadena de texto' })
+  @IsNotEmpty({ message: 'El token es requerido' })
+  @MinLength(64, { message: 'El tokenId debe tener 64 caracteres' })
+  @MaxLength(64, { message: 'El tokenId debe tener 64 caracteres' })
+  token: string
 
   @ApiProperty({
     description: 'Código numérico de 6 dígitos',
@@ -54,39 +63,14 @@ export class Verify2FACodeDto {
   @IsNotEmpty({ message: 'El código es requerido' })
   code: string
 
-  @ApiProperty({
-    description:
-      'TokenId de 64 caracteres hexadecimales (NO es JWT, es el identificador de sesión 2FA). ' +
-      'Este tokenId se recibe al hacer login cuando 2FA está habilitado.',
-    example: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234abcd',
-    required: true,
-    minLength: 64,
-    maxLength: 64,
-  })
-  @IsString({ message: 'El token debe ser una cadena de texto' })
-  @IsNotEmpty({ message: 'El token es requerido' })
-  @MinLength(64, { message: 'El tokenId debe tener 64 caracteres' })
-  @MaxLength(64, { message: 'El tokenId debe tener 64 caracteres' })
-  token: string
-
   @ApiPropertyOptional({
     description:
-      '¿Confiar en este dispositivo? Si es true, el usuario no necesitará 2FA en este dispositivo por 90 días',
+      '¿Confiar en este dispositivo? Si es true, el usuario no necesitará 2FA en este dispositivo por 90 días. ' +
+      'El backend generará automáticamente el fingerprint del dispositivo usando User-Agent e IP.',
     example: true,
     default: false,
   })
   @IsOptional()
   @IsBoolean({ message: 'trustDevice debe ser un booleano (true o false)' })
   trustDevice?: boolean
-
-  @ApiPropertyOptional({
-    description:
-      'Fingerprint del dispositivo (opcional). Si no se proporciona pero trustDevice=true, el backend lo generará automáticamente.',
-    example: 'a1b2c3d4e5f6789012345678901234567890123456789012345678901234',
-    maxLength: 64,
-  })
-  @IsOptional()
-  @IsString({ message: 'deviceFingerprint debe ser una cadena de texto' })
-  @MaxLength(64)
-  deviceFingerprint?: string
 }

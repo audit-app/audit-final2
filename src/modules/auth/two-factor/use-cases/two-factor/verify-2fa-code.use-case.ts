@@ -57,7 +57,12 @@ export class Verify2FACodeUseCase {
   /**
    * Ejecuta el flujo de verificación de código 2FA con control de intentos
    *
-   * @param dto - DTO con userId, code, token, trustDevice (opcional), deviceFingerprint (opcional)
+   * CAMBIO IMPORTANTE:
+   * - Ya NO requiere userId desde el frontend
+   * - El userId se extrae del payload almacenado en Redis
+   * - Más seguro: el userId no puede ser manipulado por el cliente
+   *
+   * @param dto - DTO con token (64 chars), code (6 dígitos), trustDevice (opcional)
    * @param connection - Metadata de la conexión (IP, User-Agent)
    * @returns Resultado con tokens JWT o error
    * @throws BadRequestException si excede intentos o código inválido
@@ -68,8 +73,10 @@ export class Verify2FACodeUseCase {
   ): Promise<{
     valid: boolean
     message: string
-    accessToken?: string
-    refreshToken?: string
+    accessToken: string
+    refreshToken: string
+    rememberMe: boolean // Necesario para setear cookie de refreshToken con TTL correcto
+    deviceId?: string // UUID del dispositivo confiable (para setear cookie)
   }> {
     const CONTEXT = '2fa-verify'
     const ATTEMPTS_KEY = `attempts:${CONTEXT}:${dto.token}`
@@ -100,18 +107,20 @@ export class Verify2FACodeUseCase {
     // 2. VALIDACIÓN DEL CÓDIGO
     // ---------------------------------------------------------
 
-    const { isValid } = await this.twoFactorTokenService.validateCode(
-      dto.userId,
-      dto.code,
+    const { isValid, payload } = await this.twoFactorTokenService.validateCode(
       dto.token,
+      dto.code,
     )
 
-    if (!isValid) {
+    if (!isValid || !payload) {
       const remaining = MAX_ATTEMPTS - attempts
       throw new BadRequestException(
         `Código incorrecto o expirado. Te quedan ${remaining} intentos.`,
       )
     }
+
+    // Extraer userId del payload (más seguro que recibirlo del frontend)
+    const userId = payload.userId
 
     // ---------------------------------------------------------
     // 3. PROTOCOLO "TIERRA QUEMADA" (Seguridad)
@@ -125,20 +134,23 @@ export class Verify2FACodeUseCase {
     // 4. Lógica de Negocio (Trusted Device + Tokens JWT)
     // ---------------------------------------------------------
 
-    // Si usuario quiere confiar en este dispositivo
+    // Capturar deviceId si el usuario quiere confiar en este dispositivo
+    let deviceId: string | undefined
+
     if (dto.trustDevice) {
-      const fingerprint =
-        dto.deviceFingerprint ||
-        this.deviceFingerprintService.generateFingerprint(
-          connection.rawUserAgent,
-          connection.ip,
-        )
+      // El backend genera el fingerprint automáticamente
+      const fingerprint = this.deviceFingerprintService.generateFingerprint(
+        connection.rawUserAgent,
+        connection.ip,
+      )
 
       const deviceInfo = this.deviceFingerprintService.parseUserAgent(
         connection.rawUserAgent,
       )
 
-      await this.trustedDeviceRepository.save(dto.userId, fingerprint, {
+      // Guardar dispositivo confiable y obtener deviceId (UUID)
+      deviceId = await this.trustedDeviceRepository.saveDevice(userId, {
+        fingerprint,
         browser: deviceInfo.browser,
         os: deviceInfo.os,
         device: deviceInfo.device,
@@ -147,24 +159,25 @@ export class Verify2FACodeUseCase {
     }
 
     // Generar tokens JWT ahora que verificó 2FA
-    const user = await this.usersRepository.findById(dto.userId)
+    const user = await this.usersRepository.findById(userId)
 
     if (!user) {
       throw new BadRequestException('Usuario no encontrado')
     }
 
+    // Usar rememberMe del payload (propagado desde el login)
+    const rememberMe = payload.rememberMe || false
+
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(
-        user,
-        connection,
-        false, // rememberMe: false (no hay opción de recordar en 2FA)
-      )
+      await this.tokensService.generateTokenPair(user, connection, rememberMe)
 
     return {
       valid: true,
       message: 'Código verificado exitosamente. Sesión iniciada.',
       accessToken,
       refreshToken,
+      deviceId,
+      rememberMe,
     }
   }
 }
