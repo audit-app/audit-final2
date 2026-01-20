@@ -4,6 +4,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 import { join } from 'path'
 import { EmailService } from './email.service'
+import { EmailEventService } from './email-event.service'
+import { EmailListener } from './listeners/email.listener'
 
 @Global()
 @Module({
@@ -41,7 +43,7 @@ import { EmailService } from './email.service'
       },
     }),
   ],
-  providers: [EmailService],
-  exports: [EmailService],
+  providers: [EmailService, EmailEventService, EmailListener],
+  exports: [EmailService, EmailEventService],
 })
 export class EmailModule {}

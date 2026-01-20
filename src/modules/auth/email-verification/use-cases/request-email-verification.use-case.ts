@@ -1,5 +1,5 @@
-import { Injectable, Inject, BadRequestException } from '@nestjs/common'
-import { EmailService } from '@core/email'
+import { Injectable, Inject } from '@nestjs/common'
+import { EmailEventService } from '@core/email'
 import { EmailVerificationTokenService } from '../services/email-verification-token.service'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
@@ -35,7 +35,7 @@ export class RequestEmailVerificationUseCase {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly emailVerificationTokenService: EmailVerificationTokenService,
-    private readonly emailService: EmailService,
+    private readonly emailEventService: EmailEventService,
   ) {}
 
   /**
@@ -75,8 +75,8 @@ export class RequestEmailVerificationUseCase {
     // 4. Construir enlace de verificación
     const verificationLink = this.buildVerificationLink(token)
 
-    // 5. Enviar email con enlace de verificación
-    await this.emailService.sendVerificationEmail({
+    // 5. Enviar email con enlace de verificación (asíncrono, no bloqueante)
+    this.emailEventService.emitSendVerification({
       to: user.email,
       userName: user.username,
       verificationLink,

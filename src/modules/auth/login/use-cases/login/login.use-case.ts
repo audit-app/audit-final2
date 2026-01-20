@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { PasswordHashService } from '@core/security'
-import { EmailService } from '@core/email'
+import { EmailEventService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { TwoFactorTokenService } from '../../../two-factor'
@@ -30,7 +30,7 @@ export class LoginUseCase {
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly deviceFingerprintService: DeviceFingerprintService,
-    private readonly emailService: EmailService,
+    private readonly emailEventService: EmailEventService,
   ) {}
 
   async execute(
@@ -124,8 +124,8 @@ export class LoginUseCase {
           dto.rememberMe, // Propagar rememberMe al payload de Redis
         )
 
-        // Enviar código por email
-        await this.emailService.sendTwoFactorCode({
+        // Enviar código por email (asíncrono vía eventos, no bloqueante)
+        this.emailEventService.emitSend2FACode({
           to: user.email,
           userName: user.username,
           code,

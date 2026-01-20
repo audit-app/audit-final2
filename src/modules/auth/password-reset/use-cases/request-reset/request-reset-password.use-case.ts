@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { EmailService } from '@core/email'
+import { EmailEventService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { RequestResetPasswordRateLimitPolicy } from '../../policies'
@@ -16,7 +16,7 @@ export class RequestResetPasswordUseCase {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly otpCoreService: OtpCoreService, // Inyectamos el genérico
-    private readonly emailService: EmailService,
+    private readonly emailEventService: EmailEventService,
     private readonly requestResetPasswordRateLimitPolicy: RequestResetPasswordRateLimitPolicy,
   ) {}
 
@@ -64,8 +64,8 @@ export class RequestResetPasswordUseCase {
         3600, // 1 hora de expiración
       )
 
-    // 5. Enviar email con el código OTP
-    await this.emailService.sendResetPasswordEmail({
+    // 5. Enviar email con el código OTP (asíncrono, no bloqueante)
+    this.emailEventService.emitSendResetPassword({
       to: user.email,
       userName: user.username,
       resetLink: otpCode, // Enviamos el código de 6 dígitos

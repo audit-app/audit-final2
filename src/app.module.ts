@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
+import { EventEmitterModule } from '@nestjs/event-emitter'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { EmailModule } from '@core/email/email.module'
@@ -36,6 +37,14 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
       isGlobal: true,
       envFilePath: '.env',
       load: [databaseConfig],
+    }),
+    // EventEmitter para emails asíncronos (en memoria, NO requiere Redis)
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false,
     }),
     DatabaseModule,
     CacheModule, // Redis cache module

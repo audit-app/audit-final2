@@ -7,7 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config'
 import { v4 as uuidv4 } from 'uuid'
 import { CacheService } from '@core/cache'
-import { EmailService } from '@core/email'
+import { EmailEventService } from '@core/email'
 import { USERS_REPOSITORY } from '../tokens'
 import type { IUsersRepository } from '../repositories'
 
@@ -42,7 +42,7 @@ export class EmailVerificationService {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly cacheService: CacheService,
-    private readonly emailService: EmailService,
+    private readonly emailEventService: EmailEventService,
     private readonly configService: ConfigService,
   ) {
     this.frontendUrl =
@@ -94,9 +94,9 @@ export class EmailVerificationService {
     const mapKey = `${this.TOKEN_MAP_PREFIX}${tokenId}`
     await this.cacheService.set(mapKey, userId, this.VERIFICATION_TTL)
 
-    // 7. Construir link y enviar email
+    // 7. Construir link y enviar email (asíncrono, no bloqueante)
     const verificationLink = this.buildVerificationLink(tokenId)
-    await this.emailService.sendVerificationEmail({
+    this.emailEventService.emitSendVerification({
       to: user.email,
       userName: user.fullName,
       verificationLink,

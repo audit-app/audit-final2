@@ -4,7 +4,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common'
-import { EmailService } from '@core/email'
+import { EmailEventService } from '@core/email'
 import { TwoFactorTokenService } from '../../services/two-factor-token.service'
 import { Resend2FARateLimitPolicy } from '../../policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
@@ -48,7 +48,7 @@ export class Resend2FACodeUseCase {
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
     private readonly twoFactorTokenService: TwoFactorTokenService,
-    private readonly emailService: EmailService,
+    private readonly emailEventService: EmailEventService,
     private readonly resend2FARateLimitPolicy: Resend2FARateLimitPolicy,
   ) {}
 
@@ -85,8 +85,8 @@ export class Resend2FACodeUseCase {
       throw new NotFoundException('Usuario no encontrado')
     }
 
-    // 4. Reenviar el MISMO código por email
-    await this.emailService.sendTwoFactorCode({
+    // 4. Reenviar el MISMO código por email (asíncrono, no bloqueante)
+    this.emailEventService.emitSend2FACode({
       to: user.email,
       userName: user.username,
       code,
