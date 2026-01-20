@@ -183,6 +183,6 @@ export class TwoFactorController {
     description: 'Debe esperar 60 segundos antes de reenviar',
   })
   async resend(@Body() dto: Resend2FACodeDto): Promise<{ message: string }> {
-    return await this.resendUseCase.execute(dto.tokenId)
+    return await this.resendUseCase.execute(dto.token)
   }
 }

@@ -29,5 +29,5 @@ export class Resend2FACodeDto {
   @IsNotEmpty({ message: 'El tokenId es requerido' })
   @MinLength(64, { message: 'El tokenId debe tener 64 caracteres' })
   @MaxLength(64, { message: 'El tokenId debe tener 64 caracteres' })
-  tokenId: string
+  token: string
 }
