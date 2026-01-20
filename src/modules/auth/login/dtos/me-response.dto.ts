@@ -42,6 +42,12 @@ export class UserResponseDto {
   image: string | null
 
   @ApiProperty({
+    description: 'Email del usuario',
+    example: 'juan.perez@example.com',
+  })
+  email: string
+
+  @ApiProperty({
     enum: Role,
     isArray: true,
     description: 'Roles asignados al usuario',
