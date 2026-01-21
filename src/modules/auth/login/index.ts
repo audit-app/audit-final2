@@ -5,6 +5,7 @@ export * from './controllers/auth.controller'
 export * from './use-cases/login/login.use-case'
 export * from './use-cases/logout/logout.use-case'
 export * from './use-cases/refresh-token/refresh-token.use-case'
+export * from './use-cases/google-login/google-login.use-case'
 
 // Services
 export * from './services/tokens.service'

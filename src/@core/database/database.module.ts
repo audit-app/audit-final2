@@ -5,7 +5,7 @@ import { TransactionService } from './transaction.service'
 import { TransactionDiscoveryService } from './transaction-discovery.service'
 import { AuditService } from './audit.service'
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
-import { ConfigModule, ConfigService } from '@nestjs/config'
+import { AppConfigService } from '@core/config'
 
 /**
  * Módulo global de database implementa:
@@ -18,10 +18,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config'
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const dbConfig = configService.get<TypeOrmModuleOptions>('database')
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => {
+        const dbConfig = config.database as TypeOrmModuleOptions
         if (!dbConfig) {
           throw new Error(
             'La configuración de la base de datos no fue cargada correctamente',

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MailerService } from '@nestjs-modules/mailer'
-import { ConfigService } from '@nestjs/config'
+import { AppConfigService } from '@core/config'
 import { LoggerService } from '@core/logger'
 import * as nodemailer from 'nodemailer'
 import * as path from 'path'
@@ -33,12 +33,11 @@ export class EmailService {
   constructor(
     private readonly logger: LoggerService,
     private readonly mailerService: MailerService,
-    private readonly configService: ConfigService,
+    private readonly config: AppConfigService,
   ) {
-    this.fromEmail =
-      this.configService.get<string>('MAIL_FROM') || 'noreply@audit2.com'
-    this.fromName = this.configService.get<string>('MAIL_FROM_NAME') || 'Audit2'
-    this.appName = this.configService.get<string>('APP_NAME') || 'Audit2'
+    this.fromEmail = this.config.email.from
+    this.fromName = this.config.email.fromName
+    this.appName = this.config.app.name
 
     // Opción 1: Logo Base64 (recomendado)
     // Buscar logo en assets/images/logo.png
@@ -59,7 +58,8 @@ export class EmailService {
     }
 
     // Opción 2: Logo por URL (alternativa)
-    this.logoUrl = this.configService.get<string>('LOGO_URL') || null
+    // TODO: Agregar LOGO_URL a la configuración si es necesario
+    this.logoUrl = null
   }
 
   /**
@@ -88,9 +88,8 @@ export class EmailService {
       )
 
       // En desarrollo, mostrar preview URL
-      const isDevelopment = this.configService.get('NODE_ENV') !== 'production'
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (isDevelopment && info.messageId) {
+      if (this.config.app.isDevelopment && info.messageId) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const previewUrl = nodemailer.getTestMessageUrl(info)
         if (previewUrl) {

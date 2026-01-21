@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule } from '@nestjs/config'
 import { EventEmitterModule } from '@nestjs/event-emitter'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
@@ -15,7 +14,7 @@ import {
   AuditInterceptor,
   TransformInterceptor,
 } from '@core/interceptors'
-import { databaseConfig } from '@core/config'
+import { AppConfigModule } from '@core/config'
 import { FilesModule } from '@core/files'
 import { PersistenceModule } from '@core/persistence'
 import { CacheModule } from '@core/cache'
@@ -32,12 +31,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 
 @Module({
   imports: [
-    // Core modules
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-      load: [databaseConfig],
-    }),
+    // Core modules (centralized configuration)
+    AppConfigModule,
     // EventEmitter para emails asíncronos (en memoria, NO requiere Redis)
     EventEmitterModule.forRoot({
       wildcard: false,
@@ -51,11 +46,12 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     CommonModule, // Decoradores y servicios comunes (@ConnectionInfo, ConnectionMetadataService)
 
     // Throttling global (protección contra DoS)
+    // Configuración centralizada en @core/config/security.config.ts
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: 60000,
-        limit: 100,
+        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10) * 1000, // Segundos a ms
+        limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
       },
     ]),
 

@@ -1,3 +1,4 @@
+import { IsNumberString } from '@core/i18n'
 import { ApiProperty } from '@nestjs/swagger'
 import {
   IsNotEmpty,
@@ -40,7 +41,7 @@ export class ResetPasswordDto {
   @IsNotEmpty({ message: 'El código OTP es requerido' })
   @MinLength(6, { message: 'El código OTP debe tener 6 dígitos' })
   @MaxLength(6, { message: 'El código OTP debe tener 6 dígitos' })
-  @Matches(/^\d{6}$/, { message: 'El código OTP debe ser numérico' })
+  @IsNumberString()
   otpCode: string
 
   @ApiProperty({

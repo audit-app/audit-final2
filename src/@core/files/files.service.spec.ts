@@ -45,7 +45,9 @@ describe('FilesService', () => {
         isValid: true,
         errors: [],
       }),
-      resizeImageIfNeeded: jest.fn((buffer) => Promise.resolve(buffer)),
+      resizeImageIfNeeded: jest.fn((buffer, _options) =>
+        Promise.resolve(buffer),
+      ),
     }
 
     const module: TestingModule = await Test.createTestingModule({
@@ -77,7 +79,6 @@ describe('FilesService', () => {
       folder: 'documents',
       validationOptions: {
         maxSize: 5 * 1024 * 1024, // 5MB
-        allowedMimeTypes: ['application/pdf'],
       },
     }
 
@@ -336,7 +337,6 @@ describe('FilesService', () => {
       folder: 'avatars',
       validationOptions: {
         maxSize: 2 * 1024 * 1024,
-        allowedMimeTypes: ['image/jpeg', 'image/png'],
       },
     }
 
@@ -477,7 +477,6 @@ describe('FilesService', () => {
         folder: 'documents/important',
         validationOptions: {
           maxSize: 10 * 1024 * 1024,
-          allowedMimeTypes: ['application/pdf'],
         },
         customFileName: 'contract-2024',
       }
@@ -506,7 +505,6 @@ describe('FilesService', () => {
         folder: 'users/123',
         validationOptions: {
           maxSize: 2 * 1024 * 1024,
-          allowedMimeTypes: ['image/jpeg', 'image/png'],
         },
         customFileName: 'avatar',
       }

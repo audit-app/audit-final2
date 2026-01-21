@@ -126,9 +126,10 @@ export class LoggerService implements NestLoggerService {
     res: Response,
     responseTime: number,
     userContext?: Partial<UserContext>,
+    responseBody?: unknown,
   ): void {
     const user = this.extractUserContext(req, userContext)
-    this.http.logResponse(req, res, responseTime, user)
+    this.http.logResponse(req, res, responseTime, user, responseBody)
   }
 
   // ===== EXCEPTION LOGGING =====

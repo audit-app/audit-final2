@@ -16,6 +16,7 @@ export interface HttpRequestContext {
   url: string
   ip: string
   contentType?: string
+  headers?: Record<string, unknown> // ✅ Headers del request
   query?: Record<string, unknown>
   params?: Record<string, unknown>
   body?: Record<string, unknown>
@@ -24,6 +25,7 @@ export interface HttpRequestContext {
 export interface HttpResponseContext {
   statusCode: number
   responseTime: number
+  body?: unknown // ✅ Body de la respuesta
 }
 
 export interface ErrorContext {

@@ -18,6 +18,10 @@ import { OrganizationRepository } from '../../modules/organizations/repositories
 // Import tokens directly from token files
 import { USERS_REPOSITORY } from '../../modules/users/tokens'
 import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
+import { TemplateEntity } from 'src/modules/templates/entities'
+import { StandardEntity } from 'src/modules/standards'
+import { TemplatesRepository } from 'src/modules/templates/repositories'
+import { TEMPLATES_REPOSITORY } from './tokens'
 // TODO: Importar otros tokens:
 // import { AUDITS_REPOSITORY } from '../../modules/audits'
 
@@ -75,11 +79,11 @@ import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
 @Global()
 @Module({
   imports: [
-    // Registrar todas las entities de la aplicación
     TypeOrmModule.forFeature([
       UserEntity,
       OrganizationEntity,
-      // TODO: Agregar nuevas entities aquí
+      TemplateEntity,
+      StandardEntity,
     ]),
   ],
   providers: [
@@ -93,6 +97,11 @@ import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
     {
       provide: ORGANIZATION_REPOSITORY,
       useClass: OrganizationRepository,
+    },
+
+    {
+      provide: TEMPLATES_REPOSITORY,
+      useClass: TemplatesRepository,
     },
 
     // ========== TODO: Agregar nuevos repositorios aquí ==========

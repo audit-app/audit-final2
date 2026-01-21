@@ -35,6 +35,13 @@ export class UserEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, select: false, nullable: true })
   password: string | null
 
+  // OAuth Fields (solo para identificación, no para tokens)
+  @Column({ type: 'varchar', length: 50, nullable: true, default: 'local' })
+  provider: 'local' | 'google' | null // Proveedor de autenticación
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  providerId: string | null // ID del usuario en el proveedor (ej: Google sub)
+
   // Campos no gestionables directamente por el usuario
   @Column({ type: 'boolean', default: false })
   emailVerified: boolean

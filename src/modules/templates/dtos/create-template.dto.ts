@@ -1,35 +1,48 @@
-import { IsString, IsOptional, MinLength, MaxLength } from 'class-validator'
+import { IsString, IsOptional, MinLength, MaxLength } from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { TEMPLATE_CONSTRAINTS } from '../constants'
 
-/**
- * DTO para crear un template
- *
- * Flujo:
- * - El template se crea siempre en estado DRAFT
- * - La versión se calcula automáticamente (v1.0, v1.1, v2.0, etc.)
- * - Para publicar, usar el endpoint POST /templates/:id/publish
- */
 export class CreateTemplateDto {
   @ApiProperty({
-    description: 'Nombre de la plantilla',
-    example: 'ISO 27001',
-    minLength: 2,
-    maxLength: 100,
+    description: 'Código único agrupador de la familia de la norma',
+    example: 'ISO-27001',
+    minLength: TEMPLATE_CONSTRAINTS.CODE.MIN_LENGTH,
+    maxLength: TEMPLATE_CONSTRAINTS.CODE.MAX_LENGTH,
   })
   @IsString()
-  @MinLength(2, { message: 'El nombre debe tener al menos 2 caracteres' })
-  @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
+  @MinLength(TEMPLATE_CONSTRAINTS.CODE.MIN_LENGTH)
+  @MaxLength(TEMPLATE_CONSTRAINTS.CODE.MAX_LENGTH)
+  code: string
+
+  @ApiProperty({
+    description: 'Nombre completo y descriptivo de la plantilla',
+    example: 'Norma ISO/IEC 27001:2022 Seguridad de la Información',
+    minLength: TEMPLATE_CONSTRAINTS.NAME.MIN_LENGTH,
+    maxLength: TEMPLATE_CONSTRAINTS.NAME.MAX_LENGTH,
+  })
+  @IsString()
+  @MinLength(TEMPLATE_CONSTRAINTS.NAME.MIN_LENGTH)
+  @MaxLength(TEMPLATE_CONSTRAINTS.NAME.MAX_LENGTH)
   name: string
 
   @ApiPropertyOptional({
-    description: 'Descripción de la plantilla',
-    example: 'Sistema de Gestión de Seguridad de la Información',
-    maxLength: 1000,
+    description: 'Descripción detallada, alcance o notas sobre esta versión',
+    example: 'Versión actualizada con los nuevos controles del Anexo A.',
+    maxLength: TEMPLATE_CONSTRAINTS.DESCRIPTION.MAX_LENGTH,
   })
   @IsOptional()
   @IsString()
-  @MaxLength(1000, {
-    message: 'La descripción no puede exceder 1000 caracteres',
-  })
+  @MaxLength(TEMPLATE_CONSTRAINTS.DESCRIPTION.MAX_LENGTH)
   description?: string
+
+  @ApiProperty({
+    description: 'Identificador de la versión (Año, Revisión o SemVer)',
+    example: '2022',
+    minLength: TEMPLATE_CONSTRAINTS.VERSION.MIN_LENGTH,
+    maxLength: TEMPLATE_CONSTRAINTS.VERSION.MAX_LENGTH,
+  })
+  @IsString()
+  @MinLength(TEMPLATE_CONSTRAINTS.VERSION.MIN_LENGTH)
+  @MaxLength(TEMPLATE_CONSTRAINTS.VERSION.MAX_LENGTH)
+  version: string
 }

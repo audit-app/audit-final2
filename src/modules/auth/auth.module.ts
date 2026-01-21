@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
+import { AppConfigService } from '@core/config'
 
 import type * as ms from 'ms'
 
@@ -15,6 +15,7 @@ import {
   RefreshTokenUseCase,
   LogoutUseCase,
   LoginRateLimitPolicy,
+  GoogleLoginUseCase,
 } from './login'
 
 // ========================================
@@ -71,6 +72,12 @@ import {
 } from './sessions'
 
 // ========================================
+// GOOGLE OAUTH CONTEXT
+// ========================================
+import { GoogleAuthController } from './google'
+import { GoogleStrategy } from './strategies/google.strategy'
+
+// ========================================
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtAuthGuard } from './shared'
@@ -86,19 +93,12 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
       session: false,
     }),
 
-    // Configuración de JWT para access tokens
+    // Configuración de JWT para access tokens (centralizado)
     JwtModule.registerAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const secret = configService.get<string>(
-          'JWT_SECRET',
-          'your-secret-key-change-in-production',
-        )
-        const expiresIn = configService.get<string>(
-          'JWT_EXPIRES_IN',
-          '15m',
-        ) as ms.StringValue
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => {
+        const secret = config.auth.jwt.access.secret
+        const expiresIn = config.auth.jwt.access.expiresIn as ms.StringValue
 
         if (!secret) {
           throw new Error('JWT_SECRET is required')
@@ -121,6 +121,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     EmailVerificationController,
     SessionsController,
     TrustedDevicesController,
+    GoogleAuthController,
   ],
 
   providers: [
@@ -142,8 +143,6 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     DeviceFingerprintService,
     NavigationService,
 
-    ConfigService,
-
     // ========================================
     // Policies
     // ========================================
@@ -158,6 +157,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     LoginUseCase,
     RefreshTokenUseCase,
     LogoutUseCase,
+    GoogleLoginUseCase,
 
     // Password Reset
     RequestResetPasswordUseCase,
@@ -185,6 +185,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     // Passport Strategies
     // ========================================
     JwtStrategy,
+    GoogleStrategy,
     JwtAuthGuard,
     // ========================================
     // Global Guards (registrados como APP_GUARD)

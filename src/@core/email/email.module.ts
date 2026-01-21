@@ -1,8 +1,8 @@
 import { Global, Module } from '@nestjs/common'
 import { MailerModule } from '@nestjs-modules/mailer'
-import { ConfigModule, ConfigService } from '@nestjs/config'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 import { join } from 'path'
+import { AppConfigService } from '@core/config'
 import { EmailService } from './email.service'
 import { EmailEventService } from './email-event.service'
 import { EmailListener } from './listeners/email.listener'
@@ -10,25 +10,21 @@ import { EmailListener } from './listeners/email.listener'
 @Global()
 @Module({
   imports: [
-    ConfigModule,
     MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const isProduction = configService.get('NODE_ENV') === 'production'
-
+      inject: [AppConfigService],
+      useFactory: (config: AppConfigService) => {
         return {
           transport: {
-            host: configService.get<string>('MAIL_HOST'),
-            port: parseInt(configService.get<string>('MAIL_PORT') || '587', 10),
-            secure: configService.get<string>('MAIL_SECURE') === 'true',
+            host: config.email.host,
+            port: config.email.port,
+            secure: config.email.secure,
             auth: {
-              user: configService.get<string>('MAIL_USER'),
-              pass: configService.get<string>('MAIL_PASSWORD'),
+              user: config.email.user,
+              pass: config.email.password,
             },
           },
           defaults: {
-            from: `"${configService.get<string>('MAIL_FROM_NAME') || 'Audit2'}" <${configService.get<string>('MAIL_FROM') || 'noreply@audit2.com'}>`,
+            from: `"${config.email.fromName}" <${config.email.from}>`,
           },
           template: {
             dir: join(__dirname, 'templates'),
@@ -38,7 +34,7 @@ import { EmailListener } from './listeners/email.listener'
             },
           },
           // Preview de emails en desarrollo (opcional)
-          preview: !isProduction,
+          preview: config.app.isDevelopment,
         }
       },
     }),

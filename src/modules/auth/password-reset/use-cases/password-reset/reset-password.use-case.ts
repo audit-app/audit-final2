@@ -38,6 +38,14 @@ export class ResetPasswordUseCase {
     // ---------------------------------------------------------
     // 1. SEGURIDAD OTP: Control de Intentos (Token Burning)
     // ---------------------------------------------------------
+    const sessionExists = await this.otpCoreService.getPayload(CONTEXT, tokenId)
+
+    if (!sessionExists) {
+      // Token no existe o ya fue revocado/expiró
+      throw new BadRequestException(
+        'El código de verificación ha expirado o ya fue usado. Por favor, inicia sesión nuevamente.',
+      )
+    }
 
     // Incrementamos el contador ANTES de validar nada.
     // Usamos una ventana corta (ej. 15 min), suficiente para el proceso.

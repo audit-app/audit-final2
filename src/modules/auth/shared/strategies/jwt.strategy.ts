@@ -1,7 +1,7 @@
 import { Injectable, Inject, UnauthorizedException } from '@nestjs/common'
 import { PassportStrategy } from '@nestjs/passport'
 import { ExtractJwt, Strategy } from 'passport-jwt'
-import { ConfigService } from '@nestjs/config'
+import { AppConfigService } from '@core/config'
 import { TokensService } from '../../login/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
@@ -22,7 +22,7 @@ import type { Request } from 'express'
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
-    private readonly configService: ConfigService,
+    private readonly config: AppConfigService,
     private readonly tokensService: TokensService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
@@ -30,10 +30,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>(
-        'JWT_SECRET',
-        'your-secret-key-change-in-production',
-      ),
+      secretOrKey: config.auth.jwt.access.secret,
       passReqToCallback: true, // Para acceder al token original
     })
   }

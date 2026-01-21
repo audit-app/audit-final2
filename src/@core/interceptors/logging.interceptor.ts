@@ -28,20 +28,21 @@ export class LoggingInterceptor implements NestInterceptor {
         }
       : undefined
 
-    // Log del request
+    // Log del request (ENTRADA)
     this.logger.logHttpRequest(request, userContext)
 
     return next.handle().pipe(
       tap({
-        next: () => {
+        next: (responseBody: unknown) => {
           const responseTime = Date.now() - startTime
 
-          // Log del response exitoso
+          // Log del response exitoso (SALIDA con body)
           this.logger.logHttpResponse(
             request,
             response,
             responseTime,
             userContext,
+            responseBody, // ✅ Ahora capturamos el body de la respuesta
           )
         },
         error: (error: Error) => {
@@ -53,6 +54,10 @@ export class LoggingInterceptor implements NestInterceptor {
             response,
             responseTime,
             userContext,
+            {
+              error: error.message,
+              name: error.name,
+            },
           )
 
           // Log de la excepción

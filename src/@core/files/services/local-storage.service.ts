@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
+import { AppConfigService } from '@core/config'
 import { LoggerService } from '@core/logger'
 import * as fs from 'fs/promises'
 import * as path from 'path'
@@ -37,18 +37,14 @@ export class LocalStorageService implements IStorageService {
   private readonly baseUrl: string
 
   constructor(
-    private readonly configService: ConfigService,
+    private readonly config: AppConfigService,
     private readonly logger: LoggerService,
   ) {
-    // Directorio raíz para uploads (por defecto: ./uploads)
-    this.uploadsDir =
-      this.configService.get<string>('UPLOADS_DIR') ||
-      path.join(process.cwd(), 'uploads')
+    // Directorio raíz para uploads (configuración centralizada)
+    this.uploadsDir = this.config.files.uploadsDir
 
     // URL base para acceder a los archivos
-    const appUrl =
-      this.configService.get<string>('APP_URL') || 'http://localhost:3001'
-    this.baseUrl = `${appUrl}/uploads`
+    this.baseUrl = `${this.config.app.url}/uploads`
 
     // Crear directorio de uploads si no existe
     this.ensureUploadsDirExists().catch((error) => {

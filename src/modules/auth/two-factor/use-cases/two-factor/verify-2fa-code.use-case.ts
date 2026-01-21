@@ -18,27 +18,31 @@ import { TWO_FACTOR_CONFIG } from '../../config/two-factor.config'
  * Responsabilidades:
  * - Controlar intentos de verificación (máximo 3)
  * - Validar el código contra Redis usando OtpCoreService
- * - Quemar token si excede intentos
+ * - Quemar token si agota los 3 intentos
  * - Agregar dispositivo como confiable si el usuario lo solicita
  * - Generar tokens JWT (accessToken + refreshToken)
  * - Retornar tokens para completar el login
  *
- * Flujo completo (similar a reset-password):
+ * Flujo completo:
  * 1. Usuario hace login → recibe código 2FA por email + tokenId
  * 2. Usuario ingresa código → llama a este use case
- * 3. Incrementar contador de intentos
- * 4. Si excede 3 intentos → quemar token y lanzar excepción
+ * 3. Verificar que el token existe en Redis (si no existe, rechazar sin incrementar contador)
+ * 4. Incrementar contador de intentos (solo si el token existe)
  * 5. Validar código con OtpCoreService
- * 6. Si código inválido → informar intentos restantes
+ * 6. Si código inválido:
+ *    - Si agotó los 3 intentos → quemar token y lanzar excepción
+ *    - Si tiene intentos restantes → informar cuántos quedan
  * 7. Si código válido:
  *    - Quemar token (one-time use)
+ *    - Limpiar contador de intentos
  *    - Agregar dispositivo como confiable (opcional)
  *    - Generar tokens JWT
  *    - Retornar tokens
  *
  * Seguridad implementada:
- * - Máximo 3 intentos de verificación (Token Burning)
- * - Código de un solo uso (se elimina después de validarse)
+ * - Verificación de existencia del token antes de incrementar contador (evita spam)
+ * - Exactamente 3 intentos de verificación (Token Burning después del 3er fallo)
+ * - Código de un solo uso (se elimina después de validarse o agotar intentos)
  * - Expira en 5 minutos (TTL automático)
  * - Token obligatorio para vincular sesión
  */
@@ -84,27 +88,31 @@ export class Verify2FACodeUseCase {
     const WINDOW_MINUTES = TWO_FACTOR_CONFIG.rateLimit.verify.windowMinutes
 
     // ---------------------------------------------------------
-    // 1. SEGURIDAD OTP: Control de Intentos (Token Burning)
+    // 1. VERIFICAR QUE EL TOKEN EXISTE (antes de incrementar contador)
     // ---------------------------------------------------------
 
-    // Incrementamos el contador ANTES de validar nada
+    // Verificar si el token existe en Redis ANTES de incrementar el contador
+    const sessionExists = await this.twoFactorTokenService.getPayload(dto.token)
+
+    if (!sessionExists) {
+      // Token no existe o ya fue revocado/expiró
+      throw new BadRequestException(
+        'El código de verificación ha expirado o ya fue usado. Por favor, inicia sesión nuevamente.',
+      )
+    }
+
+    // ---------------------------------------------------------
+    // 2. SEGURIDAD OTP: Control de Intentos (Token Burning)
+    // ---------------------------------------------------------
+
+    // Incrementamos el contador solo si el token existe
     const attempts = await this.rateLimitService.incrementAttempts(
       ATTEMPTS_KEY,
       WINDOW_MINUTES,
     )
 
-    // Si supera 3 intentos, QUEMAMOS el token inmediatamente
-    if (attempts > MAX_ATTEMPTS) {
-      await this.twoFactorTokenService.deleteSession(dto.token) // Borra el token real
-      await this.rateLimitService.resetAttempts(ATTEMPTS_KEY) // Limpia el contador
-
-      throw new BadRequestException(
-        'El código ha expirado por exceso de intentos. Solicita uno nuevo desde el login.',
-      )
-    }
-
     // ---------------------------------------------------------
-    // 2. VALIDACIÓN DEL CÓDIGO
+    // 3. VALIDACIÓN DEL CÓDIGO
     // ---------------------------------------------------------
 
     const { isValid, payload } = await this.twoFactorTokenService.validateCode(
@@ -113,9 +121,21 @@ export class Verify2FACodeUseCase {
     )
 
     if (!isValid || !payload) {
+      // Código incorrecto: Verificar si agotó los intentos permitidos
+      if (attempts >= MAX_ATTEMPTS) {
+        // Agotó intentos → QUEMAR TOKEN
+        await this.twoFactorTokenService.deleteSession(dto.token)
+        await this.rateLimitService.resetAttempts(ATTEMPTS_KEY)
+
+        throw new BadRequestException(
+          `Has agotado los ${MAX_ATTEMPTS} intentos permitidos. El código ha sido revocado. Inicia sesión nuevamente.`,
+        )
+      }
+
+      // Todavía tiene intentos
       const remaining = MAX_ATTEMPTS - attempts
       throw new BadRequestException(
-        `Código incorrecto o expirado. Te quedan ${remaining} intentos.`,
+        `Código incorrecto o expirado. Te quedan ${remaining} ${remaining === 1 ? 'intento' : 'intentos'}.`,
       )
     }
 
@@ -123,11 +143,12 @@ export class Verify2FACodeUseCase {
     const userId = payload.userId
 
     // ---------------------------------------------------------
-    // 3. PROTOCOLO "TIERRA QUEMADA" (Seguridad)
+    // 3. CÓDIGO VÁLIDO: Quemar token (one-time use)
     // ---------------------------------------------------------
 
-    // A. Quemar el token usado (Para que no se pueda reusar)
+    // Quemar el token usado (para que no se pueda reusar)
     await this.twoFactorTokenService.deleteSession(dto.token)
+    // Limpiar contador de intentos (ya no es necesario)
     await this.rateLimitService.resetAttempts(ATTEMPTS_KEY)
 
     // ---------------------------------------------------------

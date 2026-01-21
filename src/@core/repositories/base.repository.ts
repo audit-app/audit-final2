@@ -7,6 +7,7 @@ import {
   type Repository,
   FindOptionsOrder,
   In,
+  SelectQueryBuilder,
 } from 'typeorm'
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 import { IBaseRepository } from './base-repository.interface'
@@ -159,6 +160,38 @@ export abstract class BaseRepository<
       take: limit,
       skip,
     })
+
+    return { data, total }
+  }
+
+  protected async paginateQueryBuilder(
+    qb: SelectQueryBuilder<T>,
+    query: PaginationDto,
+  ): Promise<PaginatedData<T>> {
+    const { page = 1, limit = 10, all = false, sortBy, sortOrder } = query
+
+    // 1. Aplicar Ordenamiento Dinámico
+    if (sortBy) {
+      // Protegemos contra inyección SQL simple verificando que sea una columna válida
+      // Ojo: Para relaciones complejas necesitarás lógica extra, pero esto cubre el 90%
+      qb.addOrderBy(`${qb.alias}.${sortBy}`, sortOrder || 'DESC')
+    } else {
+      // Default sort (opcional, ajusta según tu entidad, ej: createdAt)
+      qb.addOrderBy(`${qb.alias}.createdAt`, 'DESC')
+    }
+
+    // 2. Caso: Devolver Todo
+    if (all) {
+      const data = await qb.getMany()
+      return { data, total: data.length }
+    }
+
+    // 3. Paginación Real
+    const total = await qb.getCount() // Contamos antes de limitar
+    const data = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany()
 
     return { data, total }
   }

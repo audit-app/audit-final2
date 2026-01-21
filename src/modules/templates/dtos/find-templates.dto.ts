@@ -18,22 +18,17 @@ export const TEMPLATE_SORTABLE_FIELDS: (keyof TemplateEntity)[] = [
 /**
  * Campos en los que busca el parámetro 'search'
  */
-export const TEMPLATE_SEARCH_FIELDS = ['name', 'description', 'version']
+export const TEMPLATE_SEARCH_FIELDS: (keyof TemplateEntity)[] = [
+  'name',
+  'description',
+  'version',
+]
 
 export class FindTemplatesDto extends PaginationDto {
-  /**
-   * Búsqueda de texto libre
-   * Busca en: name, description, version
-   */
   @IsOptional()
   @IsString()
   search?: string
 
-  /**
-   * Filtrar por estado de la plantilla
-   * Puede ser: draft, published, archived
-   * Si no se especifica, devuelve plantillas con cualquier estado
-   */
   @IsOptional()
   @IsEnum(TemplateStatus)
   status?: TemplateStatus

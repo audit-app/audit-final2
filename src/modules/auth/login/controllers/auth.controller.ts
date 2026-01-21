@@ -90,7 +90,7 @@ export class AuthController {
     const { response, refreshToken } = await this.loginUseCase.execute(
       loginDto,
       connection,
-      deviceId, // Pasar deviceId al use case
+      deviceId,
     )
 
     // Configurar refresh token en HTTP-only cookie (solo si existe)
@@ -272,6 +272,7 @@ export class AuthController {
       names: profile.names,
       lastNames: profile.lastNames,
       username: profile.username,
+      email: profile.email,
       image: profile.image,
       roles: profile.roles,
       organizationId: profile.organizationId,

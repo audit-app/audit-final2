@@ -59,10 +59,7 @@ export class Resend2FARateLimitPolicy {
 
     // Incrementamos a 1 y establecemos TTL
     // La existencia de la key indica que el usuario está en cooldown
-    await this.rateLimitService.incrementAttempts(
-      key,
-      this.cooldownSeconds / 60, // Convertir segundos a minutos
-    )
+    await this.rateLimitService.incrementAttempts(key, this.cooldownSeconds)
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { Request, Response, CookieOptions } from 'express'
+import { AppConfigService } from '@core/config'
 
 @Injectable()
 export class CookieService {
@@ -10,10 +10,9 @@ export class CookieService {
   private readonly REFRESH_TOKEN_COOKIE = 'refreshToken'
   private readonly TRUSTED_DEVICE_COOKIE = 'trustedDevice'
 
-  constructor(private readonly configService: ConfigService) {
-    // 1. Usamos ConfigService para el entorno
-    this.isProduction =
-      this.configService.get<string>('NODE_ENV') === 'production'
+  constructor(private readonly config: AppConfigService) {
+    // Usamos la configuración centralizada
+    this.isProduction = this.config.app.isProduction
   }
 
   // =================================================================
@@ -23,12 +22,9 @@ export class CookieService {
     const options = this.getSafeCookieOptions()
 
     if (rememberMe) {
-      // 2. Leemos del ENV. Importante: Redis suele configurarse en SEGUNDOS.
-      // Multiplicamos por 1000 para pasar a MILISEGUNDOS para la cookie.
-      const expiresInSeconds = this.configService.get<number>(
-        'JWT_REFRESH_EXPIRATION_TIME',
-        604800,
-      ) // Default 7 días
+      // Leemos de la configuración centralizada
+      // Redis usa SEGUNDOS, cookies usan MILISEGUNDOS
+      const expiresInSeconds = this.config.auth.jwt.refresh.expirationTime
       options.maxAge = expiresInSeconds * 1000
     }
 
@@ -51,12 +47,9 @@ export class CookieService {
   setTrustedDeviceToken(res: Response, token: string): void {
     const options = this.getSafeCookieOptions()
 
-    // 3. Leemos del ENV específico para 2FA
-    // Ej: TWO_FACTOR_TRUSTED_DEVICE_EXPIRATION = 7776000 (90 días en segundos)
-    const expiresInSeconds = this.configService.get<number>(
-      'TWO_FACTOR_TRUSTED_DEVICE_EXPIRATION',
-      7776000,
-    )
+    // Leemos de la configuración centralizada
+    const expiresInSeconds =
+      this.config.auth.twoFactor.trustedDevice.expirationSeconds
 
     options.maxAge = expiresInSeconds * 1000
 
@@ -75,7 +68,7 @@ export class CookieService {
     return {
       httpOnly: true,
       secure: this.isProduction,
-      // 4. SameSite: 'Strict' es muy seguro, pero considera 'Lax' si tienes problemas
+      // SameSite: 'Strict' es muy seguro, pero considera 'Lax' si tienes problemas
       // con enlaces desde correos electrónicos. Para APIs internas, 'Strict' está bien.
       sameSite: 'strict',
       path: '/',

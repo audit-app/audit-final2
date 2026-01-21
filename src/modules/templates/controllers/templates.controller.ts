@@ -17,47 +17,39 @@ import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiQuery,
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger'
 import type { Response } from 'express'
-import { UploadSpreadsheet } from '@core/files'
 import {
   ApiCreate,
   ApiList,
   ApiFindOne,
   ApiUpdateWithMessage,
   ApiRemoveWithMessage,
-  ApiOkResponse,
   ApiNotFoundResponse,
   ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { ResponseMessage } from '@core/decorators'
 import {
-  ImportTemplateMetadataDto,
-  TemplateResponseDto,
-  FindTemplatesDto,
-  TEMPLATE_SORTABLE_FIELDS,
-  TEMPLATE_SEARCH_FIELDS,
-  CreateTemplateDto,
-  UpdateTemplateDto,
-  CloneTemplateDto,
-} from '../dtos'
-import {
   CreateTemplateUseCase,
   UpdateTemplateUseCase,
-  DeleteTemplateUseCase,
   FindTemplateUseCase,
   FindTemplatesUseCase,
-  FindTemplatesWithFiltersUseCase,
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
-  CloneTemplateUseCase,
-} from '../use-cases/templates'
-import { TemplateImportService } from '../shared/services/template-import.service'
-import { TemplateStatus } from '../constants/template-status.enum'
+  FindTemplatesWithFiltersUseCase,
+} from '../use-cases'
+import {
+  CreateTemplateDto,
+  FindTemplatesDto,
+  TEMPLATE_SEARCH_FIELDS,
+  TEMPLATE_SORTABLE_FIELDS,
+  UpdateTemplateDto,
+} from '../dtos'
+import { TemplateEntity } from '../entities'
+import { TemplateStatus } from '../constants'
 
 @ApiTags('templates')
 @Controller('templates')
@@ -65,18 +57,15 @@ export class TemplatesController {
   constructor(
     private readonly createTemplateUseCase: CreateTemplateUseCase,
     private readonly updateTemplateUseCase: UpdateTemplateUseCase,
-    private readonly deleteTemplateUseCase: DeleteTemplateUseCase,
     private readonly findTemplateUseCase: FindTemplateUseCase,
-    private readonly findTemplatesUseCase: FindTemplatesUseCase,
-    private readonly findTemplatesWithFiltersUseCase: FindTemplatesWithFiltersUseCase,
     private readonly publishTemplateUseCase: PublishTemplateUseCase,
     private readonly archiveTemplateUseCase: ArchiveTemplateUseCase,
-    private readonly cloneTemplateUseCase: CloneTemplateUseCase,
-    private readonly templateImportService: TemplateImportService,
+    private readonly findTemplatesWithFiltersUseCase: FindTemplatesWithFiltersUseCase,
+    private readonly templateImportService: FindTemplatesUseCase,
   ) {}
 
   @Post()
-  @ApiCreate(TemplateResponseDto, {
+  @ApiCreate(TemplateEntity, {
     summary: 'Crear una nueva plantilla',
     description:
       'Crea una nueva plantilla de auditoría en estado DRAFT. El nombre y versión deben ser únicos.',
@@ -87,7 +76,7 @@ export class TemplatesController {
   }
 
   @Get()
-  @ApiList(TemplateResponseDto, {
+  @ApiList(TemplateEntity, {
     summary: 'Listar plantillas con paginación y filtros',
     searchFields: TEMPLATE_SEARCH_FIELDS,
     sortableFields: TEMPLATE_SORTABLE_FIELDS.map(String),
@@ -106,14 +95,14 @@ export class TemplatesController {
   }
 
   @Get(':id')
-  @ApiFindOne(TemplateResponseDto)
+  @ApiFindOne(TemplateEntity)
   async findOne(@Param() { id }: UuidParamDto) {
     return await this.findTemplateUseCase.execute(id)
   }
 
   // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
   // @Patch(':id')
-  // @ApiUpdate(TemplateResponseDto, {
+  // @ApiUpdate(TemplateEntity, {
   //   summary: 'Actualizar una plantilla (solo si está en draft)',
   //   description:
   //     'Actualiza una plantilla solo si está en estado DRAFT. Las plantillas publicadas no se pueden editar directamente.',
@@ -142,46 +131,6 @@ export class TemplatesController {
     await this.updateTemplateUseCase.execute(id, updateTemplateDto)
   }
 
-  // OPCIÓN 1: Devolver entidad eliminada
-  // @Delete(':id')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({
-  //   summary: 'Eliminar una plantilla (solo si está en draft)',
-  //   description:
-  //     'Elimina permanentemente una plantilla solo si está en estado DRAFT. Retorna la plantilla eliminada para confirmación.',
-  // })
-  // @ApiOkResponse(TemplateResponseDto, 'Plantilla eliminada exitosamente')
-  // @ApiNotFoundResponse('Plantilla no encontrada')
-  // @ApiStandardResponses({ exclude: [400] })
-  // async remove(@Param() { id }: UuidParamDto) {
-  //   return await this.deleteTemplateUseCase.execute(id)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico
-  @Delete(':id')
-  @ResponseMessage('Plantilla eliminada exitosamente')
-  @ApiRemoveWithMessage({
-    summary: 'Eliminar una plantilla (solo si está en draft)',
-    description:
-      'Elimina permanentemente una plantilla solo si está en estado DRAFT. Retorna un mensaje de confirmación.',
-    conflictMessage: 'Plantilla no editable (debe estar en estado draft)',
-  })
-  async remove(@Param() { id }: UuidParamDto) {
-    await this.deleteTemplateUseCase.execute(id)
-  }
-
-  // OPCIÓN 1: Devolver entidad actualizada
-  // @Patch(':id/publish')
-  // @ApiCustom(TemplateResponseDto, {
-  //   summary: 'Publicar una plantilla (draft → published)',
-  //   description:
-  //     'Cambia el estado de una plantilla de DRAFT a PUBLISHED. Una vez publicada, la plantilla no se puede editar directamente.',
-  // })
-  // async publish(@Param() { id }: UuidParamDto) {
-  //   return await this.publishTemplateUseCase.execute(id)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/publish')
   @ResponseMessage('Plantilla publicada exitosamente')
   @ApiUpdateWithMessage({
@@ -193,18 +142,6 @@ export class TemplatesController {
     await this.publishTemplateUseCase.execute(id)
   }
 
-  // OPCIÓN 1: Devolver entidad actualizada
-  // @Patch(':id/archive')
-  // @ApiCustom(TemplateResponseDto, {
-  //   summary: 'Archivar una plantilla (published → archived)',
-  //   description:
-  //     'Cambia el estado de una plantilla de PUBLISHED a ARCHIVED. Las plantillas archivadas no se usan en nuevas auditorías.',
-  // })
-  // async archive(@Param() { id }: UuidParamDto) {
-  //   return await this.archiveTemplateUseCase.execute(id)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/archive')
   @ResponseMessage('Plantilla archivada exitosamente')
   @ApiUpdateWithMessage({
@@ -216,7 +153,7 @@ export class TemplatesController {
     await this.archiveTemplateUseCase.execute(id)
   }
 
-  @Post(':id/clone')
+  /*   @Post(':id/clone')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: 'Clonar una plantilla para crear una nueva versión',
@@ -235,13 +172,13 @@ export class TemplatesController {
     @Body() cloneTemplateDto: CloneTemplateDto,
   ) {
     return await this.cloneTemplateUseCase.execute(id, cloneTemplateDto)
-  }
+  } */
 
   // ========================================
   // Import/Export Endpoints
   // ========================================
 
-  @Post('import/excel')
+  /*   @Post('import/excel')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Importar plantilla desde Excel',
@@ -431,5 +368,5 @@ export class TemplatesController {
       'attachment; filename=estandares-template.xlsx',
     )
     res.send(buffer)
-  }
+  } */
 }
