@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
 import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attempts.exception'
-import { LOGIN_CONFIG } from '../config/login.config'
+import { envs } from '@core/config'
 
 /**
  * Política de Rate Limiting para Login
@@ -21,8 +21,8 @@ import { LOGIN_CONFIG } from '../config/login.config'
 @Injectable()
 export class LoginRateLimitPolicy {
   private readonly contextPrefix = 'login'
-  private readonly maxAttempts = LOGIN_CONFIG.rateLimit.maxAttemptsByUser
-  private readonly windowMinutes = LOGIN_CONFIG.rateLimit.windowMinutes
+  private readonly maxAttempts = envs.login.maxAttemptsByUser
+  private readonly windowMinutes = envs.login.windowMinutes
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

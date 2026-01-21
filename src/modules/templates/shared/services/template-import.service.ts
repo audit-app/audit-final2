@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common'
+import { Injectable, BadRequestException, Logger, Inject } from '@nestjs/common'
 import {
   validate,
   ValidationError as ClassValidatorError,
@@ -7,8 +7,9 @@ import { plainToInstance } from 'class-transformer'
 import * as XLSX from 'xlsx'
 import { ImportTemplateMetadataDto } from '../../dtos'
 import { ImportStandardDto } from '../../../standards/dtos'
-import { TemplatesRepository } from '../../repositories/templates.repository'
-import { StandardsRepository } from '../../../standards/repositories/standards.repository'
+import type { ITemplatesRepository } from '../../repositories'
+import type { IStandardsRepository } from '../../../standards/repositories'
+import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from '@core'
 import { TransactionService } from '@core/database'
 import { HierarchyValidatorUtil, HierarchyProcessorUtil } from '../utils'
 
@@ -71,8 +72,10 @@ export class TemplateImportService {
   private readonly logger = new Logger(TemplateImportService.name)
 
   constructor(
-    private readonly templatesRepository: TemplatesRepository,
-    private readonly standardsRepository: StandardsRepository,
+    @Inject(TEMPLATES_REPOSITORY)
+    private readonly templatesRepository: ITemplatesRepository,
+    @Inject(STANDARDS_REPOSITORY)
+    private readonly standardsRepository: IStandardsRepository,
     private readonly transactionService: TransactionService,
   ) {}
 

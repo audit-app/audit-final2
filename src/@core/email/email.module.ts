@@ -2,7 +2,7 @@ import { Global, Module } from '@nestjs/common'
 import { MailerModule } from '@nestjs-modules/mailer'
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter'
 import { join } from 'path'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import { EmailService } from './email.service'
 import { EmailEventService } from './email-event.service'
 import { EmailListener } from './listeners/email.listener'
@@ -11,20 +11,19 @@ import { EmailListener } from './listeners/email.listener'
 @Module({
   imports: [
     MailerModule.forRootAsync({
-      inject: [AppConfigService],
-      useFactory: (config: AppConfigService) => {
+      useFactory: () => {
         return {
           transport: {
-            host: config.email.host,
-            port: config.email.port,
-            secure: config.email.secure,
+            host: envs.email.host,
+            port: envs.email.port,
+            secure: envs.email.secure,
             auth: {
-              user: config.email.user,
-              pass: config.email.password,
+              user: envs.email.user,
+              pass: envs.email.password,
             },
           },
           defaults: {
-            from: `"${config.email.fromName}" <${config.email.from}>`,
+            from: `"${envs.email.fromName}" <${envs.email.from}>`,
           },
           template: {
             dir: join(__dirname, 'templates'),
@@ -34,7 +33,7 @@ import { EmailListener } from './listeners/email.listener'
             },
           },
           // Preview de emails en desarrollo (opcional)
-          preview: config.app.isDevelopment,
+          preview: envs.app.isDevelopment,
         }
       },
     }),

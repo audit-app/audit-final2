@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { AbstractUserSetRepository, CacheService } from '@core/cache'
 import { TimeUtil } from '@core/utils'
 import { v4 as uuidv4 } from 'uuid' // Necesitarás esto
-import { TRUSTED_DEVICE_CONFIG } from '../config/trusted-device.config'
+import { envs } from '@core/config'
 
 /**
  * Metadata descriptiva (Lo que viene del User Agent / Frontend)
@@ -32,7 +32,7 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
     super(cacheService, {
       basePrefix: 'auth:trusted-device',
       maxItemsPerUser: 10,
-      ttlSeconds: TimeUtil.toSeconds(`${TRUSTED_DEVICE_CONFIG.ttlDays}d`),
+      ttlSeconds: envs.twoFactor.trustedDeviceExpirationSeconds,
     })
   }
 

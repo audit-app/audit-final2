@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import * as crypto from 'crypto'
-import { TRUSTED_DEVICE_CONFIG } from '../config/trusted-device.config'
+import { envs } from '@core/config'
 
 /**
  * Datos para generar fingerprint de dispositivo
@@ -23,7 +23,7 @@ export interface DeviceFingerprintData {
  */
 @Injectable()
 export class DeviceFingerprintService {
-  private readonly FINGERPRINT_SALT = TRUSTED_DEVICE_CONFIG.fingerprintSalt
+  private readonly FINGERPRINT_SALT = envs.deviceFingerprint.salt
 
   /**
    * Genera fingerprint SHA-256 del dispositivo

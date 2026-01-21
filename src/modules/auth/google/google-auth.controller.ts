@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
 import type { Response, Request } from 'express'
 import { GoogleLoginUseCase } from '../login/use-cases'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import { CookieService } from '@core/http/services/cookie.service'
 import { Public } from '../shared'
 import { GoogleUser } from '../shared/interfaces'
@@ -21,7 +21,6 @@ type GoogleAuthRequest = Omit<Request, 'user'> & { user: GoogleUser }
 export class GoogleAuthController {
   constructor(
     private readonly googleLoginUseCase: GoogleLoginUseCase,
-    private readonly config: AppConfigService,
     private readonly cookieService: CookieService,
   ) {}
 
@@ -61,7 +60,7 @@ export class GoogleAuthController {
     }
 
     // 2. Construir la URL del Frontend (configuración centralizada)
-    const frontendUrl = this.config.frontend.url
+    const frontendUrl = envs.frontend.url
 
     // 3. Decidir a dónde enviar al usuario
     let redirectUrl = ''

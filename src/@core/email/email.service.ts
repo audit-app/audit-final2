@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { MailerService } from '@nestjs-modules/mailer'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import { LoggerService } from '@core/logger'
 import * as nodemailer from 'nodemailer'
 import * as path from 'path'
@@ -33,11 +33,10 @@ export class EmailService {
   constructor(
     private readonly logger: LoggerService,
     private readonly mailerService: MailerService,
-    private readonly config: AppConfigService,
   ) {
-    this.fromEmail = this.config.email.from
-    this.fromName = this.config.email.fromName
-    this.appName = this.config.app.name
+    this.fromEmail = envs.email.from
+    this.fromName = envs.email.fromName
+    this.appName = envs.app.name
 
     // Opción 1: Logo Base64 (recomendado)
     // Buscar logo en assets/images/logo.png
@@ -89,7 +88,7 @@ export class EmailService {
 
       // En desarrollo, mostrar preview URL
       // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-      if (this.config.app.isDevelopment && info.messageId) {
+      if (envs.app.isDevelopment && info.messageId) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         const previewUrl = nodemailer.getTestMessageUrl(info)
         if (previewUrl) {

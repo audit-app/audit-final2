@@ -6,7 +6,7 @@ import {
   VerifyCallback,
   Profile,
 } from 'passport-google-oauth20'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import { GoogleUser } from '../shared/interfaces'
 
 /**
@@ -24,11 +24,11 @@ import { GoogleUser } from '../shared/interfaces'
  */
 @Injectable()
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
-  constructor(private readonly config: AppConfigService) {
+  constructor() {
     super({
-      clientID: config.auth.google.clientId,
-      clientSecret: config.auth.google.clientSecret,
-      callbackURL: config.auth.google.callbackUrl,
+      clientID: envs.google.clientId,
+      clientSecret: envs.google.clientSecret,
+      callbackURL: envs.google.callbackUrl,
       scope: ['email', 'profile'],
     } as StrategyOptions)
   }

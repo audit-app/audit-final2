@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
-import { PASSWORD_RESET_CONFIG } from '../config/password-reset.config'
+import { envs } from '@core/config'
 
 /**
  * Política de Rate Limiting para Request Reset Password
@@ -22,9 +22,8 @@ import { PASSWORD_RESET_CONFIG } from '../config/password-reset.config'
 @Injectable()
 export class RequestResetPasswordRateLimitPolicy {
   private readonly contextPrefix = 'reset-password'
-  private readonly maxAttempts =
-    PASSWORD_RESET_CONFIG.rateLimit.maxAttemptsByEmail
-  private readonly windowMinutes = PASSWORD_RESET_CONFIG.rateLimit.windowMinutes
+  private readonly maxAttempts = envs.passwordReset.maxAttemptsByEmail
+  private readonly windowMinutes = envs.passwordReset.windowMinutes
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common'
 import { Request, Response } from 'express'
 import { LoggerService } from '../logger/logger.service'
+import { envs } from '../config'
 
 // 1. Definimos una interfaz para el Error de DB (Postgres/TypeORM)
 interface DatabaseError extends Error {
@@ -94,7 +95,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (parsed.summary) errorResponse.summary = parsed.summary
 
     // Detalles solo en desarrollo
-    if (parsed.details && process.env.NODE_ENV !== 'production') {
+    if (parsed.details && !envs.app.isProduction) {
       errorResponse.details = parsed.details
     }
 
@@ -194,7 +195,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: exception.message,
         error: exception.name,
         details:
-          process.env.NODE_ENV !== 'production'
+          !envs.app.isProduction
             ? { stack: exception.stack }
             : undefined,
       }
@@ -225,7 +226,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const baseError = {
       error: 'DatabaseError',
       details:
-        process.env.NODE_ENV !== 'production'
+        !envs.app.isProduction
           ? { originalError: exception.message, code, table: exception.table }
           : undefined,
     }

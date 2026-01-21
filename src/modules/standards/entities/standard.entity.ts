@@ -8,6 +8,7 @@ import {
 } from 'typeorm'
 import { BaseEntity } from '@core/entities/base.entity'
 import { TemplateEntity } from '../../templates/entities/template.entity'
+import { STANDARDS_CONSTRAINTS } from '../constants'
 
 /**
  * Standard Entity
@@ -74,29 +75,33 @@ export class StandardEntity extends BaseEntity {
   /**
    * Standards hijos de este standard
    */
-  @OneToMany(() => StandardEntity, (standard) => standard.parent)
+  @OneToMany(() => StandardEntity, (standard) => standard.parent, {
+    cascade: ['insert', 'update'],
+  })
   children: StandardEntity[]
 
   /**
    * Código único del standard dentro de la plantilla
    * Ejemplos: 'A.5', 'A.5.1', 'A.5.1.1', '1.1', '1.2'
    */
-  @Column({ type: 'varchar', length: 50 })
+  @Column({
+    type: 'varchar',
+    length: STANDARDS_CONSTRAINTS.CODE.MAX_LENGTH,
+  })
   code: string
 
-  /**
-   * Título del standard
-   * Ejemplo: 'Políticas de seguridad de la información'
-   */
-  @Column({ type: 'varchar', length: 200 })
+  @Column({
+    type: 'varchar',
+    length: STANDARDS_CONSTRAINTS.TITLE.MAX_LENGTH,
+  })
   title: string
 
-  /**
-   * Descripción detallada del standard
-   */
-  @Column({ type: 'text', nullable: true })
+  @Column({
+    type: 'text',
+    nullable: true,
+    // TypeORM text no siempre necesita length, pero puedes validarlo en DTO
+  })
   description: string | null
-
   /**
    * Orden de visualización dentro de su nivel
    * Usado para ordenar hermanos

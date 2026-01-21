@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common'
+import { TEMPLATES_REPOSITORY } from '@core'
 import { TemplatesRepository } from './repositories/templates.repository'
 
 import {
   CreateTemplateUseCase,
   UpdateTemplateUseCase,
   FindTemplateUseCase,
-  FindTemplatesWithFiltersUseCase,
+  FindTemplatesUseCase,
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
 } from './use-cases'
@@ -19,26 +20,28 @@ import { TemplateFactory } from './factories'
   imports: [],
   controllers: [TemplatesController],
   providers: [
-    // Repositories
-    TemplatesRepository,
+    // Alias: map class to token provided by @core/persistence
+    {
+      provide: TemplatesRepository,
+      useExisting: TEMPLATES_REPOSITORY,
+    },
+
     TemplateValidator,
     TemplateFactory,
-    // Services
     TemplateImportService,
 
     // Template Use Cases
     CreateTemplateUseCase,
     UpdateTemplateUseCase,
     FindTemplateUseCase,
-    FindTemplatesWithFiltersUseCase,
+    FindTemplatesUseCase,
     PublishTemplateUseCase,
     ArchiveTemplateUseCase,
   ],
   exports: [
-    // Repositories (for other modules, e.g., StandardsModule)
-    TemplatesRepository,
+    // Export use cases for other modules
     FindTemplateUseCase,
-    FindTemplatesWithFiltersUseCase,
+    FindTemplatesUseCase,
     TemplateImportService,
   ],
 })

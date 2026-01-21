@@ -5,7 +5,8 @@ import { TransactionService } from './transaction.service'
 import { TransactionDiscoveryService } from './transaction-discovery.service'
 import { AuditService } from './audit.service'
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
-import { AppConfigService } from '@core/config'
+import { TypeOrmDatabaseLogger } from '@core/logger'
+import { envs } from '@core/config'
 
 /**
  * Módulo global de database implementa:
@@ -18,35 +19,28 @@ import { AppConfigService } from '@core/config'
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
-      inject: [AppConfigService],
-      useFactory: (config: AppConfigService) => {
-        const dbConfig = config.database as TypeOrmModuleOptions
-        if (!dbConfig) {
-          throw new Error(
-            'La configuración de la base de datos no fue cargada correctamente',
-          )
+      useFactory: (): TypeOrmModuleOptions => {
+        return {
+          type: 'postgres',
+          url: envs.database.url,
+          synchronize: false,
+          logging: envs.app.isDevelopment,
+          logger: TypeOrmDatabaseLogger.createStandalone(),
+          maxQueryExecutionTime: 1000,
+          autoLoadEntities: true,
         }
-        return dbConfig
       },
     }),
     ClsModule.forRoot({
       global: true,
       middleware: {
-        // Montar CLS middleware automáticamente
         mount: true,
-        // Generar ID único para cada request
         generateId: true,
       },
     }),
-    // ✅ DiscoveryModule permite escanear proveedores automáticamente
     DiscoveryModule,
   ],
-  providers: [
-    TransactionService,
-    AuditService,
-    // ✅ TransactionDiscoveryService escanea y envuelve métodos @Transactional()
-    TransactionDiscoveryService,
-  ],
+  providers: [TransactionService, AuditService, TransactionDiscoveryService],
   exports: [TransactionService, AuditService, ClsModule],
 })
 export class DatabaseModule {}

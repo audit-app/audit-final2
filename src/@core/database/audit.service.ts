@@ -7,12 +7,19 @@ import { ClsService } from 'nestjs-cls'
 export const CURRENT_USER_ID_KEY = 'CURRENT_USER_ID'
 
 /**
- * Información del usuario para auditoría
+ * Clave para almacenar el usuario completo en CLS (para auditoría granular)
+ */
+export const CURRENT_USER_KEY = 'CURRENT_USER'
+
+/**
+ * Información del usuario para auditoría granular
+ * Snapshot inmutable del usuario en el momento de la acción
  */
 export interface AuditUser {
   userId: string
+  fullName: string
+  email: string
   username?: string
-  email?: string
 }
 
 /**
@@ -46,6 +53,25 @@ export class AuditService {
    */
   setCurrentUserId(userId: string): void {
     this.cls.set(CURRENT_USER_ID_KEY, userId)
+  }
+
+  /**
+   * Establece el usuario completo en CLS (para auditoría granular)
+   *
+   * @param user - Objeto con datos del usuario (snapshot)
+   */
+  setCurrentUser(user: AuditUser): void {
+    this.cls.set(CURRENT_USER_KEY, user)
+    this.cls.set(CURRENT_USER_ID_KEY, user.userId) // Backward compatibility
+  }
+
+  /**
+   * Obtiene el usuario completo desde CLS
+   *
+   * @returns Datos del usuario si existe en el contexto, undefined si no
+   */
+  getCurrentUser(): AuditUser | undefined {
+    return this.cls.get<AuditUser>(CURRENT_USER_KEY)
   }
 
   /**

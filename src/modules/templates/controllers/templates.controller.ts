@@ -39,7 +39,6 @@ import {
   FindTemplatesUseCase,
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
-  FindTemplatesWithFiltersUseCase,
 } from '../use-cases'
 import {
   CreateTemplateDto,
@@ -60,7 +59,7 @@ export class TemplatesController {
     private readonly findTemplateUseCase: FindTemplateUseCase,
     private readonly publishTemplateUseCase: PublishTemplateUseCase,
     private readonly archiveTemplateUseCase: ArchiveTemplateUseCase,
-    private readonly findTemplatesWithFiltersUseCase: FindTemplatesWithFiltersUseCase,
+    private readonly findTemplatesWithFiltersUseCase: FindTemplatesUseCase,
     private readonly templateImportService: FindTemplatesUseCase,
   ) {}
 

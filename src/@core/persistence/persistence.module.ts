@@ -4,26 +4,19 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 // ========== ENTITIES ==========
 import { UserEntity } from '../../modules/users/entities/user.entity'
 import { OrganizationEntity } from '../../modules/organizations/entities/organization.entity'
-// TODO: Importar otras entities cuando las agregues:
-// import { AuditEntity } from '../../modules/audits/entities/audit.entity'
-// import { TemplateEntity } from '../../modules/templates/entities/template.entity'
+import { TemplateEntity } from '../../modules/templates/entities/template.entity'
+import { StandardEntity } from '../../modules/standards/entities/standard.entity'
 
 // ========== REPOSITORIES ==========
 import { UsersRepository } from '../../modules/users/repositories/users.repository'
 import { OrganizationRepository } from '../../modules/organizations/repositories/organization.repository'
-// TODO: Importar otros repositorios:
-// import { AuditsRepository } from '../../modules/audits/repositories/audits.repository'
+import { TemplatesRepository } from '../../modules/templates/repositories/templates.repository'
+import { StandardsRepository } from '../../modules/standards/repositories/standards.repository'
 
 // ========== TOKENS ==========
-// Import tokens directly from token files
 import { USERS_REPOSITORY } from '../../modules/users/tokens'
 import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
-import { TemplateEntity } from 'src/modules/templates/entities'
-import { StandardEntity } from 'src/modules/standards'
-import { TemplatesRepository } from 'src/modules/templates/repositories'
-import { TEMPLATES_REPOSITORY } from './tokens'
-// TODO: Importar otros tokens:
-// import { AUDITS_REPOSITORY } from '../../modules/audits'
+import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
 
 /**
  * Módulo de Persistencia Centralizado
@@ -99,9 +92,16 @@ import { TEMPLATES_REPOSITORY } from './tokens'
       useClass: OrganizationRepository,
     },
 
+    // ========== Templates Repository ==========
     {
       provide: TEMPLATES_REPOSITORY,
       useClass: TemplatesRepository,
+    },
+
+    // ========== Standards Repository ==========
+    {
+      provide: STANDARDS_REPOSITORY,
+      useClass: StandardsRepository,
     },
 
     // ========== TODO: Agregar nuevos repositorios aquí ==========
@@ -114,6 +114,8 @@ import { TEMPLATES_REPOSITORY } from './tokens'
     // Exportar tokens para que estén disponibles globalmente
     USERS_REPOSITORY,
     ORGANIZATION_REPOSITORY,
+    TEMPLATES_REPOSITORY,
+    STANDARDS_REPOSITORY,
     // TODO: Exportar nuevos tokens aquí
   ],
 })

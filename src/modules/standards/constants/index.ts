@@ -1,1 +1,1 @@
-// Standards constants (empty for now, for future use)
+export * from './standards-schema.constants'

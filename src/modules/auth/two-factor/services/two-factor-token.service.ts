@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { OtpCoreService } from '@core/security'
-import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
+import { envs } from '@core/config'
 
 /**
  * Payload que guardamos en el OTP para 2FA
@@ -8,6 +8,23 @@ import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
 interface TwoFactorPayload {
   userId: string
   rememberMe: boolean // Propagar remember me para generar tokens correctamente
+}
+
+/**
+ * Helper: Convierte formato de tiempo (5m, 1h) a segundos, o devuelve número directo
+ */
+function parseTimeToSeconds(value: string | number, defaultSeconds: number): number {
+  if (!value) return defaultSeconds
+  if (typeof value === 'number') return value
+  if (/^\d+$/.test(value)) return parseInt(value, 10)
+
+  const match = value.match(/^(\d+)([smh])$/)
+  if (match) {
+    const [, num, unit] = match
+    const multipliers: Record<string, number> = { s: 1, m: 60, h: 3600 }
+    return parseInt(num, 10) * multipliers[unit]
+  }
+  return defaultSeconds
 }
 
 /**
@@ -48,8 +65,8 @@ interface TwoFactorPayload {
 @Injectable()
 export class TwoFactorTokenService {
   private readonly contextPrefix = '2fa-login' // Prefijo para Redis
-  private readonly codeLength = TWO_FACTOR_CONFIG.code.length
-  private readonly codeExpiry = TWO_FACTOR_CONFIG.code.expiresIn // En segundos
+  private readonly codeLength = envs.twoFactor.codeLength
+  private readonly codeExpiry = parseTimeToSeconds(envs.twoFactor.codeExpiresIn, 300) // En segundos
 
   constructor(private readonly otpCoreService: OtpCoreService) {}
 

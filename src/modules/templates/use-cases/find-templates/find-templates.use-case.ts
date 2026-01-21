@@ -11,7 +11,7 @@ import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
  * Obtiene todos los templates del sistema con filtro opcional por status
  */
 @Injectable()
-export class FindTemplatesWithFiltersUseCase {
+export class FindTemplatesUseCase {
   constructor(
     @Inject(TEMPLATES_REPOSITORY)
     private readonly templatesRepository: ITemplatesRepository,

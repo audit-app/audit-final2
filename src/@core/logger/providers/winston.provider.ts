@@ -3,6 +3,7 @@ import * as winston from 'winston'
 import DailyRotateFile from 'winston-daily-rotate-file'
 import { LogLevel } from '../types'
 import { colorFormatter, consoleFormatter, fileFormatter } from '../formatters'
+import { envs } from '../../config'
 
 /**
  * WinstonProvider - Singleton que gestiona una única instancia de Winston
@@ -50,7 +51,7 @@ export class WinstonProvider {
 
     return winston.createLogger({
       levels: customLevels.levels,
-      level: process.env.LOG_LEVEL || LogLevel.HTTP,
+      level: envs.log.level || LogLevel.HTTP,
       // NO usamos defaultMeta aquí porque cada logger tiene su propio 'service'
       // El service se pasará en cada llamada a logger.log()
       transports: [

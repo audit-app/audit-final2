@@ -16,7 +16,7 @@ import {
 import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
 import { InvalidTokenException } from '../exceptions'
-import { LOGIN_CONFIG } from '../config/login.config'
+import { envs } from '@core/config'
 
 @Injectable()
 export class TokensService {
@@ -31,10 +31,10 @@ export class TokensService {
     private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly logger: LoggerService,
   ) {
-    this.accessTokenExpires = LOGIN_CONFIG.jwt.access.expiresIn
-    this.refreshTokenExpires = LOGIN_CONFIG.jwt.refresh.expiresIn
-    this.refreshTokenSecret = LOGIN_CONFIG.jwt.refresh.secret
-    this.jwtSecret = LOGIN_CONFIG.jwt.access.secret
+    this.accessTokenExpires = envs.jwt.accessExpiresIn
+    this.refreshTokenExpires = envs.jwt.refreshExpiresIn
+    this.refreshTokenSecret = envs.jwt.refreshSecret
+    this.jwtSecret = envs.jwt.accessSecret
   }
 
   async generateTokenPair(

@@ -22,6 +22,3 @@ export * from './use-cases'
 
 // DTOs
 export * from './dtos'
-
-// Config
-export * from './config/email-verification.config'

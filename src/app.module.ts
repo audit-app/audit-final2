@@ -14,11 +14,12 @@ import {
   AuditInterceptor,
   TransformInterceptor,
 } from '@core/interceptors'
-import { AppConfigModule } from '@core/config'
+import { AppConfigModule, envs } from '@core/config'
 import { FilesModule } from '@core/files'
 import { PersistenceModule } from '@core/persistence'
 import { CacheModule } from '@core/cache'
 import { CommonModule } from '@core/common/common.module'
+import { AuditLogModule } from '@core/audit-log'
 import { UsersModule } from './modules/users/users.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -46,12 +47,12 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     CommonModule, // Decoradores y servicios comunes (@ConnectionInfo, ConnectionMetadataService)
 
     // Throttling global (protección contra DoS)
-    // Configuración centralizada en @core/config/security.config.ts
+    // ✅ Migrated to use validated envs object
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: parseInt(process.env.THROTTLE_TTL || '60', 10) * 1000, // Segundos a ms
-        limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+        ttl: envs.security.throttleTtl, // Already in milliseconds
+        limit: envs.security.throttleLimit,
       },
     ]),
 
@@ -59,6 +60,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     LoggerModule,
     EmailModule,
     PersistenceModule,
+    AuditLogModule, // Granular audit log for Templates/Standards
     SecurityModule, // Password hashing
     HttpModule, // Cookie management
 

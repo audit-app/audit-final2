@@ -1,5 +1,5 @@
 import { Module, Global } from '@nestjs/common'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import Redis from 'ioredis'
 import { CacheService } from './cache.service'
 import { REDIS_CLIENT } from './cache.tokens'
@@ -13,12 +13,12 @@ import { REDIS_CLIENT } from './cache.tokens'
   providers: [
     {
       provide: REDIS_CLIENT,
-      useFactory: (config: AppConfigService) => {
+      useFactory: () => {
         const redis = new Redis({
-          host: config.cache.redis.host,
-          port: config.cache.redis.port,
-          password: config.cache.redis.password || undefined,
-          db: config.cache.redis.db,
+          host: envs.redis.host,
+          port: envs.redis.port,
+          password: envs.redis.password || undefined,
+          db: envs.redis.db,
           retryStrategy: (times) => {
             const delay = Math.min(times * 50, 2000)
             return delay
@@ -40,7 +40,6 @@ import { REDIS_CLIENT } from './cache.tokens'
 
         return redis
       },
-      inject: [AppConfigService],
     },
     CacheService,
   ],

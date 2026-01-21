@@ -43,12 +43,21 @@ export class AuditInterceptor implements NestInterceptor {
       const request = context.switchToHttp().getRequest<Request>()
 
       // El usuario es añadido por JwtAuthGuard en request.user
-      // Estructura típica: { sub: 'userId', email: 'user@example.com', ... }
-      const user = request.user
+      // Estructura típica: { sub: 'userId', email: 'user@example.com', names, lastNames, ... }
+      const user = request.user as any
 
       if (user?.sub) {
-        // Guardar userId en CLS para que esté disponible en toda la petición
-        this.auditService.setCurrentUserId(user.sub)
+        // Guardar snapshot completo del usuario para auditoría granular
+        const fullName = user.names && user.lastNames
+          ? `${user.names} ${user.lastNames}`.trim()
+          : user.username || 'Usuario Desconocido'
+
+        this.auditService.setCurrentUser({
+          userId: user.sub,
+          fullName,
+          email: user.email || 'no-email@unknown.com',
+          username: user.username,
+        })
       }
     }
 

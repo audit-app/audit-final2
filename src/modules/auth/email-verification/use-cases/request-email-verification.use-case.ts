@@ -3,6 +3,7 @@ import { EmailEventService } from '@core/email'
 import { EmailVerificationTokenService } from '../services/email-verification-token.service'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
+import { envs } from '@core/config'
 
 /**
  * Use Case: Solicitar verificación de email
@@ -96,7 +97,7 @@ export class RequestEmailVerificationUseCase {
    * @returns Enlace completo de verificación
    */
   private buildVerificationLink(token: string): string {
-    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:3000' // Cambiar en producción
+    const baseUrl = envs.frontend.url
     return `${baseUrl}/auth/verify-email?token=${token}`
   }
 

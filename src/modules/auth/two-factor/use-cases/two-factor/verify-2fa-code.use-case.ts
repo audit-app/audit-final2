@@ -10,7 +10,7 @@ import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { Verify2FACodeDto } from '../../dtos/verify-2fa-code.dto'
 import type { ConnectionMetadata } from '@core/common'
-import { TWO_FACTOR_CONFIG } from '../../config/two-factor.config'
+import { envs } from '@core/config'
 
 /**
  * Use Case: Verificar código 2FA y generar tokens
@@ -84,8 +84,8 @@ export class Verify2FACodeUseCase {
   }> {
     const CONTEXT = '2fa-verify'
     const ATTEMPTS_KEY = `attempts:${CONTEXT}:${dto.token}`
-    const MAX_ATTEMPTS = TWO_FACTOR_CONFIG.rateLimit.verify.maxAttempts
-    const WINDOW_MINUTES = TWO_FACTOR_CONFIG.rateLimit.verify.windowMinutes
+    const MAX_ATTEMPTS = envs.twoFactor.verifyMaxAttempts
+    const WINDOW_MINUTES = envs.twoFactor.verifyWindowMinutes
 
     // ---------------------------------------------------------
     // 1. VERIFICAR QUE EL TOKEN EXISTE (antes de incrementar contador)

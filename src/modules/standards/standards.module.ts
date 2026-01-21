@@ -1,17 +1,14 @@
-import { Module, forwardRef } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-
-// Import TemplatesModule to access TemplatesRepository
-import { TemplatesModule } from '../templates/templates.module'
-
-// Entities
-import { StandardEntity } from './entities/standard.entity'
-
-// Repositories
+import { Module } from '@nestjs/common'
+import { STANDARDS_REPOSITORY, TEMPLATES_REPOSITORY } from '@core'
 import { StandardsRepository } from './repositories/standards.repository'
+import { TemplatesRepository } from '../templates/repositories/templates.repository'
 
 // Controllers
 import { StandardsController } from './controllers/standards.controller'
+
+// Factories & Validators
+import { StandardFactory } from './factories'
+import { StandardValidator } from './validators'
 
 // Use Cases
 import {
@@ -29,14 +26,21 @@ import {
 } from './use-cases'
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([StandardEntity]),
-    forwardRef(() => TemplatesModule), // Use forwardRef to break circular dependency
-  ],
+  imports: [],
   controllers: [StandardsController],
   providers: [
-    // Repository
-    StandardsRepository,
+    // Alias: map class to token provided by @core/persistence
+    {
+      provide: StandardsRepository,
+      useExisting: STANDARDS_REPOSITORY,
+    },
+    {
+      provide: TemplatesRepository,
+      useExisting: TEMPLATES_REPOSITORY,
+    },
+
+    StandardFactory,
+    StandardValidator,
 
     // Use Cases
     CreateStandardUseCase,
@@ -52,10 +56,7 @@ import {
     DeactivateStandardUseCase,
   ],
   exports: [
-    // Export repository for other modules if needed
-    StandardsRepository,
-
-    // Export use cases that other modules might need
+    // Export use cases for other modules
     FindStandardsByTemplateUseCase,
     FindStandardsTreeUseCase,
   ],

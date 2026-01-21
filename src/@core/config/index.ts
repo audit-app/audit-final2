@@ -1,29 +1,13 @@
 // ============================================
-// ✨ NEW: Validated Config Object (Recommended)
+// ✨ Validated Config Object (Recommended)
 // ============================================
-// Use this for new code - no DI, no boilerplate
+// Use this for all code - no DI, no boilerplate, fully validated
 export * from './envs'
 
 // ============================================
-// 🔧 LEGACY: NestJS Config Module (Deprecated)
+// 🔧 LEGACY: NestJS Config Module (Kept for compatibility)
 // ============================================
-// TODO: Migrate to `envs` object and remove these
+// Only kept to maintain imports, but no longer used
 
-// Config Module & Service
+// Config Module (empty, just for compatibility)
 export * from './config.module'
-export * from './config.service'
-
-// Config Definitions
-export * from './app.config'
-export * from './auth.config'
-export * from './email.config'
-export * from './cache.config'
-export * from './files.config'
-export * from './security.config'
-export * from './frontend.config'
-export * from './swagger.config'
-export * from './pagination.config'
-export * from './database.config'
-
-// Legacy (deprecated, use AppConfigService instead)
-export * from './google.config'

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
-import { TWO_FACTOR_CONFIG } from '../config/two-factor.config'
+import { envs } from '@core/config'
 import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attempts.exception'
 
 /**
@@ -26,8 +26,7 @@ import { TooManyAttemptsException } from '../../shared/exceptions/too-many-attem
 @Injectable()
 export class Resend2FARateLimitPolicy {
   private readonly contextPrefix = '2fa-resend'
-  private readonly cooldownSeconds =
-    TWO_FACTOR_CONFIG.rateLimit.resend.cooldownSeconds
+  private readonly cooldownSeconds = envs.twoFactor.resendCooldownSeconds
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

@@ -1,21 +1,22 @@
 import {
   IsString,
   IsOptional,
-  IsBoolean,
   IsUUID,
   IsInt,
   Min,
   MinLength,
   MaxLength,
-} from 'class-validator'
+  IsBoolean,
+} from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { STANDARDS_CONSTRAINTS } from '../constants'
 
 export class CreateStandardDto {
   @ApiProperty({
     description: 'ID del template al que pertenece',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  @IsUUID('4', { message: 'El templateId debe ser un UUID válido' })
+  @IsUUID('4')
   templateId: string
 
   @ApiPropertyOptional({
@@ -23,7 +24,7 @@ export class CreateStandardDto {
     example: '550e8400-e29b-41d4-a716-446655440001',
   })
   @IsOptional()
-  @IsUUID('4', { message: 'El parentId debe ser un UUID válido' })
+  @IsUUID('4')
   parentId?: string
 
   @ApiProperty({
@@ -33,8 +34,8 @@ export class CreateStandardDto {
     maxLength: 50,
   })
   @IsString()
-  @MinLength(1, { message: 'El código debe tener al menos 1 caracter' })
-  @MaxLength(50, { message: 'El código no puede exceder 50 caracteres' })
+  @MinLength(STANDARDS_CONSTRAINTS.CODE.MIN_LENGTH)
+  @MaxLength(STANDARDS_CONSTRAINTS.CODE.MAX_LENGTH)
   code: string
 
   @ApiProperty({
@@ -44,8 +45,8 @@ export class CreateStandardDto {
     maxLength: 200,
   })
   @IsString()
-  @MinLength(2, { message: 'El título debe tener al menos 2 caracteres' })
-  @MaxLength(200, { message: 'El título no puede exceder 200 caracteres' })
+  @MinLength(STANDARDS_CONSTRAINTS.TITLE.MIN_LENGTH)
+  @MaxLength(STANDARDS_CONSTRAINTS.TITLE.MAX_LENGTH)
   title: string
 
   @ApiPropertyOptional({
@@ -54,9 +55,7 @@ export class CreateStandardDto {
   })
   @IsOptional()
   @IsString()
-  @MaxLength(2000, {
-    message: 'La descripción no puede exceder 2000 caracteres',
-  })
+  @MaxLength(STANDARDS_CONSTRAINTS.DESCRIPTION.MAX_LENGTH)
   description?: string
 
   @ApiProperty({
@@ -64,24 +63,12 @@ export class CreateStandardDto {
     example: 1,
     minimum: 0,
   })
-  @IsInt({ message: 'El orden debe ser un número entero' })
-  @Min(0, { message: 'El orden debe ser mayor o igual a 0' })
+  @IsInt()
+  @Min(1)
   order: number
 
   @ApiPropertyOptional({
-    description:
-      'Nivel jerárquico (se calcula automáticamente si no se provee)',
-    example: 1,
-    minimum: 1,
-  })
-  @IsOptional()
-  @IsInt({ message: 'El nivel debe ser un número entero' })
-  @Min(1, { message: 'El nivel debe ser mayor o igual a 1' })
-  level?: number
-
-  @ApiPropertyOptional({
-    description: 'Indica si es auditable',
-    example: true,
+    description: 'Indica si este standard es auditable',
     default: true,
   })
   @IsOptional()
@@ -89,8 +76,7 @@ export class CreateStandardDto {
   isAuditable?: boolean
 
   @ApiPropertyOptional({
-    description: 'Estado activo/inactivo',
-    example: true,
+    description: 'Estado de activación del standard',
     default: true,
   })
   @IsOptional()

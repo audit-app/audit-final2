@@ -86,11 +86,7 @@ const envVarsSchema = Joi.object({
   TWO_FACTOR_VERIFY_WINDOW_MINUTES: Joi.number().min(1).default(10),
 
   // ============ PASSWORD RESET ============
-  RESET_PASSWORD_JWT_SECRET: Joi.string().required().min(32).messages({
-    'string.min':
-      'RESET_PASSWORD_JWT_SECRET must be at least 32 characters for security',
-    'any.required': 'RESET_PASSWORD_JWT_SECRET is required',
-  }),
+
   RESET_PASSWORD_TOKEN_EXPIRES_IN: timeFormatValidator.default('1h'),
   MAX_RESET_PASSWORD_ATTEMPTS_EMAIL: Joi.number().min(1).default(10),
   RESET_PASSWORD_ATTEMPTS_WINDOW_MINUTES: Joi.number().min(1).default(60),
@@ -101,6 +97,7 @@ const envVarsSchema = Joi.object({
       'EMAIL_VERIFICATION_JWT_SECRET must be at least 32 characters for security',
     'any.required': 'EMAIL_VERIFICATION_JWT_SECRET is required',
   }),
+  EMAIL_VERIFICATION_EXPIRES_IN: timeFormatValidator.default('7d'),
 
   // ============ LOGIN RATE LIMITS ============
   MAX_LOGIN_ATTEMPTS_IP: Joi.number().min(1).default(10),
@@ -180,8 +177,7 @@ const envVarsSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid('error', 'warn', 'info', 'http', 'verbose', 'debug', 'silly')
     .default('http'),
-})
-  .unknown(true) // Permitir otras variables de entorno no listadas
+}).unknown(true) // Permitir otras variables de entorno no listadas
 
 // ========================================
 // VALIDACIÓN (FAIL-FAST)
@@ -191,8 +187,12 @@ const { error, value: validatedEnv } = envVarsSchema.validate(process.env, {
 })
 
 if (error) {
-  const errorMessages = error.details.map((detail) => detail.message).join('\n  - ')
-  throw new Error(`⚠️  Environment variables validation failed:\n  - ${errorMessages}`)
+  const errorMessages = error.details
+    .map((detail) => detail.message)
+    .join('\n  - ')
+  throw new Error(
+    `⚠️  Environment variables validation failed:\n  - ${errorMessages}`,
+  )
 }
 
 // ========================================
@@ -251,23 +251,28 @@ export const envs = {
     jwtSecret: validatedEnv.TWO_FACTOR_JWT_SECRET as string,
     trustedDeviceExpirationDays: trustedDeviceDays,
     trustedDeviceExpirationSeconds: trustedDeviceDays * 24 * 60 * 60,
-    resendCooldownSeconds: validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
+    resendCooldownSeconds:
+      validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
     verifyMaxAttempts: validatedEnv.TWO_FACTOR_VERIFY_MAX_ATTEMPTS as number,
-    verifyWindowMinutes: validatedEnv.TWO_FACTOR_VERIFY_WINDOW_MINUTES as number,
+    verifyWindowMinutes:
+      validatedEnv.TWO_FACTOR_VERIFY_WINDOW_MINUTES as number,
   },
 
   // ============ PASSWORD RESET ============
   passwordReset: {
-    jwtSecret: validatedEnv.RESET_PASSWORD_JWT_SECRET as string,
     tokenExpiresIn: validatedEnv.RESET_PASSWORD_TOKEN_EXPIRES_IN as string,
-    maxAttemptsByEmail: validatedEnv.MAX_RESET_PASSWORD_ATTEMPTS_EMAIL as number,
-    windowMinutes: validatedEnv.RESET_PASSWORD_ATTEMPTS_WINDOW_MINUTES as number,
-    resendCooldownSeconds: validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
+    maxAttemptsByEmail:
+      validatedEnv.MAX_RESET_PASSWORD_ATTEMPTS_EMAIL as number,
+    windowMinutes:
+      validatedEnv.RESET_PASSWORD_ATTEMPTS_WINDOW_MINUTES as number,
+    resendCooldownSeconds:
+      validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
   },
 
   // ============ EMAIL VERIFICATION ============
   emailVerification: {
     jwtSecret: validatedEnv.EMAIL_VERIFICATION_JWT_SECRET as string,
+    expiresIn: validatedEnv.EMAIL_VERIFICATION_EXPIRES_IN as string,
   },
 
   // ============ LOGIN RATE LIMITS ============
@@ -293,7 +298,9 @@ export const envs = {
     clientId: validatedEnv.GOOGLE_CLIENT_ID as string,
     clientSecret: validatedEnv.GOOGLE_CLIENT_SECRET as string,
     callbackUrl: validatedEnv.GOOGLE_CALLBACK_URL as string,
-    defaultOrganizationId: validatedEnv.DEFAULT_ORGANIZATION_ID as string | null,
+    defaultOrganizationId: validatedEnv.DEFAULT_ORGANIZATION_ID as
+      | string
+      | null,
   },
 
   // ============ EMAIL / SMTP ============

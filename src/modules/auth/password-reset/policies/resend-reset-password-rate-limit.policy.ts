@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 import { RateLimitService } from '@core/security'
 import { TooManyAttemptsException } from '../../shared'
 
@@ -30,10 +30,8 @@ export class ResendResetPasswordRateLimitPolicy {
 
   constructor(
     private readonly rateLimitService: RateLimitService,
-    private readonly appService: AppConfigService,
   ) {
-    this.cooldownSeconds =
-      this.appService.auth.passwordReset.rateLimit.resendCooldownSeconds
+    this.cooldownSeconds = envs.passwordReset.resendCooldownSeconds
   }
 
   async checkCooldownOrThrow(userId: string): Promise<void> {

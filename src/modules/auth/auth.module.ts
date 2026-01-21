@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 
 import type * as ms from 'ms'
 
@@ -95,10 +95,9 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
 
     // Configuración de JWT para access tokens (centralizado)
     JwtModule.registerAsync({
-      inject: [AppConfigService],
-      useFactory: (config: AppConfigService) => {
-        const secret = config.auth.jwt.access.secret
-        const expiresIn = config.auth.jwt.access.expiresIn as ms.StringValue
+      useFactory: () => {
+        const secret = envs.jwt.accessSecret
+        const expiresIn = envs.jwt.accessExpiresIn as ms.StringValue
 
         if (!secret) {
           throw new Error('JWT_SECRET is required')

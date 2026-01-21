@@ -167,4 +167,41 @@ export class StandardsRepository
   ): Promise<StandardEntity[]> {
     return await this.findAll(options)
   }
+
+  /**
+   * Verifica si un standard tiene hijos
+   *
+   * @param standardId - ID del standard
+   * @returns true si tiene hijos, false en caso contrario
+   */
+  async hasChildren(standardId: string): Promise<boolean> {
+    const count = await this.countChildren(standardId)
+    return count > 0
+  }
+
+  /**
+   * Verifica si existe un standard con el mismo código en el template
+   *
+   * @param templateId - ID del template
+   * @param code - Código del standard
+   * @param excludeId - ID del standard a excluir (para updates)
+   * @returns true si existe, false en caso contrario
+   */
+  async existsByCodeInTemplate(
+    templateId: string,
+    code: string,
+    excludeId?: string,
+  ): Promise<boolean> {
+    const query = this.getRepo()
+      .createQueryBuilder('standard')
+      .where('standard.templateId = :templateId', { templateId })
+      .andWhere('standard.code = :code', { code })
+
+    if (excludeId) {
+      query.andWhere('standard.id != :excludeId', { excludeId })
+    }
+
+    const count = await query.getCount()
+    return count > 0
+  }
 }

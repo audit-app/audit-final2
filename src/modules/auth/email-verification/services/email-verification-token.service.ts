@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { OtpCoreService } from '@core/security'
-import { EMAIL_VERIFICATION_CONFIG } from '../config/email-verification.config'
+import { envs } from '@core/config'
 import ms from 'ms'
 
 /**
@@ -45,7 +45,7 @@ interface EmailVerificationPayload {
 @Injectable()
 export class EmailVerificationTokenService {
   private readonly contextPrefix = 'email-verification'
-  private readonly expiresIn = EMAIL_VERIFICATION_CONFIG.jwt.expiresIn
+  private readonly expiresIn = envs.emailVerification.expiresIn
 
   constructor(private readonly otpCoreService: OtpCoreService) {}
 

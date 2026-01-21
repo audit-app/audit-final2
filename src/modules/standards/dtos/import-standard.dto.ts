@@ -8,7 +8,8 @@ import {
   Min,
 } from 'class-validator'
 import { Type } from 'class-transformer'
-import { IsNotEmptyString } from '../../templates/shared/validators'
+// TODO: Mover IsNotEmptyString cuando se migre import/clone
+// import { IsNotEmptyString } from '../../templates/shared/validators'
 
 /**
  * DTO para importar Standard desde Excel
@@ -38,9 +39,10 @@ export class ImportStandardDto {
    */
   @IsOptional()
   @IsString({ message: 'El código padre debe ser una cadena de texto' })
-  @IsNotEmptyString({
-    message: 'El código padre no puede ser una cadena vacía',
-  })
+  // TODO: Descomentar cuando se migre IsNotEmptyString
+  // @IsNotEmptyString({
+  //   message: 'El código padre no puede ser una cadena vacía',
+  // })
   @Length(1, 50, {
     message: 'El código padre debe tener entre 1 y 50 caracteres',
   })

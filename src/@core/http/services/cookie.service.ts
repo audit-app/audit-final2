@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { Request, Response, CookieOptions } from 'express'
-import { AppConfigService } from '@core/config'
+import { envs } from '@core/config'
 
 @Injectable()
 export class CookieService {
@@ -10,9 +10,9 @@ export class CookieService {
   private readonly REFRESH_TOKEN_COOKIE = 'refreshToken'
   private readonly TRUSTED_DEVICE_COOKIE = 'trustedDevice'
 
-  constructor(private readonly config: AppConfigService) {
+  constructor() {
     // Usamos la configuración centralizada
-    this.isProduction = this.config.app.isProduction
+    this.isProduction = envs.app.isProduction
   }
 
   // =================================================================
@@ -24,7 +24,7 @@ export class CookieService {
     if (rememberMe) {
       // Leemos de la configuración centralizada
       // Redis usa SEGUNDOS, cookies usan MILISEGUNDOS
-      const expiresInSeconds = this.config.auth.jwt.refresh.expirationTime
+      const expiresInSeconds = envs.jwt.refreshExpirationSeconds
       options.maxAge = expiresInSeconds * 1000
     }
 
@@ -48,8 +48,7 @@ export class CookieService {
     const options = this.getSafeCookieOptions()
 
     // Leemos de la configuración centralizada
-    const expiresInSeconds =
-      this.config.auth.twoFactor.trustedDevice.expirationSeconds
+    const expiresInSeconds = envs.twoFactor.trustedDeviceExpirationSeconds
 
     options.maxAge = expiresInSeconds * 1000
 

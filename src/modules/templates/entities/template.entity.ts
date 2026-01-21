@@ -12,10 +12,7 @@ export class TemplateEntity extends BaseEntity {
   @Column({ type: 'varchar', length: TEMPLATE_CONSTRAINTS.NAME.MAX_LENGTH })
   name: string
 
-  @Column({
-    type: 'text',
-    length: TEMPLATE_CONSTRAINTS.DESCRIPTION.MAX_LENGTH,
-  })
+  @Column({ type: 'text' })
   description: string | null
 
   @Column({ type: 'varchar', length: TEMPLATE_CONSTRAINTS.VERSION.MAX_LENGTH })

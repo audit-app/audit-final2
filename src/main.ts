@@ -3,6 +3,7 @@ import { NestExpressApplication } from '@nestjs/platform-express'
 import { AppModule } from './app.module'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { LoggerService } from '@core/logger'
+import { envs } from '@core/config'
 import cookieParser from 'cookie-parser'
 import { join } from 'path'
 import { ValidationPipe } from '@nestjs/common'
@@ -10,11 +11,11 @@ import { ValidationPipe } from '@nestjs/common'
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule)
   const logger = app.get(LoggerService)
-  const port = Number(process.env.PORT) || 3001
+  const port = envs.app.port
   app.useLogger(logger)
 
   // Configurar archivos estáticos para uploads
-  const uploadsDir = process.env.UPLOADS_DIR || join(process.cwd(), 'uploads')
+  const uploadsDir = envs.files.uploadsDir || join(process.cwd(), 'uploads')
   app.useStaticAssets(uploadsDir, {
     prefix: '/uploads/',
     index: false, // Deshabilitar index.html automático
@@ -24,13 +25,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api')
 
   // Configurar CORS
-  const corsOriginRaw = process.env.CORS_ORIGIN || 'http://localhost:3000'
-  const corsOrigin =
-    corsOriginRaw === '*'
-      ? '*'
-      : corsOriginRaw.includes(',')
-        ? corsOriginRaw.split(',').map((origin) => origin.trim())
-        : corsOriginRaw
+  // envs.security.corsOrigins ya es un array de strings
+  const corsOrigin = envs.security.corsOrigins.length === 1 && envs.security.corsOrigins[0] === '*'
+    ? '*'
+    : envs.security.corsOrigins
 
   app.enableCors({
     origin: corsOrigin,
@@ -38,7 +36,7 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   })
-  logger.log(`🔓 CORS habilitado para: ${corsOriginRaw}`)
+  logger.log(`🔓 CORS habilitado para: ${envs.security.corsOrigins.join(', ')}`)
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -86,19 +84,19 @@ async function bootstrap() {
       appName: 'Audit API',
       version: '1.0.0',
       port,
-      nodeEnv: process.env.NODE_ENV || 'development',
+      nodeEnv: envs.app.nodeEnv,
       apiPrefix: '/api',
     },
     {
       type: 'PostgreSQL',
-      host: process.env.DATABASE_URL?.split('@')[1]?.split('/')[0],
-      database: process.env.DATABASE_URL?.split('@')[1]?.split('/')[1],
+      host: envs.database.url?.split('@')[1]?.split('/')[0],
+      database: envs.database.url?.split('@')[1]?.split('/')[1],
     },
   )
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api/docs', app, document)
 
-  await app.listen(process.env.PORT ?? port)
+  await app.listen(port)
 }
 // eslint-disable-next-line @typescript-eslint/no-floating-promises
 bootstrap()
