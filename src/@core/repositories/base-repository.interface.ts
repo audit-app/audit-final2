@@ -13,6 +13,7 @@ export interface IBaseRepository<T extends BaseEntity> {
     partialEntity: QueryDeepPartialEntity<T>,
   ): Promise<boolean>
   patch(entity: T, partialEntity: DeepPartial<T>): Promise<T>
+  delete(id: string): Promise<boolean>
   softDelete(id: string): Promise<boolean>
   recover(id: string): Promise<boolean>
 }

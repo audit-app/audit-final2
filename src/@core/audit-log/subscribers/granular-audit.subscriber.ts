@@ -8,9 +8,9 @@ import {
 } from 'typeorm'
 import { Injectable } from '@nestjs/common'
 import { AuditService } from '@core/database/audit.service'
-import { TemplateEntity } from '../../../modules/templates/entities/template.entity'
-import { StandardEntity } from '../../../modules/standards/entities/standard.entity'
-import { TemplateStatus } from '../../../modules/templates/constants/template-status.enum'
+import { TemplateEntity } from '../../../modules/audit-library/templates/entities/template.entity'
+import { StandardEntity } from '../../../modules/audit-library/standards/entities/standard.entity'
+import { TemplateStatus } from '../../../modules/audit-library/templates/constants/template-status.enum'
 import { AuditLogEntity, AuditAction } from '../entities/audit-log.entity'
 
 /**

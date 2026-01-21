@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm'
 import { Seeder } from 'typeorm-extension'
-import { MaturityFrameworkEntity } from '../../../modules/maturity/entities/maturity-framework.entity'
-import { MaturityLevelEntity } from '../../../modules/maturity/entities/maturity-level.entity'
+import { MaturityFrameworkEntity } from '../../../modules/maturity/frameworks/entities/maturity-framework.entity'
+import { MaturityLevelEntity } from '../../../modules/maturity/levels/entities/maturity-level.entity'
 import {
   COBIT5Framework,
   CMMIFramework,

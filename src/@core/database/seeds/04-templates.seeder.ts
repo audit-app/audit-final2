@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm'
 import { Seeder } from 'typeorm-extension'
-import { TemplateEntity } from '../../../modules/templates/entities/template.entity'
-import { StandardEntity } from '../../../modules/standards/entities/standard.entity'
+import { TemplateEntity } from '../../../modules/audit-library/templates/entities/template.entity'
+import { StandardEntity } from '../../../modules/audit-library/standards/entities/standard.entity'
 import {
   ISO27001Template,
   ASFITemplate,
@@ -87,7 +87,6 @@ export default class TemplatesSeeder implements Seeder {
           order: standardDef.order,
           level: standardDef.level,
           isAuditable: standardDef.isAuditable,
-          isActive: true,
         })
 
         await standardRepo.save(standard)

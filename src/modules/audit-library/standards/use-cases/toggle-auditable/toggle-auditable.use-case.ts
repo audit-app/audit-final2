@@ -1,0 +1,58 @@
+import { Inject, Injectable } from '@nestjs/common'
+import { Transactional } from '@core/database/transactional.decorator'
+import { StandardValidator } from '../../validators'
+import { STANDARDS_REPOSITORY } from '@core'
+import type { StandardsRepository } from '../../repositories/standards.repository'
+import type { ToggleAuditableDto } from '../../dtos/toggle-auditable.dto'
+import type { StandardEntity } from '../../entities/standard.entity'
+
+/**
+ * Toggle Auditable Use Case
+ *
+ * Activa o desactiva si un standard es auditable
+ *
+ * Casos de uso:
+ * - isAuditable = true: Control específico que se puede auditar
+ * - isAuditable = false: Agrupador organizacional (solo título/sección)
+ *
+ * Reglas de negocio:
+ * - El standard debe existir
+ * - El template debe ser editable (DRAFT)
+ */
+@Injectable()
+export class ToggleAuditableUseCase {
+  constructor(
+    @Inject(STANDARDS_REPOSITORY)
+    private readonly standardsRepository: StandardsRepository,
+    private readonly standardValidator: StandardValidator,
+  ) {}
+
+  /**
+   * Ejecuta el cambio de isAuditable
+   *
+   * @param id - ID del standard
+   * @param dto - Nuevo valor de isAuditable
+   * @returns Standard actualizado
+   * @throws {StandardNotFoundException} Si el standard no existe
+   * @throws {TemplateNotEditableException} Si el template no es editable
+   */
+  @Transactional()
+  async execute(
+    id: string,
+    dto: ToggleAuditableDto,
+  ): Promise<StandardEntity> {
+    // 1. Validar y obtener standard
+    const standard = await this.standardValidator.validateAndGetStandard(id)
+
+    // 2. Verificar que el template es editable
+    await this.standardValidator.validateAndGetEditableTemplate(
+      standard.templateId,
+    )
+
+    // 3. Actualizar isAuditable
+    standard.isAuditable = dto.isAuditable
+
+    // 4. Guardar
+    return await this.standardsRepository.save(standard)
+  }
+}

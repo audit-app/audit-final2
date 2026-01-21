@@ -1,4 +1,4 @@
-import { TemplateStatus } from '../../../../modules/templates/constants/template-status.enum'
+import { TemplateStatus } from '../../../../modules/audit-library/templates/constants/template-status.enum'
 
 /**
  * ISO 27001:2013 Factory

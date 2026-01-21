@@ -4,19 +4,25 @@ import { TypeOrmModule } from '@nestjs/typeorm'
 // ========== ENTITIES ==========
 import { UserEntity } from '../../modules/users/entities/user.entity'
 import { OrganizationEntity } from '../../modules/organizations/entities/organization.entity'
-import { TemplateEntity } from '../../modules/templates/entities/template.entity'
-import { StandardEntity } from '../../modules/standards/entities/standard.entity'
+import { TemplateEntity } from '../../modules/audit-library/templates/entities/template.entity'
+import { StandardEntity } from '../../modules/audit-library/standards/entities/standard.entity'
+import { MaturityFrameworkEntity } from '../../modules/maturity/frameworks/entities/maturity-framework.entity'
+import { MaturityLevelEntity } from '../../modules/maturity/levels/entities/maturity-level.entity'
 
 // ========== REPOSITORIES ==========
 import { UsersRepository } from '../../modules/users/repositories/users.repository'
 import { OrganizationRepository } from '../../modules/organizations/repositories/organization.repository'
-import { TemplatesRepository } from '../../modules/templates/repositories/templates.repository'
-import { StandardsRepository } from '../../modules/standards/repositories/standards.repository'
+import { TemplatesRepository } from '../../modules/audit-library/templates/repositories/templates.repository'
+import { StandardsRepository } from '../../modules/audit-library/standards/repositories/standards.repository'
+import { MaturityFrameworksRepository } from '../../modules/maturity/frameworks/repositories/maturity-frameworks.repository'
+import { MaturityLevelsRepository } from '../../modules/maturity/levels/repositories/maturity-levels.repository'
 
 // ========== TOKENS ==========
 import { USERS_REPOSITORY } from '../../modules/users/tokens'
 import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
 import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
+import { FRAMEWORKS_REPOSITORY } from '../../modules/maturity/frameworks/tokens'
+import { LEVELS_REPOSITORY } from '../../modules/maturity/levels/tokens'
 
 /**
  * Módulo de Persistencia Centralizado
@@ -77,6 +83,8 @@ import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
       OrganizationEntity,
       TemplateEntity,
       StandardEntity,
+      MaturityFrameworkEntity,
+      MaturityLevelEntity,
     ]),
   ],
   providers: [
@@ -104,6 +112,18 @@ import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
       useClass: StandardsRepository,
     },
 
+    // ========== Maturity Frameworks Repository ==========
+    {
+      provide: FRAMEWORKS_REPOSITORY,
+      useClass: MaturityFrameworksRepository,
+    },
+
+    // ========== Maturity Levels Repository ==========
+    {
+      provide: LEVELS_REPOSITORY,
+      useClass: MaturityLevelsRepository,
+    },
+
     // ========== TODO: Agregar nuevos repositorios aquí ==========
     // {
     //   provide: AUDITS_REPOSITORY,
@@ -116,6 +136,8 @@ import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
     ORGANIZATION_REPOSITORY,
     TEMPLATES_REPOSITORY,
     STANDARDS_REPOSITORY,
+    FRAMEWORKS_REPOSITORY,
+    LEVELS_REPOSITORY,
     // TODO: Exportar nuevos tokens aquí
   ],
 })

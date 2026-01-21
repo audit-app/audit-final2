@@ -223,11 +223,27 @@ export abstract class BaseRepository<
 
   // ---------- Métodos de eliminación ----------
 
+  /**
+   * Eliminación permanente (hard delete)
+   * El registro se elimina completamente de la base de datos
+   */
+  async delete(id: string): Promise<boolean> {
+    const result = await this.getRepo().delete(id)
+    return (result.affected ?? 0) > 0
+  }
+
+  /**
+   * Eliminación lógica (soft delete)
+   * El registro permanece en la BD pero marca deletedAt
+   */
   async softDelete(id: string): Promise<boolean> {
     const result = await this.getRepo().softDelete(id)
     return (result.affected ?? 0) > 0
   }
 
+  /**
+   * Recupera un registro soft-deleted
+   */
   async recover(id: string): Promise<boolean> {
     const result = await this.getRepo().restore(id)
     return (result.affected ?? 0) > 0

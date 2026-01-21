@@ -25,9 +25,10 @@ import { OrganizationsModule } from './modules/organizations/organizations.modul
 import { AuthModule } from './modules/auth/auth.module'
 import { AuthorizationModule } from './modules/authorization/authorization.module'
 import { PermissionsGuard } from './modules/authorization/guards/permissions.guard'
-import { TemplatesModule } from './modules/templates/templates.module'
-import { StandardsModule } from './modules/standards/standards.module'
+import { TemplatesModule } from './modules/audit-library/templates/templates.module'
+import { StandardsModule } from './modules/audit-library/standards/standards.module'
 import { MaturityModule } from './modules/maturity/maturity.module'
+import { ImportModule } from './modules/audit-library/import/import.module'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 
 @Module({
@@ -74,6 +75,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     TemplatesModule, // Must be imported before StandardsModule (dependency)
     StandardsModule,
     MaturityModule,
+    ImportModule, // Template & Standards import (depends on both modules)
   ],
   controllers: [AppController],
   providers: [

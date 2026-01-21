@@ -1,75 +1,49 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
+import { FrameworksModule } from './frameworks/frameworks.module'
+import { LevelsModule } from './levels/levels.module'
 
-// Entities
-import { MaturityFrameworkEntity } from './entities/maturity-framework.entity'
-import { MaturityLevelEntity } from './entities/maturity-level.entity'
-
-// Repositories
-import {
-  MaturityFrameworksRepository,
-  MaturityLevelsRepository,
-} from './repositories'
-
-// Use Cases - Frameworks
-import {
-  CreateFrameworkUseCase,
-  UpdateFrameworkUseCase,
-  FindFrameworkUseCase,
-  FindFrameworksUseCase,
-  DeleteFrameworkUseCase,
-  ActivateFrameworkUseCase,
-} from './use-cases/frameworks'
-
-// Use Cases - Levels
-import {
-  CreateLevelUseCase,
-  UpdateLevelUseCase,
-  DeleteLevelUseCase,
-  FindLevelsByFrameworkUseCase,
-  BulkCreateLevelsUseCase,
-} from './use-cases/levels'
-
-// Controllers
-import {
-  MaturityFrameworksController,
-  MaturityLevelsController,
-} from './controllers'
-
+/**
+ * Maturity Module
+ *
+ * Módulo principal que agrupa submódulos de frameworks y levels.
+ *
+ * Submódulos:
+ * - FrameworksModule: Gestión de frameworks de madurez (COBIT, CMMI, etc.)
+ * - LevelsModule: Gestión de niveles de madurez
+ *
+ * Arquitectura:
+ * ```
+ * MaturityModule
+ * ├── FrameworksModule
+ * │   ├── controllers/
+ * │   ├── use-cases/
+ * │   ├── repositories/
+ * │   └── ...
+ * ├── LevelsModule
+ * │   ├── controllers/
+ * │   ├── use-cases/
+ * │   ├── repositories/
+ * │   └── ...
+ * └── shared/          # Recursos compartidos (futuro)
+ *     ├── validators/
+ *     └── utils/
+ * ```
+ *
+ * Beneficios:
+ * - ✅ Código organizado por dominio
+ * - ✅ Submódulos independientes pero relacionados
+ * - ✅ LevelsModule puede importar FrameworksModule
+ * - ✅ Recursos compartidos en /shared
+ * - ✅ Fácil de mantener y escalar
+ */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MaturityFrameworkEntity, MaturityLevelEntity]),
-  ],
-  controllers: [MaturityFrameworksController, MaturityLevelsController],
-  providers: [
-    // Repositories
-    MaturityFrameworksRepository,
-    MaturityLevelsRepository,
-
-    // Framework Use Cases
-    CreateFrameworkUseCase,
-    UpdateFrameworkUseCase,
-    FindFrameworkUseCase,
-    FindFrameworksUseCase,
-    DeleteFrameworkUseCase,
-    ActivateFrameworkUseCase,
-
-    // Level Use Cases
-    CreateLevelUseCase,
-    UpdateLevelUseCase,
-    DeleteLevelUseCase,
-    FindLevelsByFrameworkUseCase,
-    BulkCreateLevelsUseCase,
+    FrameworksModule,
+    LevelsModule,
   ],
   exports: [
-    // Repositories (para otros módulos)
-    MaturityFrameworksRepository,
-    MaturityLevelsRepository,
-
-    // Use Cases (para otros módulos)
-    FindFrameworkUseCase,
-    FindFrameworksUseCase,
-    FindLevelsByFrameworkUseCase,
+    FrameworksModule,  // Exportar para que otros módulos usen
+    LevelsModule,      // Exportar para que otros módulos usen
   ],
 })
 export class MaturityModule {}
