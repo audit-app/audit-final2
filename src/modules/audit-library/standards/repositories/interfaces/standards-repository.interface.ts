@@ -7,7 +7,7 @@ import type { StandardEntity } from '../../entities/standard.entity'
  * Define los métodos personalizados para el repositorio de standards
  */
 export interface IStandardsRepository extends IBaseRepository<StandardEntity> {
-  getTree(templateId: string): Promise<StandardEntity[]>
+  getTree(templateId: string, search?: string): Promise<StandardEntity[]>
   findByTemplate(templateId: string): Promise<StandardEntity[]>
   findByParent(
     templateId: string,

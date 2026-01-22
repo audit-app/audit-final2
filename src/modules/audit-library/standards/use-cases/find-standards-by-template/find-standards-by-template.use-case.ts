@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { StandardsRepository } from '../../repositories/standards.repository'
+import { Injectable, Inject } from '@nestjs/common'
 import type { StandardEntity } from '../../entities/standard.entity'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
-import { StandardValidator } from '../../validators'
+import type { IStandardsRepository } from '../../repositories'
+import { STANDARDS_REPOSITORY } from '@core'
 
 /**
  * Get Template Standards Tree Use Case
@@ -13,8 +13,8 @@ import { StandardValidator } from '../../validators'
 @Injectable()
 export class GetTemplateStandardsTreeUseCase {
   constructor(
-    private readonly standardsRepository: StandardsRepository,
-    private readonly standardsValidator: StandardValidator,
+    @Inject(STANDARDS_REPOSITORY)
+    private readonly standardsRepository: IStandardsRepository,
   ) {}
 
   /**

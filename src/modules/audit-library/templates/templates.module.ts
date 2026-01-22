@@ -9,11 +9,13 @@ import {
   FindTemplatesUseCase,
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
+  ExportTemplateUseCase,
 } from './use-cases'
 
 import { TemplatesController } from './controllers/templates.controller'
 import { TemplateValidator } from './validators'
 import { TemplateFactory } from './factories'
+import { TemplateExportService } from './shared/services'
 
 @Module({
   imports: [],
@@ -27,6 +29,7 @@ import { TemplateFactory } from './factories'
 
     TemplateValidator,
     TemplateFactory,
+    TemplateExportService,
 
     // Template Use Cases
     CreateTemplateUseCase,
@@ -35,6 +38,7 @@ import { TemplateFactory } from './factories'
     FindTemplatesUseCase,
     PublishTemplateUseCase,
     ArchiveTemplateUseCase,
+    ExportTemplateUseCase,
   ],
   exports: [
     // Export use cases for other modules

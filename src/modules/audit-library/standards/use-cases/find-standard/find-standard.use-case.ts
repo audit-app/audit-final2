@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { StandardsRepository } from '../../repositories/standards.repository'
+import { Injectable, Inject } from '@nestjs/common'
 import { StandardNotFoundException } from '../../exceptions'
 import type { StandardEntity } from '../../entities/standard.entity'
+import type { IStandardsRepository } from '../../repositories'
+import { STANDARDS_REPOSITORY } from '@core'
 
 /**
  * Find Standard Use Case
@@ -10,7 +11,10 @@ import type { StandardEntity } from '../../entities/standard.entity'
  */
 @Injectable()
 export class FindStandardUseCase {
-  constructor(private readonly standardsRepository: StandardsRepository) {}
+  constructor(
+    @Inject(STANDARDS_REPOSITORY)
+    private readonly standardsRepository: IStandardsRepository,
+  ) {}
 
   async execute(id: string): Promise<StandardEntity> {
     const standard = await this.standardsRepository.findById(id)

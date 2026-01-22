@@ -6,8 +6,9 @@ import {
   Patch,
   Param,
   Query,
+  Res,
 } from '@nestjs/common'
-import { ApiTags } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import type { Response } from 'express'
 import {
   ApiCreate,
@@ -24,6 +25,7 @@ import {
   FindTemplatesUseCase,
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
+  ExportTemplateUseCase,
 } from '../use-cases'
 import {
   CreateTemplateDto,
@@ -45,7 +47,7 @@ export class TemplatesController {
     private readonly publishTemplateUseCase: PublishTemplateUseCase,
     private readonly archiveTemplateUseCase: ArchiveTemplateUseCase,
     private readonly findTemplatesWithFiltersUseCase: FindTemplatesUseCase,
-    private readonly templateImportService: FindTemplatesUseCase,
+    private readonly exportTemplateUseCase: ExportTemplateUseCase,
   ) {}
 
   @Post()
@@ -135,6 +137,57 @@ export class TemplatesController {
   })
   async archive(@Param() { id }: UuidParamDto) {
     await this.archiveTemplateUseCase.execute(id)
+  }
+
+  @Get(':id/export')
+  @ApiOperation({
+    summary: 'Exportar plantilla a Excel',
+    description:
+      'Exporta una plantilla completa con todos sus standards a un archivo Excel. ' +
+      'El archivo contiene 2 hojas: "Template" con metadatos y "Standards" con todos los controles ordenados jerárquicamente. ' +
+      'Útil para backup, compartir entre entornos o generar datos de prueba.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Archivo Excel generado exitosamente',
+    headers: {
+      'Content-Type': {
+        description:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      'Content-Disposition': {
+        description: 'attachment; filename=NombrePlantilla_vVersion_Date.xlsx',
+      },
+    },
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Plantilla no encontrada',
+  })
+  async exportTemplate(
+    @Param() { id }: UuidParamDto,
+    @Res() res: Response,
+  ): Promise<void> {
+    // Obtener el template para generar el nombre del archivo
+    const template = await this.findTemplateUseCase.execute(id)
+
+    // Exportar el template a Excel
+    const buffer = await this.exportTemplateUseCase.execute(id)
+
+    // Generar nombre del archivo
+    const sanitizedName = template.name.replace(/[^a-zA-Z0-9]/g, '_')
+    const timestamp = new Date().toISOString().split('T')[0]
+    const fileName = `${sanitizedName}_v${template.version}_${timestamp}.xlsx`
+
+    // Configurar headers para descarga
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`)
+
+    // Enviar buffer
+    res.send(buffer)
   }
 
   /*   @Post(':id/clone')

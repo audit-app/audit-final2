@@ -9,6 +9,7 @@ import {
   StandardRepeatCodeException,
   StandardCannotModifyStructureException,
   StandardCannotModifyContentException,
+  StandardWithChildrenCannotBeAuditableException,
 } from '../exceptions'
 import { TemplateNotFoundException } from '../../templates/exceptions'
 
@@ -139,6 +140,35 @@ export class StandardValidator {
       throw new StandardCannotModifyContentException(
         template.name,
         template.status,
+      )
+    }
+  }
+
+  /**
+   * Valida que un standard puede ser marcado como auditable
+   *
+   * Regla: Los standards con hijos NO pueden ser auditables (solo agrupadores)
+   *
+   * @param standardId - ID del standard
+   * @param isAuditable - Nuevo valor de isAuditable
+   * @throws {StandardWithChildrenCannotBeAuditableException} Si tiene hijos y se intenta marcar como auditable
+   */
+  async validateCanBeAuditable(
+    standardId: string,
+    isAuditable: boolean,
+  ): Promise<void> {
+    // Solo validar si se intenta marcar como auditable (true)
+    if (!isAuditable) {
+      return // Permitir marcar como NO auditable siempre
+    }
+
+    // Verificar si tiene hijos
+    const childCount = await this.standardsRepository.countChildren(standardId)
+
+    if (childCount > 0) {
+      throw new StandardWithChildrenCannotBeAuditableException(
+        standardId,
+        childCount,
       )
     }
   }

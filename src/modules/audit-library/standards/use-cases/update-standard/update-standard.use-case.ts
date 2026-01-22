@@ -5,7 +5,7 @@ import type { StandardEntity } from '../../entities/standard.entity'
 import { StandardFactory } from '../../factories'
 import { StandardValidator } from '../../validators'
 import { STANDARDS_REPOSITORY } from '@core'
-import type { StandardsRepository } from '../../repositories/standards.repository'
+import type { IStandardsRepository } from '../../repositories'
 
 /**
  * Update Standard Use Case
@@ -22,7 +22,7 @@ import type { StandardsRepository } from '../../repositories/standards.repositor
 export class UpdateStandardUseCase {
   constructor(
     @Inject(STANDARDS_REPOSITORY)
-    private readonly standardsRepository: StandardsRepository,
+    private readonly standardsRepository: IStandardsRepository,
     private readonly standardFactory: StandardFactory,
     private readonly standardValidator: StandardValidator,
   ) {}

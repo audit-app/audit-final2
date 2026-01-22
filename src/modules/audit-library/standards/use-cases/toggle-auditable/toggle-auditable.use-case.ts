@@ -2,9 +2,9 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { StandardValidator } from '../../validators'
 import { STANDARDS_REPOSITORY } from '@core'
-import type { StandardsRepository } from '../../repositories/standards.repository'
 import type { ToggleAuditableDto } from '../../dtos/toggle-auditable.dto'
 import type { StandardEntity } from '../../entities/standard.entity'
+import type { IStandardsRepository } from '../../repositories'
 
 /**
  * Toggle Auditable Use Case
@@ -23,7 +23,7 @@ import type { StandardEntity } from '../../entities/standard.entity'
 export class ToggleAuditableUseCase {
   constructor(
     @Inject(STANDARDS_REPOSITORY)
-    private readonly standardsRepository: StandardsRepository,
+    private readonly standardsRepository: IStandardsRepository,
     private readonly standardValidator: StandardValidator,
   ) {}
 
@@ -35,6 +35,7 @@ export class ToggleAuditableUseCase {
    * @returns Standard actualizado
    * @throws {StandardNotFoundException} Si el standard no existe
    * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
+   * @throws {StandardWithChildrenCannotBeAuditableException} Si tiene hijos y se intenta marcar como auditable
    */
   @Transactional()
   async execute(id: string, dto: ToggleAuditableDto): Promise<StandardEntity> {
@@ -44,10 +45,13 @@ export class ToggleAuditableUseCase {
     // 2. Verificar que se puede modificar la estructura (cambiar funcionalidad del standard)
     await this.standardValidator.validateCanModifyStructure(standard.templateId)
 
-    // 3. Actualizar isAuditable
+    // 3. Validar que puede ser auditable (si tiene hijos, solo puede ser agrupador)
+    await this.standardValidator.validateCanBeAuditable(id, dto.isAuditable)
+
+    // 4. Actualizar isAuditable
     standard.isAuditable = dto.isAuditable
 
-    // 4. Guardar
+    // 5. Guardar
     return await this.standardsRepository.save(standard)
   }
 }

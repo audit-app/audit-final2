@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { StandardValidator } from '../../validators'
 import { STANDARDS_REPOSITORY } from '@core'
-import type { StandardsRepository } from '../../repositories/standards.repository'
+import type { IStandardsRepository } from '../../repositories'
 
 /**
  * Delete Standard Use Case
@@ -23,7 +23,7 @@ import type { StandardsRepository } from '../../repositories/standards.repositor
 export class DeleteStandardUseCase {
   constructor(
     @Inject(STANDARDS_REPOSITORY)
-    private readonly standardsRepository: StandardsRepository,
+    private readonly standardsRepository: IStandardsRepository,
     private readonly standardValidator: StandardValidator,
   ) {}
 

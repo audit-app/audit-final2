@@ -2,7 +2,10 @@ import { Injectable, BadRequestException, Logger } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import * as XLSX from 'xlsx'
 import { ImportStandardDto } from '../../../standards/dtos'
-import { ParsedExcelData, ValidationError } from '../../interfaces/import-data.interface'
+import {
+  ParsedExcelData,
+  ValidationError,
+} from '../../interfaces/import-data.interface'
 
 /**
  * Parse Excel Step
@@ -31,7 +34,8 @@ export class ParseExcelStep {
 
       return this.parseStandardsSheet(workbook)
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage =
+        error instanceof Error ? error.message : String(error)
       this.logger.error(`❌ Error parseando Excel: ${errorMessage}`)
       throw new BadRequestException(
         'Error leyendo archivo Excel. Verifique que el formato sea válido.',
@@ -73,7 +77,8 @@ export class ParseExcelStep {
             row: 0,
             field: 'sheet',
             value: sheetName,
-            message: 'Hoja vacía. Debe tener encabezados y al menos una fila de datos.',
+            message:
+              'Hoja vacía. Debe tener encabezados y al menos una fila de datos.',
           },
         ],
         totalRows: 0,
@@ -131,7 +136,9 @@ export class ParseExcelStep {
   /**
    * Crea mapping de columnas
    */
-  private createHeaderMapping(headers: string[]): Record<number, string> | null {
+  private createHeaderMapping(
+    headers: string[],
+  ): Record<number, string> | null {
     const mapping: Record<string, string> = {
       codigo: 'code',
       titulo: 'title',
