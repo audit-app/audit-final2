@@ -194,10 +194,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: exception.message,
         error: exception.name,
-        details:
-          !envs.app.isProduction
-            ? { stack: exception.stack }
-            : undefined,
+        details: !envs.app.isProduction
+          ? { stack: exception.stack }
+          : undefined,
       }
     }
 
@@ -225,10 +224,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const baseError = {
       error: 'DatabaseError',
-      details:
-        !envs.app.isProduction
-          ? { originalError: exception.message, code, table: exception.table }
-          : undefined,
+      details: !envs.app.isProduction
+        ? { originalError: exception.message, code, table: exception.table }
+        : undefined,
     }
 
     switch (code) {

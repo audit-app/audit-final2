@@ -3,6 +3,7 @@ import type { StandardEntity } from '../../entities/standard.entity'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 import type { IStandardsRepository } from '../../repositories'
 import { STANDARDS_REPOSITORY } from '@core'
+import { FindStandardsDto } from '../../dtos'
 
 /**
  * Get Template Standards Tree Use Case
@@ -25,11 +26,13 @@ export class GetTemplateStandardsTreeUseCase {
    * @returns Lista de standards raíz (con hijos anidados)
    */
   async execute(
-    templateId: string,
-    search?: string,
+    dto: FindStandardsDto,
   ): Promise<PaginatedResponse<StandardEntity>> {
     //TODO: Aumentar logica de vlacion de template
-    const data = await this.standardsRepository.getTree(templateId, search)
+    const data = await this.standardsRepository.getTree(
+      dto.templateId,
+      dto.search,
+    )
     return PaginatedResponseBuilder.createAll(data)
   }
 }

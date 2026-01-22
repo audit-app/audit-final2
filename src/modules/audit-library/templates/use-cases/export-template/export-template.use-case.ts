@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { TemplateExportService } from '../../shared/services'
+import { TemplateExportService } from '../../services'
 
 /**
  * Export Template Use Case
@@ -29,18 +29,5 @@ export class ExportTemplateUseCase {
    */
   async execute(templateId: string): Promise<Buffer> {
     return await this.templateExportService.exportTemplate(templateId)
-  }
-
-  /**
-   * Genera el nombre del archivo para la descarga
-   *
-   * @param templateId - ID de la plantilla
-   * @returns Nombre del archivo con formato: NombrePlantilla_vVersion_YYYY-MM-DD.xlsx
-   */
-  async getFileName(templateId: string): Promise<string> {
-    // Este método podría usar el servicio para obtener el template
-    // y generar el nombre correcto, pero por simplicidad lo dejamos así
-    const timestamp = new Date().toISOString().split('T')[0]
-    return `template_${templateId}_${timestamp}.xlsx`
   }
 }

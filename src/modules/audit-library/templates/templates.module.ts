@@ -10,18 +10,18 @@ import {
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
   ExportTemplateUseCase,
+  ImportTemplateUseCase,
 } from './use-cases'
 
 import { TemplatesController } from './controllers/templates.controller'
 import { TemplateValidator } from './validators'
 import { TemplateFactory } from './factories'
-import { TemplateExportService } from './shared/services'
+import { TemplateExportService, TemplateImportService } from './services'
 
 @Module({
   imports: [],
   controllers: [TemplatesController],
   providers: [
-    // Alias: map class to token provided by @core/persistence
     {
       provide: TemplatesRepository,
       useExisting: TEMPLATES_REPOSITORY,
@@ -30,6 +30,7 @@ import { TemplateExportService } from './shared/services'
     TemplateValidator,
     TemplateFactory,
     TemplateExportService,
+    TemplateImportService,
 
     // Template Use Cases
     CreateTemplateUseCase,
@@ -39,6 +40,7 @@ import { TemplateExportService } from './shared/services'
     PublishTemplateUseCase,
     ArchiveTemplateUseCase,
     ExportTemplateUseCase,
+    ImportTemplateUseCase,
   ],
   exports: [
     // Export use cases for other modules

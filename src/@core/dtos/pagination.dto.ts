@@ -1,7 +1,7 @@
 import { IsOptional, IsInt, Min, Max, IsBoolean, IsEnum } from 'class-validator'
 import { Type, Transform } from 'class-transformer'
 
-enum SortOrder {
+export enum SortOrder {
   ASC = 'ASC',
   DESC = 'DESC',
 }

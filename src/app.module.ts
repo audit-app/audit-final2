@@ -19,7 +19,6 @@ import { FilesModule } from '@core/files'
 import { PersistenceModule } from '@core/persistence'
 import { CacheModule } from '@core/cache'
 import { CommonModule } from '@core/common/common.module'
-import { AuditLogModule } from '@core/audit-log'
 import { UsersModule } from './modules/users/users.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -28,8 +27,10 @@ import { PermissionsGuard } from './modules/authorization/guards/permissions.gua
 import { TemplatesModule } from './modules/audit-library/templates/templates.module'
 import { StandardsModule } from './modules/audit-library/standards/standards.module'
 import { MaturityModule } from './modules/maturity/maturity.module'
-import { ImportModule } from './modules/audit-library/import/import.module'
+// import { ImportModule } from './modules/audit-library/import/import.module' // Módulo obsoleto, funcionalidad movida a TemplatesModule
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
+import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
+import { NavigationModule } from './modules/navigation/navigation.module'
 
 @Module({
   imports: [
@@ -75,7 +76,8 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
     TemplatesModule, // Must be imported before StandardsModule (dependency)
     StandardsModule,
     MaturityModule,
-    ImportModule, // Template & Standards import (depends on both modules)
+    NavigationModule, // Navigation menu (static + dynamic)
+    // ImportModule, // Template & Standards import (obsoleto - funcionalidad movida a TemplatesModule)
   ],
   controllers: [AppController],
   providers: [

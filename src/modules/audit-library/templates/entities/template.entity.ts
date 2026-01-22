@@ -26,7 +26,7 @@ export class TemplateEntity extends BaseEntity {
   status: TemplateStatus
 
   @OneToMany(() => StandardEntity, (standard) => standard.template, {
-    cascade: true,
+    cascade: ['insert', 'update'], // Solo insert/update, NO remove (soft-delete manual)
   })
   standards: StandardEntity[]
 

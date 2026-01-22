@@ -1,6 +1,7 @@
 export * from './archive-template/archive-template.use-case'
 export * from './create-template/create-template.use-case'
 export * from './export-template/export-template.use-case'
+export * from './import-template/import-template.use-case'
 export * from './find-template/find-template.use-case'
 export * from './find-templates/find-templates.use-case'
 export * from './update-template/update-template.use-case'

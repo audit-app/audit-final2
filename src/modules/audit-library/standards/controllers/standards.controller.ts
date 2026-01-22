@@ -26,6 +26,7 @@ import {
   StandardResponseDto,
   ReorderStandardDto,
   ToggleAuditableDto,
+  FindStandardsDto,
 } from '../dtos'
 import {
   CreateStandardUseCase,
@@ -67,12 +68,9 @@ export class StandardsController {
     return await this.findStandard.execute(id)
   }
 
-  @Get(':id/template/tree')
-  async getTree(
-    @Param() { id }: UuidParamDto,
-    @Query('search') search?: string,
-  ) {
-    return await this.getTemplatesTreeUseCase.execute(id, search)
+  @Get()
+  async getTree(@Query() findStandardDto: FindStandardsDto) {
+    return await this.getTemplatesTreeUseCase.execute(findStandardDto)
   }
 
   @Patch(':id')

@@ -7,8 +7,10 @@ import {
   Param,
   Query,
   Res,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger'
 import type { Response } from 'express'
 import {
   ApiCreate,
@@ -18,6 +20,7 @@ import {
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { ResponseMessage } from '@core/decorators'
+import { UploadSpreadsheet } from '@core/files/decorators'
 import {
   CreateTemplateUseCase,
   UpdateTemplateUseCase,
@@ -26,6 +29,7 @@ import {
   PublishTemplateUseCase,
   ArchiveTemplateUseCase,
   ExportTemplateUseCase,
+  ImportTemplateUseCase,
 } from '../use-cases'
 import {
   CreateTemplateDto,
@@ -48,6 +52,7 @@ export class TemplatesController {
     private readonly archiveTemplateUseCase: ArchiveTemplateUseCase,
     private readonly findTemplatesWithFiltersUseCase: FindTemplatesUseCase,
     private readonly exportTemplateUseCase: ExportTemplateUseCase,
+    private readonly importTemplateUseCase: ImportTemplateUseCase,
   ) {}
 
   @Post()
@@ -59,6 +64,71 @@ export class TemplatesController {
   })
   async create(@Body() createTemplateDto: CreateTemplateDto) {
     return await this.createTemplateUseCase.execute(createTemplateDto)
+  }
+
+  @Post('import')
+  @UploadSpreadsheet({
+    fieldName: 'file',
+    description:
+      'Archivo Excel (.xlsx) con la hoja "Standards" que contiene las columnas: código, título, descripción, código padre, orden, nivel, auditable.',
+  })
+  @ApiBody({
+    description: 'Archivo Excel + metadatos de la plantilla',
+    schema: {
+      type: 'object',
+      required: ['file', 'name', 'version'],
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+          description: 'Archivo Excel (.xlsx) con la hoja "Standards"',
+        },
+        name: {
+          type: 'string',
+          description: 'Nombre de la plantilla',
+          example: 'ISO 27001',
+        },
+        version: {
+          type: 'string',
+          description: 'Versión de la plantilla',
+          example: '1.0',
+        },
+        description: {
+          type: 'string',
+          description: 'Descripción de la plantilla (opcional)',
+          example: 'Plantilla de controles ISO 27001:2022',
+        },
+        code: {
+          type: 'string',
+          description: 'Código de la plantilla (opcional)',
+          example: 'ISO27001',
+        },
+      },
+    },
+  })
+  @ApiOperation({
+    summary: 'Importar plantilla desde Excel',
+    description:
+      'Importa una plantilla completa con todos sus standards desde un archivo Excel. ' +
+      'El archivo debe tener una hoja "Standards" con las columnas: código, título, descripción, código padre, orden, nivel, auditable.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Plantilla importada exitosamente',
+    type: TemplateEntity,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Errores de validación en el archivo',
+  })
+  async import(
+    @UploadedFile() file: Express.Multer.File,
+    @Body() metadata: CreateTemplateDto,
+  ): Promise<TemplateEntity> {
+    if (!file) {
+      throw new BadRequestException('No se proporcionó archivo')
+    }
+    return await this.importTemplateUseCase.execute(file.buffer, metadata)
   }
 
   @Get()
@@ -86,22 +156,6 @@ export class TemplatesController {
     return await this.findTemplateUseCase.execute(id)
   }
 
-  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
-  // @Patch(':id')
-  // @ApiUpdate(TemplateEntity, {
-  //   summary: 'Actualizar una plantilla (solo si está en draft)',
-  //   description:
-  //     'Actualiza una plantilla solo si está en estado DRAFT. Las plantillas publicadas no se pueden editar directamente.',
-  //   conflictMessage: 'Plantilla no editable (debe estar en estado draft)',
-  // })
-  // async update(
-  //   @Param() { id }: UuidParamDto,
-  //   @Body() updateTemplateDto: UpdateTemplateDto,
-  // ) {
-  //   return await this.updateTemplateUseCase.execute(id, updateTemplateDto)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
   @ResponseMessage('Plantilla actualizada exitosamente')
   @ApiUpdateWithMessage({
@@ -189,221 +243,4 @@ export class TemplatesController {
     // Enviar buffer
     res.send(buffer)
   }
-
-  /*   @Post(':id/clone')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Clonar una plantilla para crear una nueva versión',
-    description:
-      'Crea una copia de una plantilla existente con todos sus estándares para crear una nueva versión editable en estado DRAFT.',
-  })
-  @ApiResponse({ status: 201, description: 'Plantilla clonada exitosamente' })
-  @ApiNotFoundResponse('Plantilla no encontrada')
-  @ApiResponse({
-    status: 409,
-    description: 'Ya existe una plantilla con ese nombre y versión',
-  })
-  @ApiStandardResponses()
-  async clone(
-    @Param() { id }: UuidParamDto,
-    @Body() cloneTemplateDto: CloneTemplateDto,
-  ) {
-    return await this.cloneTemplateUseCase.execute(id, cloneTemplateDto)
-  } */
-
-  // ========================================
-  // Import/Export Endpoints
-  // ========================================
-
-  /*   @Post('import/excel')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Importar plantilla desde Excel',
-    description:
-      'Sube un archivo Excel con 1 hoja "Estándares" + campos de formulario (name, description, version). ' +
-      'El archivo debe contener las columnas: codigo, titulo, descripcion, codigo_padre, orden, nivel, es_auditable, esta_activo. ' +
-      'Valida la estructura jerárquica y crea la plantilla con sus estándares.',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Archivo Excel + metadatos de la plantilla',
-    schema: {
-      type: 'object',
-      required: ['file', 'name', 'description', 'version'],
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-          description: 'Archivo Excel (.xlsx) con la hoja "Estándares"',
-        },
-        name: {
-          type: 'string',
-          description: 'Nombre de la plantilla',
-          example: 'ISO 27001',
-          maxLength: 100,
-        },
-        description: {
-          type: 'string',
-          description: 'Descripción de la plantilla',
-          example: 'Plantilla de controles ISO 27001:2022',
-        },
-        version: {
-          type: 'string',
-          description: 'Versión de la plantilla',
-          example: '1.0',
-          maxLength: 20,
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Plantilla importada exitosamente',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: true },
-        message: {
-          type: 'string',
-          example: 'Plantilla importada exitosamente',
-        },
-        data: {
-          type: 'object',
-          properties: {
-            templateId: { type: 'string', format: 'uuid' },
-            standardsCount: { type: 'number', example: 50 },
-          },
-        },
-        summary: {
-          type: 'object',
-          properties: {
-            totalRows: { type: 'number', example: 50 },
-            totalValidRows: { type: 'number', example: 50 },
-            totalErrors: { type: 'number', example: 0 },
-            hierarchyDepth: { type: 'number', example: 3 },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Errores de validación en el archivo o campos',
-    schema: {
-      type: 'object',
-      properties: {
-        success: { type: 'boolean', example: false },
-        message: {
-          type: 'string',
-          example: 'Errores de validación encontrados',
-        },
-        errors: {
-          type: 'object',
-          properties: {
-            standards: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  row: { type: 'number', example: 5 },
-                  field: { type: 'string', example: 'code' },
-                  value: { type: 'string' },
-                  message: {
-                    type: 'string',
-                    example: 'El código es requerido',
-                  },
-                },
-              },
-            },
-            crossValidation: {
-              type: 'array',
-              items: {
-                type: 'object',
-                properties: {
-                  row: { type: 'number', example: 8 },
-                  field: { type: 'string', example: 'parentCode' },
-                  value: { type: 'string' },
-                  message: {
-                    type: 'string',
-                    example: 'Código padre no encontrado',
-                  },
-                },
-              },
-            },
-          },
-        },
-        summary: {
-          type: 'object',
-          properties: {
-            totalRows: { type: 'number', example: 50 },
-            totalValidRows: { type: 'number', example: 45 },
-            totalErrors: { type: 'number', example: 5 },
-            hierarchyDepth: { type: 'number', example: 3 },
-          },
-        },
-      },
-    },
-  })
-  async importExcel(
-    @UploadedFile() file: Express.Multer.File,
-    @Body() metadata: ImportTemplateMetadataDto,
-  ) {
-    if (!file) {
-      throw new BadRequestException('No se proporcionó archivo')
-    }
-
-    // Step 1: Process and validate file
-    const importResult = await this.templateImportService.processExcelFile(
-      file.buffer,
-    )
-
-    // Step 2: If validation successful, save to database
-    if (importResult.success) {
-      const savedResult = await this.templateImportService.saveImportResult(
-        metadata,
-        importResult,
-      )
-      return {
-        success: true,
-        message: 'Plantilla importada exitosamente',
-        data: savedResult,
-        summary: importResult.summary,
-      }
-    }
-
-    // Step 3: Return validation errors with 400 status
-    throw new BadRequestException({
-      success: false,
-      message: 'Errores de validación encontrados',
-      errors: {
-        standards: importResult.standards.errors,
-        crossValidation: importResult.crossValidationErrors,
-      },
-      summary: importResult.summary,
-    })
-  }
-
-  @Get('export/excel-template')
-  @ApiOperation({
-    summary: 'Descargar plantilla de Excel',
-    description:
-      'Descarga un archivo Excel vacío con la estructura correcta para importar estándares (1 hoja). Los metadatos de la plantilla se envían como campos de formulario.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Plantilla Excel generada (solo estándares)',
-  })
-  downloadExcelTemplate(@Res() res: Response) {
-    const buffer = this.templateImportService.generateExcelTemplate()
-
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    )
-    res.setHeader(
-      'Content-Disposition',
-      'attachment; filename=estandares-template.xlsx',
-    )
-    res.send(buffer)
-  } */
 }
