@@ -111,7 +111,6 @@ export class CreateMaturityFrameworkDto {
         shortName: 'N/A',
         description: 'No existe proceso documentado',
         color: '#EF4444',
-        icon: '🔴',
         order: 0,
       },
       {

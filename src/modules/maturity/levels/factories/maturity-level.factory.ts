@@ -41,10 +41,6 @@ export class MaturityLevelFactory {
     level: MaturityLevelEntity,
     dto: UpdateMaturityLevelDto,
   ): MaturityLevelEntity {
-    if (dto.level !== undefined) {
-      level.level = dto.level
-    }
-
     if (dto.name !== undefined) {
       level.name = dto.name.trim()
     }
@@ -71,10 +67,6 @@ export class MaturityLevelFactory {
 
     if (dto.observations !== undefined) {
       level.observations = dto.observations?.trim() || null
-    }
-
-    if (dto.order !== undefined) {
-      level.order = dto.order
     }
 
     if (dto.isMinimumAcceptable !== undefined) {

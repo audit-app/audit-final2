@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/swagger'
+import { OmitType, PartialType } from '@nestjs/swagger'
 import { CreateMaturityFrameworkDto } from './create-maturity-framework.dto'
 
 /**
@@ -7,5 +7,5 @@ import { CreateMaturityFrameworkDto } from './create-maturity-framework.dto'
  * Todos los campos son opcionales
  */
 export class UpdateMaturityFrameworkDto extends PartialType(
-  CreateMaturityFrameworkDto,
+  OmitType(CreateMaturityFrameworkDto, ['levels', 'maxLevel', 'minLevel']),
 ) {}

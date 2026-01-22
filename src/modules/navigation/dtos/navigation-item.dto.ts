@@ -41,7 +41,7 @@ export class NavigationItemDto {
     description: 'Items hijos (para menús multinivel)',
     type: () => [NavigationItemDto],
   })
-  children?: NavigationItemDto[]
+  items?: NavigationItemDto[]
 
   @ApiPropertyOptional({
     description: 'Badge/contador (ej: notificaciones pendientes)',

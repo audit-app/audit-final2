@@ -12,6 +12,7 @@ import {
   // CreateLevelUseCase, // ❌ ELIMINADO - No se permite crear levels sueltos
   UpdateLevelUseCase,
   // DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
+  FindLevelUseCase, // ✅ PERMITIDO - Obtener un level por ID
   FindLevelsByFrameworkUseCase,
   // BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita bulk replace
 } from './use-cases/levels'
@@ -31,6 +32,7 @@ import {
     // CreateLevelUseCase, // ❌ ELIMINADO - Levels se crean solo con el framework
     UpdateLevelUseCase, // ✅ PERMITIDO - Editar texto, colores, recomendaciones
     // DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
+    FindLevelUseCase, // ✅ PERMITIDO - Obtener un level por ID
     FindLevelsByFrameworkUseCase, // ✅ PERMITIDO - Listar levels de un framework
     // BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita reemplazar en lote
   ],

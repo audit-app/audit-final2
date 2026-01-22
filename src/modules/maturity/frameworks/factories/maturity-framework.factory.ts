@@ -47,14 +47,6 @@ export class MaturityFrameworkFactory {
       framework.description = dto.description?.trim() || null
     }
 
-    if (dto.minLevel !== undefined) {
-      framework.minLevel = dto.minLevel
-    }
-
-    if (dto.maxLevel !== undefined) {
-      framework.maxLevel = dto.maxLevel
-    }
-
     if (dto.isActive !== undefined) {
       framework.isActive = dto.isActive
     }

@@ -30,6 +30,7 @@ import {
   CreateLevelUseCase,
   UpdateLevelUseCase,
   DeleteLevelUseCase,
+  FindLevelUseCase,
   FindLevelsByFrameworkUseCase,
   BulkCreateLevelsUseCase,
 } from '../use-cases'
@@ -41,6 +42,7 @@ export class MaturityLevelsController {
     // private readonly createLevelUseCase: CreateLevelUseCase, // ❌ ELIMINADO - No se permite crear levels sueltos
     private readonly updateLevelUseCase: UpdateLevelUseCase,
     // private readonly deleteLevelUseCase: DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
+    private readonly findLevelUseCase: FindLevelUseCase, // ✅ PERMITIDO - Obtener un level por ID
     private readonly findLevelsByFrameworkUseCase: FindLevelsByFrameworkUseCase,
     // private readonly bulkCreateLevelsUseCase: BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita bulk replace
   ) {}
@@ -66,6 +68,19 @@ export class MaturityLevelsController {
   // - El usuario indicó que solo necesita crear + editar
   // - Si quiere cambiar la estructura completa, puede eliminar el framework y crear uno nuevo
   // - Esto simplifica la lógica y evita inconsistencias
+
+  @Get('levels/:id')
+  @ApiOperation({
+    summary: 'Obtener un nivel de madurez por ID',
+    description:
+      'Retorna los datos de un nivel de madurez específico. Útil para obtener los datos antes de editarlo.',
+  })
+  @ApiOkResponse(MaturityLevelEntity, 'Nivel de madurez encontrado')
+  @ApiNotFoundResponse('Nivel de madurez no encontrado')
+  @ApiStandardResponses({ exclude: [400] })
+  async findOne(@Param() { id }: UuidParamDto) {
+    return await this.findLevelUseCase.execute(id)
+  }
 
   @Get('frameworks/:frameworkId/levels')
   @ApiOperation({

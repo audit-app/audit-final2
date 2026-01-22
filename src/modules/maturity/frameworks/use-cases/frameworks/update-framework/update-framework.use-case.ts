@@ -57,19 +57,9 @@ export class UpdateFrameworkUseCase {
       }
     }
 
-    // 3. Validar rango de niveles si se actualiza
-    const minLevel = dto.minLevel ?? framework.minLevel
-    const maxLevel = dto.maxLevel ?? framework.maxLevel
-
-    if (minLevel >= maxLevel) {
-      throw new InvalidLevelRangeException(minLevel, maxLevel)
-    }
-
     // 4. Actualizar el framework
     const updated = await this.frameworksRepository.update(id, {
       ...dto,
-      minLevel,
-      maxLevel,
     })
 
     return framework

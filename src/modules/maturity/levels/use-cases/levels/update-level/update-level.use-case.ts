@@ -41,21 +41,6 @@ export class UpdateLevelUseCase {
       throw new MaturityLevelNotFoundException(id)
     }
 
-    // 2. Si se actualiza el número de nivel, verificar que no exista otro con ese número
-    if (dto.level !== undefined && dto.level !== level.level) {
-      const existingLevel = await this.levelsRepository.findByFrameworkAndLevel(
-        level.frameworkId,
-        dto.level,
-      )
-
-      if (existingLevel) {
-        throw new MaturityLevelAlreadyExistsException(
-          level.frameworkId,
-          dto.level,
-        )
-      }
-    }
-
     // 3. Actualizar el nivel
     const updated = await this.levelsRepository.update(id, dto)
 

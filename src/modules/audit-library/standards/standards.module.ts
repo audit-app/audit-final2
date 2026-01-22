@@ -1,11 +1,5 @@
 import { Module } from '@nestjs/common'
-import { StandardsRepository } from './repositories/standards.repository'
-import { TemplatesRepository } from '../templates/repositories/templates.repository'
-
-// Controllers
 import { StandardsController } from './controllers/standards.controller'
-
-// Factories & Validators
 import { StandardFactory } from './factories'
 import { StandardValidator } from './validators'
 
