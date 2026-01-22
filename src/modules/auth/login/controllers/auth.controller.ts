@@ -21,12 +21,23 @@ import {
 import type { Request, Response } from 'express'
 import { CookieService } from '@core/http/services/cookie.service'
 import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
-import { LoginDto, LoginResponseDto, MeResponseDto } from '../dtos'
+import {
+  LoginDto,
+  LoginResponseDto,
+  UserResponseDto,
+  SwitchRoleDto,
+  SwitchRoleResponseDto,
+} from '../dtos'
 import { Public, GetUser, GetToken } from '../../shared/decorators'
 import type { JwtPayload } from '../../shared/interfaces'
-import { LoginUseCase, LogoutUseCase, RefreshTokenUseCase } from '../use-cases'
+import {
+  LoginUseCase,
+  LogoutUseCase,
+  RefreshTokenUseCase,
+  SwitchRoleUseCase,
+} from '../use-cases'
 import { JwtAuthGuard } from '../../shared'
-import { NavigationService } from '@shared'
+
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
 @UseGuards(JwtAuthGuard)
@@ -37,8 +48,8 @@ export class AuthController {
     private readonly loginUseCase: LoginUseCase,
     private readonly refreshTokenUseCase: RefreshTokenUseCase,
     private readonly logoutUseCase: LogoutUseCase,
+    private readonly switchRoleUseCase: SwitchRoleUseCase,
     private readonly cookieService: CookieService,
-    private readonly navigationService: NavigationService,
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
   ) {}
@@ -245,7 +256,7 @@ export class AuthController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Perfil del usuario con navegación',
-    type: MeResponseDto,
+    type: UserResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
@@ -255,17 +266,12 @@ export class AuthController {
     status: HttpStatus.NOT_FOUND,
     description: 'Usuario no encontrado',
   })
-  async getProfile(@GetUser() user: JwtPayload): Promise<MeResponseDto> {
+  async getProfile(@GetUser() user: JwtPayload): Promise<UserResponseDto> {
     const profile = await this.usersRepository.getProfile(user.sub)
 
     if (!profile) {
       throw new NotFoundException('Usuario no encontrado')
     }
-
-    // Obtener rutas de navegación según los roles del usuario
-    const navigation = this.navigationService.getNavigationForUser(
-      profile.roles,
-    )
 
     return {
       id: profile.id,
@@ -275,10 +281,57 @@ export class AuthController {
       email: profile.email,
       image: profile.image,
       roles: profile.roles,
+      currentRole: user.currentRole, // ← Desde el JWT
       organizationId: profile.organizationId,
       organizationName: profile.organization?.name || 'Sin organización',
       organizationImage: profile.organization?.logoUrl || null,
-      navigation,
     }
+  }
+
+  /**
+   * POST /auth/switch-role
+   *
+   * Cambia el rol activo del usuario autenticado
+   * Actualiza el currentRole en Redis para que persista en futuros refreshes
+   *
+   * @param user - Usuario autenticado (del JWT)
+   * @param dto - Rol nuevo que el usuario quiere activar
+   * @returns Nuevo access token con el rol cambiado
+   *
+   * @example
+   * ```
+   * POST /auth/switch-role
+   * Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+   * {
+   *   "newRole": "AUDITOR"
+   * }
+   * ```
+   */
+  @ApiBearerAuth()
+  @Post('switch-role')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Cambiar rol activo del usuario',
+    description:
+      'Permite al usuario cambiar entre sus roles asignados. El cambio persiste en todas las sesiones activas y futuros refreshes.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Rol cambiado exitosamente',
+    type: SwitchRoleResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'No autenticado',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'El usuario no tiene asignado el rol solicitado',
+  })
+  async switchRole(
+    @GetUser() user: JwtPayload,
+    @Body() dto: SwitchRoleDto,
+  ): Promise<SwitchRoleResponseDto> {
+    return await this.switchRoleUseCase.execute(user.sub, dto)
   }
 }

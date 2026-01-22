@@ -26,9 +26,11 @@ async function bootstrap() {
 
   // Configurar CORS
   // envs.security.corsOrigins ya es un array de strings
-  const corsOrigin = envs.security.corsOrigins.length === 1 && envs.security.corsOrigins[0] === '*'
-    ? '*'
-    : envs.security.corsOrigins
+  const corsOrigin =
+    envs.security.corsOrigins.length === 1 &&
+    envs.security.corsOrigins[0] === '*'
+      ? '*'
+      : envs.security.corsOrigins
 
   app.enableCors({
     origin: corsOrigin,
@@ -64,20 +66,9 @@ async function bootstrap() {
     .addTag('Password Reset', 'Restablecimiento de Contraseña')
     .addTag('users', 'Gestión de usuarios')
     .addTag('organizations', 'Gestión de organizaciones')
-    .addTag('notifications', 'Sistema de notificaciones')
     .addTag('templates', 'Gestión de plantillas (ISO 27001, ISO 9001, etc.)')
     .addTag('standards', 'Gestión de normas con estructura jerárquica')
-    .addTag(
-      'frameworks',
-      'Frameworks de madurez/ponderación (COBIT 5, CMMI, etc.)',
-    )
     .addTag('maturity-levels', 'Niveles de madurez con textos predefinidos')
-    .addTag(
-      'audits',
-      'Gestión de auditorías (inicial, seguimiento, recertificación)',
-    )
-    .addTag('evaluations', 'Evaluación de normas con niveles de madurez')
-    .addTag('action-plans', 'Planes de acción para remediar no conformidades')
     .build()
   logger.startup.printStartupBanner(
     {

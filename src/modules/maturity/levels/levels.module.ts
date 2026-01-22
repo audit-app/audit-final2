@@ -16,28 +16,10 @@ import {
   BulkCreateLevelsUseCase,
 } from './use-cases/levels'
 
-/**
- * Levels Module
- *
- * Submódulo de MaturityModule para gestión de niveles de madurez
- *
- * Responsabilidades:
- * - CRUD de niveles
- * - Asociación con frameworks
- * - Creación en lote (bulk)
- * - Consultas por framework
- *
- * Relación con FrameworksModule:
- * - Importa FrameworksModule para validar frameworks
- * - Usa FindFrameworkUseCase para verificar existencia
- */
 @Module({
-  imports: [
-    FrameworksModule, // ✅ Puede usar servicios de Frameworks!
-  ],
+  imports: [FrameworksModule],
   controllers: [MaturityLevelsController],
   providers: [
-    // Alias: map class to token provided by @core/persistence
     {
       provide: MaturityLevelsRepository,
       useExisting: LEVELS_REPOSITORY,
@@ -52,9 +34,6 @@ import {
     FindLevelsByFrameworkUseCase,
     BulkCreateLevelsUseCase,
   ],
-  exports: [
-    // Export use cases for other modules
-    FindLevelsByFrameworkUseCase,
-  ],
+  exports: [FindLevelsByFrameworkUseCase],
 })
 export class LevelsModule {}

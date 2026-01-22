@@ -13,10 +13,16 @@ import {
   TokenStorageRepository,
   StoredSession, // Importamos la interfaz desde el nuevo repo
 } from './token-storage.repository'
-import { UserEntity } from '../../../users/entities/user.entity'
+import { UserEntity, Role } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../../shared'
 import { InvalidTokenException } from '../exceptions'
 import { envs } from '@core/config'
+
+/**
+ * Jerarquía de roles (de mayor a menor privilegio)
+ * Usado para determinar el rol por defecto cuando un usuario tiene múltiples roles
+ */
+const ROLE_HIERARCHY = [Role.ADMIN, Role.GERENTE, Role.AUDITOR, Role.CLIENTE]
 
 @Injectable()
 export class TokensService {
@@ -41,16 +47,21 @@ export class TokensService {
     user: UserEntity,
     connection: ConnectionMetadata,
     rememberMe: boolean,
+    currentRole?: Role,
   ): Promise<{ accessToken: string; refreshToken: string }> {
     // 1. Generamos ID usando el helper del repo
     const tokenId = this.tokenStorage.generateTokenId()
 
     // 2. Preparamos Payloads
+    // Determinar el rol activo: usar el parámetro o el más alto por defecto
+    const roleToUse = currentRole ?? this.getHighestRole(user.roles)
+
     const accessPayload: JwtPayload = {
       sub: user.id,
       email: user.email,
       username: user.username,
       roles: user.roles,
+      currentRole: roleToUse,
       organizationId: user.organizationId,
     }
 
@@ -78,6 +89,7 @@ export class TokensService {
     const sessionData: StoredSession = {
       tokenId,
       userId: user.id,
+      currentRole: roleToUse, // ← Guardar el rol activo en Redis
       ip: parsedMetadata.ip,
       userAgent: parsedMetadata.userAgent,
       browser: parsedMetadata.browser,
@@ -140,6 +152,61 @@ export class TokensService {
     return this.tokenStorage.isBlacklisted(token)
   }
 
+  /**
+   * Genera un nuevo access token con un rol específico (para switch-role)
+   * NO genera un nuevo refresh token, solo access token
+   */
+  async generateAccessTokenWithRole(
+    user: UserEntity,
+    newRole: Role,
+  ): Promise<string> {
+    // Validar que el usuario tenga el rol solicitado
+    if (!user.roles.includes(newRole)) {
+      throw new InvalidTokenException('No tienes permiso para usar este rol')
+    }
+
+    const accessPayload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      roles: user.roles,
+      currentRole: newRole, // Usar el rol solicitado
+      organizationId: user.organizationId,
+    }
+
+    return this.jwtService.signAsync(accessPayload, {
+      expiresIn: this.accessTokenExpires as ms.StringValue,
+    })
+  }
+
+  /**
+   * Actualiza el rol activo en TODAS las sesiones activas del usuario
+   *
+   * Usado cuando el usuario hace switch-role para actualizar el currentRole
+   * en Redis y que persista en futuros refreshes
+   */
+  async updateCurrentRoleInAllSessions(
+    userId: string,
+    newRole: Role,
+  ): Promise<void> {
+    // Obtener todas las sesiones activas del usuario
+    const sessions = await this.tokenStorage.findAllByUser(userId)
+
+    // Actualizar el currentRole en cada sesión
+    for (const session of sessions) {
+      const updatedSession: StoredSession = {
+        ...session,
+        currentRole: newRole,
+      }
+      await this.tokenStorage.save(userId, updatedSession)
+    }
+
+    this.logger.log(
+      `Actualizado currentRole a ${newRole} en ${sessions.length} sesión(es) del usuario ${userId}`,
+      'TokensService.updateCurrentRoleInAllSessions',
+    )
+  }
+
   // --- METODOS DE UTILERÍA JWT ---
 
   decodeRefreshToken(refreshToken: string): JwtRefreshPayload {
@@ -188,5 +255,19 @@ export class TokensService {
         `${context}.Unknown`,
       )
     }
+  }
+
+  /**
+   * Determina el rol más alto según la jerarquía de roles
+   * Usado cuando el usuario tiene múltiples roles para elegir uno por defecto
+   */
+  private getHighestRole(roles: Role[]): Role {
+    for (const role of ROLE_HIERARCHY) {
+      if (roles.includes(role)) {
+        return role
+      }
+    }
+    // Fallback por si acaso (no debería llegar aquí)
+    return roles[0] || Role.CLIENTE
   }
 }

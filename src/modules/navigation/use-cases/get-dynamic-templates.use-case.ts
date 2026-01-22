@@ -28,7 +28,7 @@ export class GetDynamicTemplatesUseCase {
     const { data: templates } =
       await this.templatesRepository.paginateTemplates({
         status: TemplateStatus.PUBLISHED,
-        sortBy: 'name',
+        sortBy: 'cretedAt',
         sortOrder: SortOrder.ASC,
         page: 1,
         limit: 50, // Limitar para no sobrecargar el sidebar

@@ -126,15 +126,29 @@ export class MaturityLevelEntity extends BaseEntity {
   order: number
 
   /**
-   * Determina si es el nivel mínimo aceptable
-   * Útil para marcar umbrales de cumplimiento
+   * 🎯 Nivel Mínimo Sugerido por Defecto (defaultMinimum)
+   *
+   * Este campo NO es obligatorio para la auditoría.
+   * Es un valor de UX para pre-llenar la configuración cuando el usuario
+   * inicia una nueva auditoría con este framework.
+   *
+   * Ejemplo: "La norma sugiere que menos de nivel 2 es inaceptable"
+   *
+   * La empresa puede cambiarlo según su contexto (startup vs banco)
    */
   @Column({ type: 'boolean', default: false })
   isMinimumAcceptable: boolean
 
   /**
-   * Determina si es el nivel objetivo/ideal
-   * Útil para marcar metas organizacionales
+   * 🎯 Nivel Objetivo Sugerido por Defecto (industryStandard / recommendedTarget)
+   *
+   * Este campo NO es obligatorio para la auditoría.
+   * Es un valor de UX para pre-llenar la configuración cuando el usuario
+   * inicia una nueva auditoría con este framework.
+   *
+   * Ejemplo: "Lo ideal para este framework es llegar a nivel 4"
+   *
+   * La empresa puede cambiarlo según su madurez objetivo real
    */
   @Column({ type: 'boolean', default: false })
   isTarget: boolean

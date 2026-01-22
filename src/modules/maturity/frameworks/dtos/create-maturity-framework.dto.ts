@@ -3,13 +3,18 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsArray,
   MinLength,
   MaxLength,
   Min,
   Max,
   Matches,
+  ValidateNested,
+  ArrayMinSize,
 } from 'class-validator'
-import { ApiProperty } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
+import { CreateNestedMaturityLevelDto } from '../../levels/dtos'
 
 /**
  * DTO para crear un framework de madurez
@@ -90,4 +95,41 @@ export class CreateMaturityFrameworkDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean
+
+  @ApiPropertyOptional({
+    description:
+      'Niveles de madurez del framework (creación atómica). ' +
+      'Si no se especifica, se deben crear los niveles por separado después. ' +
+      'IMPORTANTE: La cantidad de niveles debe coincidir con (maxLevel - minLevel + 1)',
+    type: [CreateNestedMaturityLevelDto],
+    example: [
+      {
+        level: 0,
+        name: 'Inexistente',
+        shortName: 'N/A',
+        description: 'No existe proceso documentado',
+        color: '#EF4444',
+        icon: '🔴',
+        order: 0,
+      },
+      {
+        level: 1,
+        name: 'Inicial',
+        shortName: 'Init',
+        description: 'Procesos ad-hoc y desorganizados',
+        color: '#F59E0B',
+        icon: '🟠',
+        order: 1,
+        isMinimumAcceptable: true,
+      },
+    ],
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1, {
+    message: 'Debe proporcionar al menos un nivel de madurez',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => CreateNestedMaturityLevelDto)
+  levels?: CreateNestedMaturityLevelDto[]
 }

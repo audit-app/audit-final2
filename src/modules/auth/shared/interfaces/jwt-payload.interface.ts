@@ -16,8 +16,11 @@ export interface JwtPayload {
   /** Username del usuario */
   username: string
 
-  /** Roles del usuario */
+  /** Roles del usuario (todos los roles asignados) */
   roles: Role[]
+
+  /** Rol activo actual (el rol que está usando en esta sesión) */
+  currentRole: Role
 
   /** ID de la organización a la que pertenece */
   organizationId: string

@@ -27,8 +27,7 @@ export class GetMenuUseCase {
     const staticNavigation = this.getStaticNavigationUseCase.execute(roles)
 
     // Obtener plantillas dinámicas
-    const dynamicTemplates =
-      await this.getDynamicTemplatesUseCase.execute()
+    const dynamicTemplates = await this.getDynamicTemplatesUseCase.execute()
 
     return {
       static: staticNavigation,

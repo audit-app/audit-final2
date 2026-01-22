@@ -3,6 +3,7 @@ import { FRAMEWORKS_REPOSITORY } from './tokens'
 import { MaturityFrameworksRepository } from './repositories'
 import { MaturityFrameworksController } from './controllers/maturity-frameworks.controller'
 import { MaturityFrameworkFactory } from './factories'
+import { MaturityLevelsIntegrityValidator } from './validators'
 
 // Use Cases
 import {
@@ -36,6 +37,7 @@ import {
     },
 
     MaturityFrameworkFactory,
+    MaturityLevelsIntegrityValidator,
 
     // Use Cases
     CreateFrameworkUseCase,

@@ -207,9 +207,7 @@ export const NAVIGATION_BY_ROLE: Record<Role, NavigationItemDto[]> = {
  * @param role - Rol del usuario
  * @returns Array de items de navegación ordenados
  */
-export function getStaticNavigationForRole(
-  role: Role,
-): NavigationItemDto[] {
+export function getStaticNavigationForRole(role: Role): NavigationItemDto[] {
   const routes = NAVIGATION_BY_ROLE[role] || COMMON_ROUTES
 
   // Ordenar rutas por el campo order

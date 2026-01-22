@@ -16,6 +16,7 @@ import {
   LogoutUseCase,
   LoginRateLimitPolicy,
   GoogleLoginUseCase,
+  SwitchRoleUseCase,
 } from './login'
 
 // ========================================
@@ -81,7 +82,6 @@ import { GoogleStrategy } from './strategies/google.strategy'
 // SHARED INFRASTRUCTURE
 // ========================================
 import { JwtStrategy, JwtAuthGuard } from './shared'
-import { NavigationService } from '@shared'
 import { RequestResetPasswordRateLimitPolicy } from './password-reset/policies'
 import { TokenStorageRepository } from './login/services/token-storage.repository'
 
@@ -140,7 +140,6 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TwoFactorTokenService,
     EmailVerificationTokenService,
     DeviceFingerprintService,
-    NavigationService,
 
     // ========================================
     // Policies
@@ -157,6 +156,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     RefreshTokenUseCase,
     LogoutUseCase,
     GoogleLoginUseCase,
+    SwitchRoleUseCase,
 
     // Password Reset
     RequestResetPasswordUseCase,
@@ -205,8 +205,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     TwoFactorTokenService,
     EmailVerificationTokenService,
     DeviceFingerprintService,
-    NavigationService,
-    // Exportar guards para uso manual si es necesario
+
     JwtAuthGuard,
   ],
 })

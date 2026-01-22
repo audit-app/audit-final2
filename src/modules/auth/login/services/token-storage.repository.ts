@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common'
 import { AbstractUserSetRepository, CacheService } from '@core/cache'
 import { v4 as uuidv4 } from 'uuid'
+import { Role } from '../../../users/entities/user.entity'
 
 // Definimos la interfaz aquí o la importas de donde la tengas
 export interface StoredSession {
   tokenId: string
   userId: string
+  currentRole: Role // Rol activo de esta sesión (persistente durante 7 días)
   ip: string
   userAgent: string
   browser?: string

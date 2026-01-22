@@ -1,11 +1,17 @@
 {{#> base}}
-  <!-- Greeting -->
+  <!-- Greeting with icon -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
-      <td style="padding-bottom: 20px;">
-        <h2 style="margin: 0; color: #111827; font-size: 24px; font-weight: 600; line-height: 1.3;">
-          ¡Bienvenido a {{appName}}, {{userName}}! 🎉
+      <td align="center" style="padding-bottom: 30px;">
+        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+          <span style="font-size: 40px; line-height: 1;">👋</span>
+        </div>
+        <h2 style="margin: 0; color: #1e293b; font-size: 28px; font-weight: 700; line-height: 1.3;" class="mobile-heading">
+          ¡Bienvenido, {{userName}}!
         </h2>
+        <p style="margin: 12px 0 0 0; color: #64748b; font-size: 16px; line-height: 1.6; font-weight: 500;">
+          Estamos emocionados de tenerte en {{appName}}
+        </p>
       </td>
     </tr>
   </table>
@@ -14,56 +20,58 @@
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
       <td style="padding-bottom: 30px;">
-        <p style="margin: 0; color: #4b5563; font-size: 16px; line-height: 1.6;">
-          Estamos emocionados de tenerte con nosotros. Tu cuenta ha sido creada exitosamente y ya puedes comenzar a utilizar todas las funcionalidades de nuestra plataforma.
+        <p style="margin: 0; color: #475569; font-size: 16px; line-height: 1.7;" class="mobile-text">
+          Tu cuenta ha sido creada exitosamente. Ahora puedes acceder a todas las funcionalidades de nuestra plataforma de gestión de auditorías y comenzar a trabajar de inmediato.
         </p>
       </td>
     </tr>
   </table>
 
-  <!-- Button -->
+  <!-- CTA Button -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
-      <td align="center" style="padding: 20px 0 30px 0;">
-        <a href="{{loginLink}}" style="display: inline-block; padding: 14px 40px; background-color: #4F46E5; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px; line-height: 1;">Iniciar Sesión</a>
+      <td align="center" style="padding: 10px 0 40px 0;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0">
+          <tr>
+            <td style="border-radius: 50px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);">
+              <a href="{{loginLink}}" style="display: inline-block; padding: 16px 48px; color: #ffffff; text-decoration: none; font-weight: 600; font-size: 16px; line-height: 1; letter-spacing: 0.3px;">
+                Acceder a mi cuenta
+              </a>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
 
-  <!-- Divider -->
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
-    <tr>
-      <td style="padding: 20px 0;">
-        <div style="height: 1px; background-color: #e5e7eb;"></div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- First Steps -->
+  <!-- Feature Cards -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
       <td style="padding-bottom: 15px;">
-        <p style="margin: 0; color: #111827; font-size: 16px; font-weight: 600; line-height: 1.5;">
-          🚀 Primeros pasos:
-        </p>
+        <h3 style="margin: 0; color: #1e293b; font-size: 18px; font-weight: 700; line-height: 1.4;">
+          Primeros pasos recomendados
+        </h3>
       </td>
     </tr>
+  </table>
+
+  <!-- Step 1 -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
     <tr>
-      <td>
+      <td style="background-color: #f8fafc; border-left: 4px solid #667eea; padding: 18px 20px; border-radius: 8px;">
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
           <tr>
-            <td style="padding-left: 20px;">
-              <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                1. Completa tu perfil con tu información personal
+            <td style="width: 36px; vertical-align: top;">
+              <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #ffffff; font-size: 14px; font-weight: 700;">
+                1
+              </div>
+            </td>
+            <td style="vertical-align: top;">
+              <p style="margin: 0 0 4px 0; color: #1e293b; font-size: 15px; font-weight: 600; line-height: 1.4;">
+                Completa tu perfil
               </p>
-              <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                2. Explora las funcionalidades disponibles
-              </p>
-              <p style="margin: 0 0 10px 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                3. Configura tus preferencias de seguridad
-              </p>
-              <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.6;">
-                4. Habilita la autenticación de dos factores (recomendado)
+              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                Agrega tu información personal y foto de perfil
               </p>
             </td>
           </tr>
@@ -72,16 +80,75 @@
     </tr>
   </table>
 
-  <!-- Info Box -->
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-top: 25px;">
+  <!-- Step 2 -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 12px;">
     <tr>
-      <td style="background-color: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 4px;">
-        <p style="margin: 0 0 8px 0; color: #1e40af; font-size: 15px; font-weight: 600; line-height: 1.5;">
-          💡 ¿Necesitas ayuda?
-        </p>
-        <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.5;">
-          Si tienes alguna pregunta o necesitas asistencia, no dudes en contactar con nuestro equipo de soporte.
-        </p>
+      <td style="background-color: #f8fafc; border-left: 4px solid #667eea; padding: 18px 20px; border-radius: 8px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="width: 36px; vertical-align: top;">
+              <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #ffffff; font-size: 14px; font-weight: 700;">
+                2
+              </div>
+            </td>
+            <td style="vertical-align: top;">
+              <p style="margin: 0 0 4px 0; color: #1e293b; font-size: 15px; font-weight: 600; line-height: 1.4;">
+                Explora el dashboard
+              </p>
+              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                Familiarízate con las plantillas y herramientas disponibles
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Step 3 -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 30px;">
+    <tr>
+      <td style="background-color: #f8fafc; border-left: 4px solid #667eea; padding: 18px 20px; border-radius: 8px;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="width: 36px; vertical-align: top;">
+              <div style="width: 28px; height: 28px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: #ffffff; font-size: 14px; font-weight: 700;">
+                3
+              </div>
+            </td>
+            <td style="vertical-align: top;">
+              <p style="margin: 0 0 4px 0; color: #1e293b; font-size: 15px; font-weight: 600; line-height: 1.4;">
+                Activa la autenticación 2FA
+              </p>
+              <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                Protege tu cuenta con verificación en dos pasos
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Help Box -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+    <tr>
+      <td style="background: linear-gradient(135deg, #ecfccb 0%, #d9f99d 100%); border-radius: 12px; padding: 24px; border: 1px solid #bef264;">
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+          <tr>
+            <td style="width: 40px; vertical-align: top;">
+              <span style="font-size: 28px; line-height: 1;">💡</span>
+            </td>
+            <td style="vertical-align: top;">
+              <p style="margin: 0 0 6px 0; color: #365314; font-size: 16px; font-weight: 700; line-height: 1.4;">
+                ¿Necesitas ayuda?
+              </p>
+              <p style="margin: 0; color: #4d7c0f; font-size: 14px; line-height: 1.6;">
+                Nuestro equipo de soporte está disponible para ayudarte con cualquier pregunta o duda que tengas.
+              </p>
+            </td>
+          </tr>
+        </table>
       </td>
     </tr>
   </table>
@@ -89,8 +156,8 @@
   <!-- Divider -->
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
-      <td style="padding: 25px 0 20px 0;">
-        <div style="height: 1px; background-color: #e5e7eb;"></div>
+      <td style="padding: 35px 0 25px 0;">
+        <div style="height: 2px; background: linear-gradient(to right, transparent, #e2e8f0, transparent);"></div>
       </td>
     </tr>
   </table>
@@ -99,8 +166,8 @@
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
     <tr>
       <td align="center">
-        <p style="margin: 0; color: #6b7280; font-size: 14px; line-height: 1.5;">
-          Gracias por confiar en {{appName}}
+        <p style="margin: 0; color: #64748b; font-size: 15px; line-height: 1.6; font-style: italic;">
+          Gracias por unirte a {{appName}}
         </p>
       </td>
     </tr>

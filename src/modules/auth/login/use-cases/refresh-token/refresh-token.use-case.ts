@@ -67,9 +67,15 @@ export class RefreshTokenUseCase {
     // 4. ROTATION: Revocar el refresh token viejo
     await this.tokensService.revokeRefreshToken(payload.sub, payload.tokenId)
     const rememberMe = storedSession.rememberMe ?? false
-    // 5. Generar nuevo par de tokens
+
+    // 5. Generar nuevo par de tokens preservando el rol activo de la sesión
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(user, connection, rememberMe)
+      await this.tokensService.generateTokenPair(
+        user,
+        connection,
+        rememberMe,
+        storedSession.currentRole, // ← Preservar el rol activo
+      )
 
     return { accessToken, refreshToken, rememberMe }
   }

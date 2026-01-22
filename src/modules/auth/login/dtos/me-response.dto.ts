@@ -1,5 +1,4 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { NavigationItemDto } from '@shared'
 import { Role } from 'src/modules/users/entities'
 
 /**
@@ -56,6 +55,13 @@ export class UserResponseDto {
   roles: Role[]
 
   @ApiProperty({
+    enum: Role,
+    description: 'Rol activo actual del usuario en esta sesión',
+    example: Role.AUDITOR,
+  })
+  currentRole: Role
+
+  @ApiProperty({
     description: 'ID de la organización a la que pertenece',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
@@ -73,28 +79,4 @@ export class UserResponseDto {
     nullable: true,
   })
   organizationImage: string | null
-}
-
-export class MeResponseDto extends UserResponseDto {
-  @ApiProperty({
-    description: 'Rutas de navegación disponibles según el rol del usuario',
-    type: [NavigationItemDto],
-    example: [
-      {
-        title: 'Dashboard',
-        description: 'Panel de control',
-        url: '/dashboard',
-        icon: 'home',
-        order: 1,
-      },
-      {
-        title: 'Usuarios',
-        description: 'Gestión de usuarios',
-        url: '/admin/users',
-        icon: 'users',
-        order: 2,
-      },
-    ],
-  })
-  navigation: NavigationItemDto[]
 }
