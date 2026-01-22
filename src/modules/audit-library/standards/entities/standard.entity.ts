@@ -9,6 +9,7 @@ import {
 import { BaseEntity } from '@core/entities/base.entity'
 import { TemplateEntity } from '../../templates/entities/template.entity'
 import { STANDARDS_CONSTRAINTS } from '../constants'
+import { BadRequestException } from '@nestjs/common'
 
 /**
  * Standard Entity
@@ -121,4 +122,13 @@ export class StandardEntity extends BaseEntity {
    */
   @Column({ type: 'boolean', default: true })
   isAuditable: boolean
+
+  changeOrder(newOrder: number) {
+    if (newOrder < 0) throw new BadRequestException('Orden inválido')
+    this.order = newOrder
+  }
+
+  toggleAuditable(isAuditable: boolean) {
+    this.isAuditable = isAuditable
+  }
 }

@@ -25,9 +25,9 @@ export class StandardFactory {
     standard.code = dto.code.trim()
     standard.title = dto.title.trim()
     standard.description = dto.description?.trim() || null
-    standard.order = order // Calculado automáticamente
-    standard.level = level // Calculado automáticamente
-    standard.isAuditable = false // Por defecto false (agrupador)
+    standard.order = order
+    standard.level = level
+    standard.isAuditable = false
     return standard
   }
 

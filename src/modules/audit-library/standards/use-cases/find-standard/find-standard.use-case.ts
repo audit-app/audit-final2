@@ -13,7 +13,7 @@ export class FindStandardUseCase {
   constructor(private readonly standardsRepository: StandardsRepository) {}
 
   async execute(id: string): Promise<StandardEntity> {
-    const standard = await this.standardsRepository.findOneWithRelations(id)
+    const standard = await this.standardsRepository.findById(id)
 
     if (!standard) {
       throw new StandardNotFoundException(id)

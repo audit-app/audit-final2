@@ -1,4 +1,4 @@
-import { Inject, Injectable, BadRequestException } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import type { UpdateStandardDto } from '../../dtos/update-standard.dto'
 import type { StandardEntity } from '../../entities/standard.entity'
@@ -34,25 +34,22 @@ export class UpdateStandardUseCase {
    * @param dto - Datos a actualizar (sin parentId, no se puede cambiar jerarquía)
    * @returns Standard actualizado
    * @throws {StandardNotFoundException} Si el standard no existe
-   * @throws {TemplateNotEditableException} Si el template no es editable
+   * @throws {StandardCannotModifyContentException} Si no se puede modificar el contenido
    */
   @Transactional()
   async execute(id: string, dto: UpdateStandardDto): Promise<StandardEntity> {
     // 1. Validar y obtener standard
-    const standard =
-      await this.standardValidator.validateAndGetStandard(id)
+    const standard = await this.standardValidator.validateAndGetStandard(id)
 
-    // 2. Verificar que el template es editable
-    await this.standardValidator.validateAndGetEditableTemplate(
-      standard.templateId,
-    )
+    // 2. Verificar que se puede modificar el contenido (editar textos)
+    await this.standardValidator.validateCanModifyContent(standard.templateId)
 
     // 3. Validar código único si se está cambiando
     if (dto.code !== undefined && dto.code !== standard.code) {
       await this.standardValidator.validateUniqueCode(
         standard.templateId,
         dto.code,
-        id, // Excluir el propio standard
+        id,
       )
     }
 

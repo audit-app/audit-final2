@@ -32,7 +32,7 @@ export class DeleteStandardUseCase {
    *
    * @param id - ID del standard
    * @throws {StandardNotFoundException} Si el standard no existe
-   * @throws {TemplateNotEditableException} Si el template no es editable
+   * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
    * @throws {StandardHasChildrenException} Si el standard tiene hijos
    */
   @Transactional()
@@ -40,10 +40,8 @@ export class DeleteStandardUseCase {
     // 1. Validar y obtener standard
     const standard = await this.standardValidator.validateAndGetStandard(id)
 
-    // 2. Verificar que el template es editable
-    await this.standardValidator.validateAndGetEditableTemplate(
-      standard.templateId,
-    )
+    // 2. Verificar que se puede modificar la estructura (eliminar standards)
+    await this.standardValidator.validateCanModifyStructure(standard.templateId)
 
     // 3. Verificar que no tenga hijos
     await this.standardValidator.validateHasNoChildren(id)

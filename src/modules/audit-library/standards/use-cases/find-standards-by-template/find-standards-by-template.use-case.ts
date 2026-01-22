@@ -1,34 +1,35 @@
 import { Injectable } from '@nestjs/common'
 import { StandardsRepository } from '../../repositories/standards.repository'
-import { TemplatesRepository } from '../../../templates/repositories/templates.repository'
-import { TemplateNotFoundException } from '../../../templates/exceptions'
 import type { StandardEntity } from '../../entities/standard.entity'
+import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
+import { StandardValidator } from '../../validators'
 
 /**
- * Find Standards By Template Use Case
+ * Get Template Standards Tree Use Case
  *
- * Obtiene todos los standards de un template (lista plana)
+ * Obtiene los standards en estructura jerárquica (Árbol).
+ * Soporta filtrado por texto manteniendo la jerarquía de padres.
  */
 @Injectable()
-export class FindStandardsByTemplateUseCase {
+export class GetTemplateStandardsTreeUseCase {
   constructor(
     private readonly standardsRepository: StandardsRepository,
-    private readonly templatesRepository: TemplatesRepository,
+    private readonly standardsValidator: StandardValidator,
   ) {}
 
   /**
-   * Ejecuta la búsqueda de standards
+   * Ejecuta la obtención del árbol
    *
    * @param templateId - ID del template
-   * @returns Lista de standards ordenados por order
-   * @throws {TemplateNotFoundException} Si el template no existe
+   * @param search - (Opcional) Texto a buscar en código, título o descripción
+   * @returns Lista de standards raíz (con hijos anidados)
    */
-  async execute(templateId: string): Promise<StandardEntity[]> {
-    const template = await this.templatesRepository.findById(templateId)
-    if (!template) {
-      throw new TemplateNotFoundException(templateId)
-    }
-
-    return await this.standardsRepository.findByTemplate(templateId)
+  async execute(
+    templateId: string,
+    search?: string,
+  ): Promise<PaginatedResponse<StandardEntity>> {
+    //TODO: Aumentar logica de vlacion de template
+    const data = await this.standardsRepository.getTree(templateId, search)
+    return PaginatedResponseBuilder.createAll(data)
   }
 }

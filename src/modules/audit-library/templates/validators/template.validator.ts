@@ -31,11 +31,9 @@ export class TemplateValidator {
 
   async validateAndGetTemplate(templateId: string): Promise<TemplateEntity> {
     const template = await this.templateRepository.findById(templateId)
-
     if (!template) {
       throw new TemplateNotFoundException(templateId)
     }
-
     return template
   }
 }

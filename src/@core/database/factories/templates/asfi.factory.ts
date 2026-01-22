@@ -11,6 +11,7 @@ import type { TemplateDefinition } from './iso27001.factory'
  */
 export const ASFITemplate: TemplateDefinition = {
   name: 'ASFI',
+  code: 'ASFI',
   description:
     'Recopilación de Normas para Servicios Financieros - Autoridad de Supervisión del Sistema Financiero (Bolivia)',
   version: 'v2024',

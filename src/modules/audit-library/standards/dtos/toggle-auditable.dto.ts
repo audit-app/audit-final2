@@ -10,7 +10,8 @@ import { ApiProperty } from '@nestjs/swagger'
  */
 export class ToggleAuditableDto {
   @ApiProperty({
-    description: 'Indica si el standard es auditable (true) o solo organizacional (false)',
+    description:
+      'Indica si el standard es auditable (true) o solo organizacional (false)',
     example: true,
   })
   @IsBoolean()

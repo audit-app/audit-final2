@@ -6,12 +6,6 @@ import { TransactionService, AuditService } from '@core/database'
 import { StandardEntity } from '../entities/standard.entity'
 import type { IStandardsRepository } from './interfaces/standards-repository.interface'
 
-/**
- * Standards Repository
- *
- * Repositorio para gestionar standards/controles de templates
- * Usa BaseRepository para integración con CLS y transacciones
- */
 @Injectable()
 export class StandardsRepository
   extends BaseRepository<StandardEntity>
@@ -26,70 +20,88 @@ export class StandardsRepository
     super(repository, transactionService, auditService)
   }
 
+  // ===========================================================================
+  //  ÁRBOLES Y ESTRUCTURA
+  // ===========================================================================
+
+  async getTree(
+    templateId: string,
+    search?: string,
+  ): Promise<StandardEntity[]> {
+    // 1. Traer todo plano, ordenado jerárquicamente
+    const items = await this.getRepo().find({
+      where: { templateId },
+      order: { level: 'ASC', order: 'ASC' },
+    })
+
+    const roots: StandardEntity[] = []
+    const map = new Map<string, StandardEntity>()
+
+    // Inicializar mapa y limpiar hijos residuales
+    items.forEach((item) => {
+      item.children = []
+      map.set(item.id, item)
+    })
+
+    // Conectar cables (Referencias)
+    items.forEach((item) => {
+      if (item.parentId && map.has(item.parentId)) {
+        map.get(item.parentId)!.children.push(item)
+      } else {
+        roots.push(item) // Es raíz (o huérfano seguro)
+      }
+    })
+    // 3. Aplicar Filtro si existe
+    if (search && search.trim().length > 0) {
+      return filterTreeNodes(roots, search.trim())
+    }
+    return roots
+  }
+
   /**
-   * Obtiene todos los standards de un template
-   *
-   * @param templateId - ID del template
-   * @returns Lista de standards ordenados por order
+   * Obtiene todos los standards de forma plana.
+   * Útil para exportaciones, búsquedas internas o validaciones masivas.
    */
   async findByTemplate(templateId: string): Promise<StandardEntity[]> {
     return await this.getRepo().find({
       where: { templateId },
-      relations: ['parent', 'children'],
-      order: { order: 'ASC' },
+      order: { order: 'ASC' }, // Orden visual por defecto
     })
   }
 
   /**
-   * Obtiene los standards raíz (sin padre) de un template
-   *
-   * @param templateId - ID del template
-   * @returns Lista de standards raíz ordenados por order
+   * Busca hijos directos de un padre específico (o raíces si parentId es null).
    */
-  async findRootByTemplate(templateId: string): Promise<StandardEntity[]> {
-    return await this.getRepo().find({
-      where: { templateId, parentId: IsNull() },
-      relations: ['children'],
-      order: { order: 'ASC' },
-    })
-  }
-
-  /**
-   * Obtiene los hijos directos de un standard
-   *
-   * @param parentId - ID del standard padre
-   * @returns Lista de standards hijos ordenados por order
-   */
-  async findChildren(parentId: string): Promise<StandardEntity[]> {
-    return await this.getRepo().find({
-      where: { parentId },
-      relations: ['children'],
-      order: { order: 'ASC' },
-    })
-  }
-
-  /**
-   * Obtiene solo los standards auditables de un template
-   *
-   * @param templateId - ID del template
-   * @returns Lista de standards auditables
-   */
-  async findAuditableByTemplate(templateId: string): Promise<StandardEntity[]> {
+  async findByParent(
+    templateId: string,
+    parentId: string | null,
+  ): Promise<StandardEntity[]> {
     return await this.getRepo().find({
       where: {
         templateId,
-        isAuditable: true,
+        parentId: parentId || IsNull(),
       },
       order: { order: 'ASC' },
     })
   }
 
+  // ===========================================================================
+  //  BÚSQUEDAS ESPECÍFICAS Y VALIDACIONES
+  // ===========================================================================
+
   /**
-   * Busca un standard por código dentro de un template
-   *
-   * @param templateId - ID del template
-   * @param code - Código del standard
-   * @returns Standard encontrado o null
+   * Obtiene solo los checklist items (auditables).
+   * CRÍTICO: Se usa para instanciar una Auditoría real.
+   */
+  async findAuditableByTemplate(templateId: string): Promise<StandardEntity[]> {
+    return await this.getRepo().find({
+      where: { templateId, isAuditable: true },
+      order: { order: 'ASC' },
+    })
+  }
+
+  /**
+   * Busca por código (Validaciones de unicidad o búsqueda rápida).
    */
   async findByCode(
     templateId: string,
@@ -101,60 +113,8 @@ export class StandardsRepository
   }
 
   /**
-   * Obtiene un standard con sus relaciones completas
-   *
-   * @param id - ID del standard
-   * @returns Standard con relaciones o null
-   */
-  async findOneWithRelations(id: string): Promise<StandardEntity | null> {
-    return await this.getRepo().findOne({
-      where: { id },
-      relations: ['template', 'parent', 'children'],
-    })
-  }
-
-  /**
-   * Cuenta los hijos de un standard
-   *
-   * @param parentId - ID del standard padre
-   * @returns Número de hijos
-   */
-  async countChildren(parentId: string): Promise<number> {
-    return await this.getRepo().count({
-      where: { parentId },
-    })
-  }
-
-  /**
-   * Busca todos los standards con opciones de filtrado
-   *
-   * @param options - Opciones de búsqueda de TypeORM
-   * @returns Lista de standards
-   */
-  async findAllStandards(
-    options?: Parameters<typeof this.findAll>[0],
-  ): Promise<StandardEntity[]> {
-    return await this.findAll(options)
-  }
-
-  /**
-   * Verifica si un standard tiene hijos
-   *
-   * @param standardId - ID del standard
-   * @returns true si tiene hijos, false en caso contrario
-   */
-  async hasChildren(standardId: string): Promise<boolean> {
-    const count = await this.countChildren(standardId)
-    return count > 0
-  }
-
-  /**
-   * Verifica si existe un standard con el mismo código en el template
-   *
-   * @param templateId - ID del template
-   * @param code - Código del standard
-   * @param excludeId - ID del standard a excluir (para updates)
-   * @returns true si existe, false en caso contrario
+   * Validación compleja de unicidad (ideal para Updates).
+   * Permite excluir un ID para no chocar consigo mismo al editar.
    */
   async existsByCodeInTemplate(
     templateId: string,
@@ -170,32 +130,68 @@ export class StandardsRepository
       query.andWhere('standard.id != :excludeId', { excludeId })
     }
 
-    const count = await query.getCount()
-    return count > 0
+    return (await query.getCount()) > 0
+  }
+
+  // ===========================================================================
+  // CÁLCULOS Y UTILITARIOS
+  // ===========================================================================
+
+  /**
+   * Cuenta hijos.
+   * Se usa para validar "isAuditable".
+   */
+  async countChildren(parentId: string): Promise<number> {
+    return await this.getRepo().count({
+      where: { parentId },
+    })
   }
 
   /**
-   * Obtiene el orden máximo de los hermanos (mismo parentId)
-   * Útil para agregar un nuevo standard al final de la lista
-   *
-   * @param templateId - ID del template
-   * @param parentId - ID del padre (null para nivel raíz)
-   * @returns Orden máximo (0 si no hay hermanos)
+   * Obtiene el siguiente número de orden disponible.
    */
   async getMaxOrderByParent(
     templateId: string,
     parentId: string | null,
   ): Promise<number> {
-    const result = await this.getRepo()
-      .createQueryBuilder('standard')
-      .select('MAX(standard.order)', 'maxOrder')
-      .where('standard.templateId = :templateId', { templateId })
-      .andWhere(
-        parentId ? 'standard.parentId = :parentId' : 'standard.parentId IS NULL',
-        parentId ? { parentId } : {},
-      )
-      .getRawOne()
+    const lastStandard = await this.getRepo().findOne({
+      where: {
+        templateId,
+        parentId: parentId || IsNull(),
+      },
+      order: { order: 'DESC' }, // El más alto primero
+    })
 
-    return result?.maxOrder ?? 0
+    return lastStandard ? lastStandard.order : 0
   }
+}
+
+function filterTreeNodes(
+  nodes: StandardEntity[],
+  search: string,
+): StandardEntity[] {
+  const lowerSearch = search.toLowerCase()
+
+  return nodes.reduce((acc: StandardEntity[], node) => {
+    // 1. Filtrar hijos primero (Bottom-Up)
+    const filteredChildren = filterTreeNodes(node.children, lowerSearch)
+
+    // 2. Comprobar coincidencia en el nodo actual
+    // Agregamos comprobación segura de description por si es null
+    const matchesSelf =
+      node.code.toLowerCase().includes(lowerSearch) ||
+      node.title.toLowerCase().includes(lowerSearch) ||
+      (node.description && node.description.toLowerCase().includes(lowerSearch))
+
+    // 3. Regla de Oro: Me quedo si yo coincido O si tengo hijos que coinciden
+    if (matchesSelf || filteredChildren.length > 0) {
+      // Importante: Clonar para no mutar referencias si usas caché
+      acc.push({
+        ...node,
+        children: filteredChildren,
+      } as StandardEntity)
+    }
+
+    return acc
+  }, [])
 }

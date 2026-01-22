@@ -20,6 +20,7 @@ export interface StandardDefinition {
 export interface TemplateDefinition {
   name: string
   description: string
+  code: string
   version: string
   status: TemplateStatus
   standards: StandardDefinition[]
@@ -32,6 +33,7 @@ export interface TemplateDefinition {
  */
 export const ISO27001Template: TemplateDefinition = {
   name: 'ISO 27001',
+  code: 'ISO 27001',
   description:
     'Sistema de Gestión de Seguridad de la Información - Anexo A: Controles de Seguridad',
   version: 'v2013',

@@ -2,17 +2,15 @@ import { Injectable, Inject } from '@nestjs/common'
 import type { StandardsRepository } from '../repositories/standards.repository'
 import type { TemplatesRepository } from '../../templates/repositories/templates.repository'
 import { StandardEntity } from '../entities'
-import { TemplateEntity } from '../../templates/entities'
 import { STANDARDS_REPOSITORY, TEMPLATES_REPOSITORY } from '@core'
 import {
   StandardNotFoundException,
   StandardHasChildrenException,
   StandardRepeatCodeException,
+  StandardCannotModifyStructureException,
+  StandardCannotModifyContentException,
 } from '../exceptions'
-import {
-  TemplateNotFoundException,
-  TemplateNotEditableException,
-} from '../../templates/exceptions'
+import { TemplateNotFoundException } from '../../templates/exceptions'
 
 @Injectable()
 export class StandardValidator {
@@ -38,30 +36,6 @@ export class StandardValidator {
     }
 
     return standard
-  }
-
-  /**
-   * Valida que un template existe, es editable y lo retorna
-   *
-   * @param templateId - ID del template
-   * @returns Template encontrado
-   * @throws {TemplateNotFoundException} Si el template no existe
-   * @throws {TemplateNotEditableException} Si el template no es editable
-   */
-  async validateAndGetEditableTemplate(
-    templateId: string,
-  ): Promise<TemplateEntity> {
-    const template = await this.templatesRepository.findById(templateId)
-
-    if (!template) {
-      throw new TemplateNotFoundException(templateId)
-    }
-
-    if (!template.isEditable) {
-      throw new TemplateNotEditableException(template.name || templateId)
-    }
-
-    return template
   }
 
   /**
@@ -115,6 +89,57 @@ export class StandardValidator {
 
     if (exists) {
       throw new StandardRepeatCodeException(code)
+    }
+  }
+
+  /**
+   * Valida que se puede modificar la estructura del template
+   * (agregar, eliminar, reordenar standards)
+   *
+   * Solo permitido cuando el template está en estado DRAFT
+   *
+   * @param templateId - ID del template
+   * @throws {TemplateNotFoundException} Si el template no existe
+   * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
+   */
+  async validateCanModifyStructure(templateId: string): Promise<void> {
+    const template = await this.templatesRepository.findById(templateId)
+
+    if (!template) {
+      throw new TemplateNotFoundException(templateId)
+    }
+
+    if (!template.canModifyStructure) {
+      throw new StandardCannotModifyStructureException(
+        template.name,
+        template.status,
+      )
+    }
+  }
+
+  /**
+   * Valida que se puede modificar el contenido del template
+   * (editar textos: code, title, description)
+   *
+   * Permitido cuando el template está en DRAFT o PUBLISHED
+   * (para corregir typos en templates publicados)
+   *
+   * @param templateId - ID del template
+   * @throws {TemplateNotFoundException} Si el template no existe
+   * @throws {StandardCannotModifyContentException} Si no se puede modificar el contenido
+   */
+  async validateCanModifyContent(templateId: string): Promise<void> {
+    const template = await this.templatesRepository.findById(templateId)
+
+    if (!template) {
+      throw new TemplateNotFoundException(templateId)
+    }
+
+    if (!template.canModifyContent) {
+      throw new StandardCannotModifyContentException(
+        template.name,
+        template.status,
+      )
     }
   }
 }

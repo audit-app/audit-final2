@@ -1,10 +1,4 @@
-import {
-  IsString,
-  IsOptional,
-  IsUUID,
-  MinLength,
-  MaxLength,
-} from '@core/i18n'
+import { IsString, IsOptional, IsUUID, MinLength, MaxLength } from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { STANDARDS_CONSTRAINTS } from '../constants'
 

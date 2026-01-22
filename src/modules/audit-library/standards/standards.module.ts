@@ -16,12 +16,8 @@ import {
   UpdateStandardUseCase,
   DeleteStandardUseCase,
   FindStandardUseCase,
-  FindAllStandardsUseCase,
-  FindStandardsByTemplateUseCase,
-  FindStandardsTreeUseCase,
-  FindStandardChildrenUseCase,
-  FindAuditableStandardsUseCase,
   ReorderStandardUseCase,
+  GetTemplateStandardsTreeUseCase,
   ToggleAuditableUseCase,
 } from './use-cases'
 
@@ -46,19 +42,11 @@ import {
     CreateStandardUseCase,
     UpdateStandardUseCase,
     DeleteStandardUseCase,
+    GetTemplateStandardsTreeUseCase,
     FindStandardUseCase,
-    FindAllStandardsUseCase,
-    FindStandardsByTemplateUseCase,
-    FindStandardsTreeUseCase,
-    FindStandardChildrenUseCase,
-    FindAuditableStandardsUseCase,
     ReorderStandardUseCase,
     ToggleAuditableUseCase,
   ],
-  exports: [
-    // Export use cases for other modules
-    FindStandardsByTemplateUseCase,
-    FindStandardsTreeUseCase,
-  ],
+  exports: [],
 })
 export class StandardsModule {}

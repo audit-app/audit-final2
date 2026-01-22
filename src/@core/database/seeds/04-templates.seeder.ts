@@ -55,6 +55,7 @@ export default class TemplatesSeeder implements Seeder {
     // 1. Crear el template
     const template = templateRepo.create({
       name: templateDef.name,
+      code: templateDef.code,
       description: templateDef.description,
       version: templateDef.version,
       status: templateDef.status,

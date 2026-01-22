@@ -34,14 +34,10 @@ import {
   UpdateStandardUseCase,
   DeleteStandardUseCase,
   FindStandardUseCase,
-  FindAllStandardsUseCase,
-  FindStandardsByTemplateUseCase,
-  FindStandardsTreeUseCase,
-  FindStandardChildrenUseCase,
-  FindAuditableStandardsUseCase,
   ReorderStandardUseCase,
   ToggleAuditableUseCase,
-} from '../use-cases/standards'
+  GetTemplateStandardsTreeUseCase,
+} from '../use-cases'
 
 @ApiTags('standards')
 @Controller('standards')
@@ -51,11 +47,7 @@ export class StandardsController {
     private readonly updateStandard: UpdateStandardUseCase,
     private readonly deleteStandard: DeleteStandardUseCase,
     private readonly findStandard: FindStandardUseCase,
-    private readonly findAllStandards: FindAllStandardsUseCase,
-    private readonly findStandardsByTemplate: FindStandardsByTemplateUseCase,
-    private readonly findStandardsTree: FindStandardsTreeUseCase,
-    private readonly findStandardChildren: FindStandardChildrenUseCase,
-    private readonly findAuditableStandards: FindAuditableStandardsUseCase,
+    private readonly getTemplatesTreeUseCase: GetTemplateStandardsTreeUseCase,
     private readonly reorderStandard: ReorderStandardUseCase,
     private readonly toggleAuditableUseCase: ToggleAuditableUseCase,
   ) {}
@@ -71,87 +63,20 @@ export class StandardsController {
     return await this.createStandard.execute(createStandardDto)
   }
 
-  @Get()
-  @ApiOperation({
-    summary: 'Listar todos los estándares',
-    description:
-      'Obtiene una lista de estándares con filtrado opcional por plantilla, estructura jerárquica y auditabilidad.',
-  })
-  @ApiOkResponse(StandardResponseDto, 'Lista de estándares', true)
-  @ApiQuery({
-    name: 'templateId',
-    required: false,
-    type: String,
-    description: 'Filtrar por ID de plantilla',
-  })
-  @ApiQuery({
-    name: 'tree',
-    required: false,
-    type: Boolean,
-    description: 'Retornar estructura jerárquica (árbol)',
-  })
-  @ApiQuery({
-    name: 'auditableOnly',
-    required: false,
-    type: Boolean,
-    description: 'Filtrar solo estándares auditables',
-  })
-  @ApiStandardResponses({ exclude: [400] })
-  async findAll(
-    @Query('templateId') templateId?: string,
-    @Query('tree') tree?: string,
-    @Query('auditableOnly') auditableOnly?: string,
-  ) {
-    if (templateId && tree === 'true') {
-      return await this.findStandardsTree.execute(templateId)
-    }
-
-    if (templateId && auditableOnly === 'true') {
-      return await this.findAuditableStandards.execute(templateId)
-    }
-
-    if (templateId) {
-      return await this.findStandardsByTemplate.execute(templateId)
-    }
-
-    return await this.findAllStandards.execute()
-  }
-
   @Get(':id')
   @ApiFindOne(StandardResponseDto)
   async findOne(@Param() { id }: UuidParamDto) {
     return await this.findStandard.execute(id)
   }
 
-  @Get(':id/children')
-  @ApiOperation({
-    summary: 'Obtener estándares hijos de un estándar',
-    description:
-      'Retorna todos los estándares que son hijos directos de un estándar específico.',
-  })
-  @ApiOkResponse(StandardResponseDto, 'Lista de estándares hijos', true)
-  @ApiNotFoundResponse('Estándar no encontrado')
-  @ApiStandardResponses({ exclude: [400] })
-  async findChildren(@Param() { id }: UuidParamDto) {
-    return await this.findStandardChildren.execute(id)
+  @Get(':id/template/tree')
+  async getTree(
+    @Param() { id }: UuidParamDto,
+    @Query('search') search?: string,
+  ) {
+    return await this.getTemplatesTreeUseCase.execute(id, search)
   }
 
-  // OPCIÓN 1: Devolver entidad actualizada (RECOMENDADO para frontends modernos)
-  // @Patch(':id')
-  // @ApiUpdate(StandardResponseDto, {
-  //   summary: 'Actualizar un estándar',
-  //   description:
-  //     'Actualiza los datos de un estándar y retorna el estándar actualizado.',
-  //   conflictMessage: 'Ya existe un estándar con ese código en la plantilla',
-  // })
-  // async update(
-  //   @Param() { id }: UuidParamDto,
-  //   @Body() updateStandardDto: UpdateStandardDto,
-  // ) {
-  //   return await this.standardsService.update(id, updateStandardDto)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (más ligero)
   @Patch(':id')
   @ResponseMessage('Estándar actualizado exitosamente')
   @ApiUpdateWithMessage({
@@ -167,26 +92,6 @@ export class StandardsController {
     await this.updateStandard.execute(id, updateStandardDto)
   }
 
-  // OPCIÓN 1: Devolver entidad eliminada
-  // @Delete(':id')
-  // @HttpCode(HttpStatus.OK)
-  // @ApiOperation({
-  //   summary: 'Eliminar un estándar',
-  //   description:
-  //     'Elimina permanentemente un estándar. No se puede eliminar si tiene estándares hijos. Retorna el estándar eliminado para confirmación.',
-  // })
-  // @ApiOkResponse(StandardResponseDto, 'Estándar eliminado exitosamente')
-  // @ApiNotFoundResponse('Estándar no encontrado')
-  // @ApiResponse({
-  //   status: 409,
-  //   description: 'No se puede eliminar un estándar con hijos',
-  // })
-  // @ApiStandardResponses({ exclude: [400] })
-  // async remove(@Param() { id }: UuidParamDto) {
-  //   return await this.standardsService.remove(id)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico
   @Delete(':id')
   @ResponseMessage('Estándar eliminado exitosamente')
   @ApiRemoveWithMessage({
@@ -205,11 +110,7 @@ export class StandardsController {
     description:
       'Cambia el orden de visualización de un estándar entre sus hermanos. Útil para drag & drop en la interfaz.',
   })
-  @ApiOkResponse(
-    StandardResponseDto,
-    'Estándar reordenado exitosamente',
-    false,
-  )
+  @ApiOkResponse(StandardResponseDto, 'Estándar reordenado exitosamente', false)
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [200, 404] })
   async reorder(
@@ -238,5 +139,4 @@ export class StandardsController {
   ) {
     return await this.toggleAuditableUseCase.execute(id, toggleDto)
   }
-
 }

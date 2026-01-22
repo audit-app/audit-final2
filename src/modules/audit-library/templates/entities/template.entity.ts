@@ -49,4 +49,27 @@ export class TemplateEntity extends BaseEntity {
   archive(): void {
     this.status = TemplateStatus.ARCHIVED
   }
+
+  get canModifyStructure(): boolean {
+    return this.status === TemplateStatus.DRAFT
+  }
+
+  /**
+   * ¿Puedo corregir textos? (Títulos, Descripciones)
+   * Permitido en Draft y Published (para typos).
+   * Prohibido en Archived.
+   */
+  get canModifyContent(): boolean {
+    return [TemplateStatus.DRAFT, TemplateStatus.PUBLISHED].includes(
+      this.status,
+    )
+  }
+
+  /**
+   * ¿Se puede usar para iniciar una nueva auditoría?
+   * Solo si está publicada.
+   */
+  get canStartAudit(): boolean {
+    return this.status === TemplateStatus.PUBLISHED
+  }
 }

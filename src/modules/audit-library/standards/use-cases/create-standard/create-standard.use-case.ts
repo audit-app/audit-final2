@@ -37,13 +37,13 @@ export class CreateStandardUseCase {
    * @param dto - Datos del standard
    * @returns Standard creado
    * @throws {TemplateNotFoundException} Si el template no existe
-   * @throws {TemplateNotEditableException} Si el template no es editable
+   * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
    * @throws {StandardNotFoundException} Si el padre no existe
    */
   @Transactional()
   async execute(dto: CreateStandardDto): Promise<StandardEntity> {
-    // 1. Verificar que el template existe y es editable
-    await this.standardValidator.validateAndGetEditableTemplate(dto.templateId)
+    // 1. Verificar que se puede modificar la estructura (crear standards)
+    await this.standardValidator.validateCanModifyStructure(dto.templateId)
 
     // 2. Validar código único dentro del template
     await this.standardValidator.validateUniqueCode(dto.templateId, dto.code)
