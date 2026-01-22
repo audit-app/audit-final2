@@ -38,40 +38,34 @@ import {
 @Controller('maturity')
 export class MaturityLevelsController {
   constructor(
-    private readonly createLevelUseCase: CreateLevelUseCase,
+    // private readonly createLevelUseCase: CreateLevelUseCase, // ❌ ELIMINADO - No se permite crear levels sueltos
     private readonly updateLevelUseCase: UpdateLevelUseCase,
-    private readonly deleteLevelUseCase: DeleteLevelUseCase,
+    // private readonly deleteLevelUseCase: DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
     private readonly findLevelsByFrameworkUseCase: FindLevelsByFrameworkUseCase,
-    private readonly bulkCreateLevelsUseCase: BulkCreateLevelsUseCase,
+    // private readonly bulkCreateLevelsUseCase: BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita bulk replace
   ) {}
 
-  @Post('levels')
-  @ApiCreate(MaturityLevelEntity, {
-    summary: 'Crear un nuevo nivel de madurez',
-    description:
-      'Crea un nuevo nivel de madurez dentro de un framework. El número de nivel debe ser único dentro del framework.',
-    conflictMessage: 'Nivel ya existe en el framework',
-  })
-  async create(@Body() dto: CreateMaturityLevelDto) {
-    return await this.createLevelUseCase.execute(dto)
-  }
+  // ❌ ENDPOINT ELIMINADO - Los levels se crean SOLO junto con el framework
+  // @Post('levels')
+  // async create(@Body() dto: CreateMaturityLevelDto) {
+  //   return await this.createLevelUseCase.execute(dto)
+  // }
+  //
+  // JUSTIFICACIÓN:
+  // - Los levels son parte integral del framework
+  // - No tiene sentido crear levels sueltos
+  // - Podría romper la integridad del rango (minLevel-maxLevel)
 
-  @Post('levels/bulk')
-  @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({
-    summary: 'Crear múltiples niveles de madurez (reemplaza existentes)',
-    description:
-      'Crea múltiples niveles de madurez para un framework. Los niveles existentes del framework serán reemplazados.',
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Niveles creados exitosamente',
-  })
-  @ApiNotFoundResponse('Framework no encontrado')
-  @ApiStandardResponses()
-  async bulkCreate(@Body() dto: BulkCreateMaturityLevelsDto) {
-    return await this.bulkCreateLevelsUseCase.execute(dto)
-  }
+  // ❌ ENDPOINT ELIMINADO - No se necesita reemplazar todos los levels
+  // @Post('levels/bulk')
+  // async bulkCreate(@Body() dto: BulkCreateMaturityLevelsDto) {
+  //   return await this.bulkCreateLevelsUseCase.execute(dto)
+  // }
+  //
+  // JUSTIFICACIÓN:
+  // - El usuario indicó que solo necesita crear + editar
+  // - Si quiere cambiar la estructura completa, puede eliminar el framework y crear uno nuevo
+  // - Esto simplifica la lógica y evita inconsistencias
 
   @Get('frameworks/:frameworkId/levels')
   @ApiOperation({
@@ -115,13 +109,15 @@ export class MaturityLevelsController {
     await this.updateLevelUseCase.execute(id, dto)
   }
 
-  @Delete('levels/:id')
-  @ApiRemoveNoContent({
-    summary: 'Eliminar un nivel de madurez',
-    description:
-      'Elimina permanentemente un nivel de madurez sin devolver contenido.',
-  })
-  async remove(@Param() { id }: UuidParamDto) {
-    await this.deleteLevelUseCase.execute(id)
-  }
+  // ❌ ENDPOINT ELIMINADO - No se permite eliminar levels individuales
+  // @Delete('levels/:id')
+  // async remove(@Param() { id }: UuidParamDto) {
+  //   await this.deleteLevelUseCase.execute(id)
+  // }
+  //
+  // JUSTIFICACIÓN:
+  // - Eliminar un level rompe la escala de madurez (ej: 0,1,2,[FALTA 3],4,5)
+  // - Las auditorías que usan ese framework quedan inconsistentes
+  // - Si quiere cambiar la estructura, debe eliminar el framework completo
+  //   y crear uno nuevo con la estructura correcta
 }

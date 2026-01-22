@@ -96,11 +96,13 @@ export class CreateMaturityFrameworkDto {
   @IsBoolean()
   isActive?: boolean
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description:
-      'Niveles de madurez del framework (creación atómica). ' +
-      'Si no se especifica, se deben crear los niveles por separado después. ' +
-      'IMPORTANTE: La cantidad de niveles debe coincidir con (maxLevel - minLevel + 1)',
+      'Niveles de madurez del framework (OBLIGATORIO - creación atómica). ' +
+      'Los niveles se crean junto con el framework y no se pueden crear por separado. ' +
+      'Solo se permite editar los niveles existentes después de crear el framework. ' +
+      'IMPORTANTE: La cantidad de niveles debe coincidir con (maxLevel - minLevel + 1) y ' +
+      'deben cubrir todos los valores desde minLevel hasta maxLevel sin saltos.',
     type: [CreateNestedMaturityLevelDto],
     example: [
       {
@@ -122,14 +124,50 @@ export class CreateMaturityFrameworkDto {
         order: 1,
         isMinimumAcceptable: true,
       },
+      {
+        level: 2,
+        name: 'Repetible',
+        shortName: 'Rep',
+        description: 'Procesos repetibles con resultados consistentes',
+        color: '#FBBF24',
+        icon: '🟡',
+        order: 2,
+      },
+      {
+        level: 3,
+        name: 'Definido',
+        shortName: 'Def',
+        description: 'Procesos documentados y estandarizados',
+        color: '#3B82F6',
+        icon: '🔵',
+        order: 3,
+      },
+      {
+        level: 4,
+        name: 'Administrado',
+        shortName: 'Adm',
+        description: 'Procesos medidos y controlados',
+        color: '#8B5CF6',
+        icon: '🟣',
+        order: 4,
+      },
+      {
+        level: 5,
+        name: 'Optimizado',
+        shortName: 'Opt',
+        description: 'Mejora continua basada en métricas',
+        color: '#10B981',
+        icon: '🟢',
+        order: 5,
+        isTarget: true,
+      },
     ],
   })
-  @IsOptional()
-  @IsArray()
+  @IsArray({ message: 'Los niveles de madurez son obligatorios' })
   @ArrayMinSize(1, {
     message: 'Debe proporcionar al menos un nivel de madurez',
   })
   @ValidateNested({ each: true })
   @Type(() => CreateNestedMaturityLevelDto)
-  levels?: CreateNestedMaturityLevelDto[]
+  levels: CreateNestedMaturityLevelDto[]
 }

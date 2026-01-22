@@ -20,9 +20,10 @@ import { MaturityLevelsRepository } from '../../modules/maturity/levels/reposito
 // ========== TOKENS ==========
 import { USERS_REPOSITORY } from '../../modules/users/tokens'
 import { ORGANIZATION_REPOSITORY } from '../../modules/organizations/tokens'
-import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from './tokens'
 import { FRAMEWORKS_REPOSITORY } from '../../modules/maturity/frameworks/tokens'
 import { LEVELS_REPOSITORY } from '../../modules/maturity/levels/tokens'
+import { TEMPLATES_REPOSITORY } from 'src/modules/audit-library/templates/tokens'
+import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens'
 
 /**
  * Módulo de Persistencia Centralizado

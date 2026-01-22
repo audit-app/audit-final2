@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import { StandardNotFoundException } from '../../exceptions'
 import type { StandardEntity } from '../../entities/standard.entity'
 import type { IStandardsRepository } from '../../repositories'
-import { STANDARDS_REPOSITORY } from '@core'
+import { STANDARDS_REPOSITORY } from '../../tokens'
 
 /**
  * Find Standard Use Case

@@ -1,9 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { ITemplatesRepository } from '../../audit-library/templates/repositories'
-import { TEMPLATES_REPOSITORY } from '@core'
 import { NavigationItemDto } from '../dtos'
 import { TemplateStatus } from '../../audit-library/templates/constants'
 import { SortOrder } from '@core/dtos'
+import { TEMPLATES_REPOSITORY } from 'src/modules/audit-library/templates/tokens'
 
 /**
  * Get Dynamic Templates Use Case

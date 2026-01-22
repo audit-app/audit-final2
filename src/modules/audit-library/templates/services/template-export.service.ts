@@ -2,10 +2,11 @@ import { Injectable, Inject, Logger } from '@nestjs/common'
 import * as ExcelJS from 'exceljs'
 import type { ITemplatesRepository } from '../repositories'
 import type { IStandardsRepository } from '../../standards/repositories'
-import { TEMPLATES_REPOSITORY, STANDARDS_REPOSITORY } from '@core'
 import { TemplateNotFoundException } from '../exceptions'
 import type { StandardEntity } from '../../standards/entities'
 import type { TemplateEntity } from '../entities'
+import { TEMPLATES_REPOSITORY } from '../tokens'
+import { STANDARDS_REPOSITORY } from '../../standards/tokens'
 
 /**
  * Template Export Service

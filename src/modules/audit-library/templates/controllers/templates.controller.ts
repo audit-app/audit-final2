@@ -31,6 +31,7 @@ import {
   ExportTemplateUseCase,
   ImportTemplateUseCase,
 } from '../use-cases'
+import { TemplateExampleService } from '../services'
 import {
   CreateTemplateDto,
   FindTemplatesDto,
@@ -53,6 +54,7 @@ export class TemplatesController {
     private readonly findTemplatesWithFiltersUseCase: FindTemplatesUseCase,
     private readonly exportTemplateUseCase: ExportTemplateUseCase,
     private readonly importTemplateUseCase: ImportTemplateUseCase,
+    private readonly templateExampleService: TemplateExampleService,
   ) {}
 
   @Post()
@@ -64,6 +66,50 @@ export class TemplatesController {
   })
   async create(@Body() createTemplateDto: CreateTemplateDto) {
     return await this.createTemplateUseCase.execute(createTemplateDto)
+  }
+
+  @Get('download-example')
+  @ApiOperation({
+    summary: 'Descargar plantilla de ejemplo para importación',
+    description:
+      'Descarga un archivo Excel de ejemplo que muestra la estructura correcta para importar templates. ' +
+      'El archivo incluye:\n' +
+      '- Hoja "Template": Metadatos de ejemplo de la plantilla\n' +
+      '- Hoja "Standards": Ejemplos de controles con estructura jerárquica correcta (ISO 27001)\n' +
+      '- Hoja "Instrucciones": Guía detallada de cómo llenar el archivo\n' +
+      '- Comentarios en celdas para facilitar el uso\n\n' +
+      'Los usuarios pueden usar este archivo como plantilla base, modificar los datos según sus necesidades, ' +
+      'y luego importarlo usando el endpoint POST /templates/import',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Archivo Excel de ejemplo generado exitosamente',
+    headers: {
+      'Content-Type': {
+        description:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      },
+      'Content-Disposition': {
+        description: 'attachment; filename=template_example_YYYY-MM-DD.xlsx',
+      },
+    },
+  })
+  async downloadExample(@Res() res: Response): Promise<void> {
+    // Generar archivo Excel de ejemplo
+    const buffer = await this.templateExampleService.generateExampleFile()
+
+    // Generar nombre del archivo
+    const fileName = this.templateExampleService.getFileName()
+
+    // Configurar headers para descarga
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    res.setHeader('Content-Disposition', `attachment; filename=${fileName}`)
+
+    // Enviar buffer
+    res.send(buffer)
   }
 
   @Post('import')

@@ -4,7 +4,7 @@ import type { UpdateStandardDto } from '../../dtos/update-standard.dto'
 import type { StandardEntity } from '../../entities/standard.entity'
 import { StandardFactory } from '../../factories'
 import { StandardValidator } from '../../validators'
-import { STANDARDS_REPOSITORY } from '@core'
+import { STANDARDS_REPOSITORY } from '../../tokens'
 import type { IStandardsRepository } from '../../repositories'
 
 /**

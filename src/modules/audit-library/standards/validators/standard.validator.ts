@@ -1,8 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common'
-import type { StandardsRepository } from '../repositories/standards.repository'
-import type { TemplatesRepository } from '../../templates/repositories/templates.repository'
 import { StandardEntity } from '../entities'
-import { STANDARDS_REPOSITORY, TEMPLATES_REPOSITORY } from '@core'
 import {
   StandardNotFoundException,
   StandardHasChildrenException,
@@ -12,14 +9,18 @@ import {
   StandardWithChildrenCannotBeAuditableException,
 } from '../exceptions'
 import { TemplateNotFoundException } from '../../templates/exceptions'
+import { STANDARDS_REPOSITORY } from '../tokens'
+import { TEMPLATES_REPOSITORY } from '../../templates/tokens'
+import type { IStandardsRepository } from '../repositories'
+import type { ITemplatesRepository } from '../../templates/repositories'
 
 @Injectable()
 export class StandardValidator {
   constructor(
     @Inject(STANDARDS_REPOSITORY)
-    private readonly standardsRepository: StandardsRepository,
+    private readonly standardsRepository: IStandardsRepository,
     @Inject(TEMPLATES_REPOSITORY)
-    private readonly templatesRepository: TemplatesRepository,
+    private readonly templatesRepository: ITemplatesRepository,
   ) {}
 
   /**

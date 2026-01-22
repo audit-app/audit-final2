@@ -4,8 +4,9 @@ import type { CreateStandardDto } from '../../dtos/create-standard.dto'
 import type { StandardEntity } from '../../entities/standard.entity'
 import { StandardFactory } from '../../factories'
 import { StandardValidator } from '../../validators'
-import { STANDARDS_REPOSITORY } from '@core'
+
 import type { IStandardsRepository } from '../../repositories'
+import { STANDARDS_REPOSITORY } from '../../tokens'
 
 /**
  * Create Standard Use Case

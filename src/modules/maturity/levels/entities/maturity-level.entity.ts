@@ -67,102 +67,44 @@ export class MaturityLevelEntity extends BaseEntity {
   name: string
 
   /**
-   * Nombre corto/abreviado del nivel
-   * Útil para visualizaciones compactas
-   * Ejemplos: 'N/A', 'Init', 'Rep', 'Def', 'Adm', 'Opt'
+   * Nombre corto del nivel (opcional)
+   * Ejemplos: 'Init', 'Def', 'Adm', 'Opt'
    */
-  @Column({ type: 'varchar', length: 20, nullable: true })
+  @Column({ type: 'varchar', length: 50, nullable: true })
   shortName: string | null
 
-  /**
-   * Descripción completa del nivel
-   * Explica qué características debe tener un proceso
-   * para estar en este nivel de madurez
-   */
   @Column({ type: 'text' })
   description: string
 
-  /**
-   * Color en formato hexadecimal para visualización
-   * Se usa en reportes, dashboards, gráficos, etc.
-   * Ejemplos:
-   * - Rojo (bajo): #EF4444, #DC2626
-   * - Naranja: #F59E0B, #FB923C
-   * - Amarillo: #EAB308, #FBBF24
-   * - Verde (alto): #10B981, #22C55E
-   * - Azul: #3B82F6, #6366F1
-   */
   @Column({ type: 'varchar', length: 7 })
   color: string
 
   /**
-   * Icono o emoji representativo del nivel
-   * Ejemplos: '🔴', '🟡', '🟢', '⭐', '✅'
+   * Icono del nivel (emoji opcional)
+   * Ejemplos: '🔴', '🟠', '🟡', '🟢', '🔵'
    */
   @Column({ type: 'varchar', length: 10, nullable: true })
   icon: string | null
 
-  /**
-   * Recomendaciones para alcanzar o mejorar este nivel
-   * Guía para auditores y evaluados sobre qué implementar
-   */
   @Column({ type: 'text', nullable: true })
   recommendations: string | null
 
-  /**
-   * Observaciones típicas en este nivel
-   * Patrones comunes que se observan en organizaciones
-   * que están en este nivel de madurez
-   */
   @Column({ type: 'text', nullable: true })
   observations: string | null
 
-  /**
-   * Orden de visualización
-   * Normalmente coincide con el nivel, pero permite
-   * personalizar el orden si es necesario
-   */
   @Column({ type: 'int' })
   order: number
 
-  /**
-   * 🎯 Nivel Mínimo Sugerido por Defecto (defaultMinimum)
-   *
-   * Este campo NO es obligatorio para la auditoría.
-   * Es un valor de UX para pre-llenar la configuración cuando el usuario
-   * inicia una nueva auditoría con este framework.
-   *
-   * Ejemplo: "La norma sugiere que menos de nivel 2 es inaceptable"
-   *
-   * La empresa puede cambiarlo según su contexto (startup vs banco)
-   */
   @Column({ type: 'boolean', default: false })
   isMinimumAcceptable: boolean
 
-  /**
-   * 🎯 Nivel Objetivo Sugerido por Defecto (industryStandard / recommendedTarget)
-   *
-   * Este campo NO es obligatorio para la auditoría.
-   * Es un valor de UX para pre-llenar la configuración cuando el usuario
-   * inicia una nueva auditoría con este framework.
-   *
-   * Ejemplo: "Lo ideal para este framework es llegar a nivel 4"
-   *
-   * La empresa puede cambiarlo según su madurez objetivo real
-   */
   @Column({ type: 'boolean', default: false })
   isTarget: boolean
 
-  /**
-   * Obtiene una representación visual del nivel
-   */
   get displayName(): string {
     return this.icon ? `${this.icon} ${this.name}` : this.name
   }
 
-  /**
-   * Obtiene el nombre a mostrar en UI (corto o completo)
-   */
   get uiName(): string {
     return this.shortName || this.name
   }

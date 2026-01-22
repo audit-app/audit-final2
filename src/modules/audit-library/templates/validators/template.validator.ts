@@ -1,11 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common'
 import type { ITemplatesRepository } from '../repositories'
 import { TemplateEntity } from '../entities'
-import { TEMPLATES_REPOSITORY } from '@core'
 import {
   TemplateAlreadyExistsException,
   TemplateNotFoundException,
 } from '../exceptions'
+import { TEMPLATES_REPOSITORY } from '../tokens'
 
 @Injectable()
 export class TemplateValidator {

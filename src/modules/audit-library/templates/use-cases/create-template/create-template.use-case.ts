@@ -3,7 +3,7 @@ import { Transactional } from '@core/database/transactional.decorator'
 import type { CreateTemplateDto } from '../../dtos/create-template.dto'
 import type { TemplateEntity } from '../../entities/template.entity'
 import { TemplateFactory } from '../../factories'
-import { TEMPLATES_REPOSITORY } from '@core'
+import { TEMPLATES_REPOSITORY } from '../../tokens'
 import type { ITemplatesRepository } from '../../repositories'
 import { TemplateValidator } from '../../validators'
 

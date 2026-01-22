@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 import type { TemplateEntity } from '../../entities/template.entity'
-import { TEMPLATES_REPOSITORY } from '@core'
+import { TEMPLATES_REPOSITORY } from '../../tokens'
 import type { ITemplatesRepository } from '../../repositories'
 import { FindTemplatesDto } from '../../dtos'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'

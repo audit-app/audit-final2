@@ -2,7 +2,7 @@ import { Injectable, Inject } from '@nestjs/common'
 import type { StandardEntity } from '../../entities/standard.entity'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 import type { IStandardsRepository } from '../../repositories'
-import { STANDARDS_REPOSITORY } from '@core'
+import { STANDARDS_REPOSITORY } from '../../tokens'
 import { FindStandardsDto } from '../../dtos'
 
 /**

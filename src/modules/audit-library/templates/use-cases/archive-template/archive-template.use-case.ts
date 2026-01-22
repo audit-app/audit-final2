@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import type { TemplateEntity } from '../../entities/template.entity'
-import { TEMPLATES_REPOSITORY } from '@core'
+import { TEMPLATES_REPOSITORY } from '../../tokens'
 import type { ITemplatesRepository } from '../../repositories'
 import { TemplateValidator } from '../../validators'
 

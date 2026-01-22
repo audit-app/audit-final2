@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common'
-import { TEMPLATES_REPOSITORY } from '@core'
 import { TemplatesRepository } from './repositories/templates.repository'
 
 import {
@@ -16,7 +15,12 @@ import {
 import { TemplatesController } from './controllers/templates.controller'
 import { TemplateValidator } from './validators'
 import { TemplateFactory } from './factories'
-import { TemplateExportService, TemplateImportService } from './services'
+import {
+  TemplateExportService,
+  TemplateImportService,
+  TemplateExampleService,
+} from './services'
+import { TEMPLATES_REPOSITORY } from './tokens'
 
 @Module({
   imports: [],
@@ -31,6 +35,7 @@ import { TemplateExportService, TemplateImportService } from './services'
     TemplateFactory,
     TemplateExportService,
     TemplateImportService,
+    TemplateExampleService,
 
     // Template Use Cases
     CreateTemplateUseCase,

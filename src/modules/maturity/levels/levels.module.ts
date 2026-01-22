@@ -9,11 +9,11 @@ import { FrameworksModule } from '../frameworks/frameworks.module'
 
 // Use Cases
 import {
-  CreateLevelUseCase,
+  // CreateLevelUseCase, // ❌ ELIMINADO - No se permite crear levels sueltos
   UpdateLevelUseCase,
-  DeleteLevelUseCase,
+  // DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
   FindLevelsByFrameworkUseCase,
-  BulkCreateLevelsUseCase,
+  // BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita bulk replace
 } from './use-cases/levels'
 
 @Module({
@@ -27,12 +27,12 @@ import {
 
     MaturityLevelFactory,
 
-    // Use Cases
-    CreateLevelUseCase,
-    UpdateLevelUseCase,
-    DeleteLevelUseCase,
-    FindLevelsByFrameworkUseCase,
-    BulkCreateLevelsUseCase,
+    // Use Cases (solo los necesarios después del rediseño)
+    // CreateLevelUseCase, // ❌ ELIMINADO - Levels se crean solo con el framework
+    UpdateLevelUseCase, // ✅ PERMITIDO - Editar texto, colores, recomendaciones
+    // DeleteLevelUseCase, // ❌ ELIMINADO - No se permite eliminar levels individuales
+    FindLevelsByFrameworkUseCase, // ✅ PERMITIDO - Listar levels de un framework
+    // BulkCreateLevelsUseCase, // ❌ ELIMINADO - No se necesita reemplazar en lote
   ],
   exports: [FindLevelsByFrameworkUseCase],
 })

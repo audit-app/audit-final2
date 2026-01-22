@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
 import { StandardValidator } from '../../validators'
-import { STANDARDS_REPOSITORY } from '@core'
+import { STANDARDS_REPOSITORY } from '../../tokens'
 import type { ToggleAuditableDto } from '../../dtos/toggle-auditable.dto'
 import type { StandardEntity } from '../../entities/standard.entity'
 import type { IStandardsRepository } from '../../repositories'
