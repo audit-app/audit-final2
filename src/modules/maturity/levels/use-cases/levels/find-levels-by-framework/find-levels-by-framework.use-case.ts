@@ -6,6 +6,7 @@ import { FRAMEWORKS_REPOSITORY } from 'src/modules/maturity/frameworks'
 import type { IFrameworksRepository } from 'src/modules/maturity/frameworks'
 import type { IMaturityLevelsRepository } from '../../../repositories'
 import { LEVELS_REPOSITORY } from '../../../tokens'
+import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 
 /**
  * Find Levels By Framework Use Case
@@ -28,7 +29,9 @@ export class FindLevelsByFrameworkUseCase {
    * @returns Lista de niveles ordenados por orden
    * @throws {MaturityFrameworkNotFoundException} Si el framework no existe
    */
-  async execute(frameworkId: string): Promise<MaturityLevelEntity[]> {
+  async execute(
+    frameworkId: string,
+  ): Promise<PaginatedResponse<MaturityLevelEntity>> {
     // 1. Verificar que el framework existe
     const framework = await this.frameworksRepository.findById(frameworkId)
 
@@ -39,6 +42,6 @@ export class FindLevelsByFrameworkUseCase {
     // 2. Obtener los niveles
     const levels = await this.levelsRepository.findByFramework(frameworkId)
 
-    return levels
+    return PaginatedResponseBuilder.createAll(levels)
   }
 }
