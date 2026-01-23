@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common'
 
 import type { FindMaturityFrameworksDto } from '../../dtos'
-import type { MaturityFrameworkEntity } from '../../entities/maturity-framework.entity'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
 import { FRAMEWORKS_REPOSITORY } from '../../tokens'
 import type { IFrameworksRepository } from '../../repositories'
@@ -22,20 +21,26 @@ export class FindFrameworksUseCase {
    * Ejecuta la búsqueda de frameworks
    *
    * @param query - Parámetros de búsqueda
-   * @returns Lista de frameworks
+   * @returns Lista de frameworks con campos calculados (totalLevels, levelRange)
    */
   async execute(
     dto: FindMaturityFrameworksDto = {},
-  ): Promise<PaginatedResponse<MaturityFrameworkEntity>> {
+  ): Promise<PaginatedResponse<any>> {
     const { data, total } =
       await this.frameworksRepository.paginateFrameworks(dto)
 
+    // Mapear para incluir campos calculados
+    const mappedData = data.map((framework) => ({
+      ...framework,
+      totalLevels: framework.maxLevel - framework.minLevel + 1,
+    }))
+
     if (dto.all) {
-      return PaginatedResponseBuilder.createAll(data)
+      return PaginatedResponseBuilder.createAll(mappedData)
     }
 
     return PaginatedResponseBuilder.create(
-      data,
+      mappedData,
       total,
       dto.page || 1,
       dto.limit || 10,

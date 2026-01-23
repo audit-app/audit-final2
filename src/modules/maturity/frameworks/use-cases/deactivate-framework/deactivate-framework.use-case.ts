@@ -23,7 +23,7 @@ export class DeactivateFrameworkUseCase {
   @Transactional()
   async execute(id: string): Promise<MaturityFrameworkEntity> {
     const framework = await this.frameworkValidator.validateExistsOrThrow(id)
-    framework.activate()
+    framework.deactivated()
     return this.frameworksRepository.save(framework)
   }
 }

@@ -19,8 +19,6 @@ export const FRAMEWORK_SEARCH_FIELDS: (keyof MaturityFrameworkEntity)[] = [
   'name',
   'description',
   'code',
-  'maxLevel',
-  'minLevel',
 ]
 
 export class FindMaturityFrameworksDto extends PaginationDto {
