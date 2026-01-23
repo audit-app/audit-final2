@@ -9,6 +9,7 @@ import {
   Matches,
 } from 'class-validator'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 
 /**
  * DTO para crear un nivel de madurez dentro de un framework (creación anidada)
@@ -22,6 +23,7 @@ export class CreateNestedMaturityLevelDto {
     example: 3,
     minimum: 0,
   })
+  @Type(() => Number)
   @IsInt({ message: 'El nivel debe ser un número entero' })
   @Min(0, { message: 'El nivel no puede ser menor a 0' })
   level: number
