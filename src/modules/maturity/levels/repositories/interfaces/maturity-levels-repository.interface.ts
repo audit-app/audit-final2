@@ -1,3 +1,4 @@
+import { IBaseRepository } from '@core'
 import type { MaturityLevelEntity } from '../../entities/maturity-level.entity'
 
 /**
@@ -5,7 +6,7 @@ import type { MaturityLevelEntity } from '../../entities/maturity-level.entity'
  *
  * Define los métodos personalizados del repositorio de niveles de madurez
  */
-export interface IMaturityLevelsRepository {
+export interface IMaturityLevelsRepository extends IBaseRepository<MaturityLevelEntity> {
   /**
    * Obtiene todos los niveles de un framework
    *

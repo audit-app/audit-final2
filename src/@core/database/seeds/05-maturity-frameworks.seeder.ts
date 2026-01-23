@@ -72,7 +72,6 @@ export default class MaturityFrameworksSeeder implements Seeder {
         shortName: levelDef.shortName,
         description: levelDef.description,
         color: levelDef.color,
-        icon: levelDef.icon,
         recommendations: levelDef.recommendations,
         observations: levelDef.observations,
         order: levelDef.order,

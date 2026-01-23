@@ -78,17 +78,19 @@ export class MaturityFrameworkEntity extends BaseEntity {
   })
   levels: MaturityLevelEntity[]
 
-  /**
-   * Obtiene el rango de niveles del framework
-   */
   get levelRange(): string {
     return `${this.minLevel}-${this.maxLevel}`
   }
 
-  /**
-   * Obtiene la cantidad total de niveles
-   */
   get totalLevels(): number {
     return this.maxLevel - this.minLevel + 1
+  }
+
+  activate() {
+    this.isActive = true
+  }
+
+  deactivated() {
+    this.isActive = false
   }
 }

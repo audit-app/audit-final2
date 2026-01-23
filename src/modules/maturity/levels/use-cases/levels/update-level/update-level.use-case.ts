@@ -1,12 +1,13 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
-import { MaturityLevelsRepository } from '../../../repositories'
+import type { IMaturityLevelsRepository } from '../../../repositories'
 import {
   MaturityLevelNotFoundException,
   MaturityLevelAlreadyExistsException,
 } from '../../../exceptions'
 import type { UpdateMaturityLevelDto } from '../../../dtos'
 import type { MaturityLevelEntity } from '../../../entities/maturity-level.entity'
+import { LEVELS_REPOSITORY } from '../../../tokens'
 
 /**
  * Update Maturity Level Use Case
@@ -18,7 +19,10 @@ import type { MaturityLevelEntity } from '../../../entities/maturity-level.entit
  */
 @Injectable()
 export class UpdateLevelUseCase {
-  constructor(private readonly levelsRepository: MaturityLevelsRepository) {}
+  constructor(
+    @Inject(LEVELS_REPOSITORY)
+    private readonly levelsRepository: IMaturityLevelsRepository,
+  ) {}
 
   /**
    * Ejecuta la actualización del nivel

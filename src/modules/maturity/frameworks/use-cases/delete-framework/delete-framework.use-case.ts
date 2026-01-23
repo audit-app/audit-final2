@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database/transactional.decorator'
-import { MaturityFrameworksRepository } from '../../../repositories'
-import { MaturityFrameworkNotFoundException } from '../../../exceptions'
+import type { IFrameworksRepository } from '../../repositories'
+import { MaturityFrameworkNotFoundException } from '../../exceptions'
+import { FRAMEWORKS_REPOSITORY } from '../../tokens'
 
 /**
  * Delete Maturity Framework Use Case
@@ -14,7 +15,8 @@ import { MaturityFrameworkNotFoundException } from '../../../exceptions'
 @Injectable()
 export class DeleteFrameworkUseCase {
   constructor(
-    private readonly frameworksRepository: MaturityFrameworksRepository,
+    @Inject(FRAMEWORKS_REPOSITORY)
+    private readonly frameworksRepository: IFrameworksRepository,
   ) {}
 
   /**

@@ -14,7 +14,7 @@ import { UsersRepository } from '../../modules/users/repositories/users.reposito
 import { OrganizationRepository } from '../../modules/organizations/repositories/organization.repository'
 import { TemplatesRepository } from '../../modules/audit-library/templates/repositories/templates.repository'
 import { StandardsRepository } from '../../modules/audit-library/standards/repositories/standards.repository'
-import { MaturityFrameworksRepository } from '../../modules/maturity/frameworks/repositories/maturity-frameworks.repository'
+import { MaturityFrameworksRepository } from '../../modules/maturity/frameworks/repositories/frameworks.repository'
 import { MaturityLevelsRepository } from '../../modules/maturity/levels/repositories/maturity-levels.repository'
 
 // ========== TOKENS ==========

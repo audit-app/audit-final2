@@ -1,2 +1,2 @@
-export * from './maturity-frameworks.repository'
-export * from './interfaces/maturity-frameworks-repository.interface'
+export * from './frameworks.repository'
+export * from './interfaces/frameworks-repository.interface'

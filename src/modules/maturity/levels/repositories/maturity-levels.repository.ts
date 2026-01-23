@@ -35,6 +35,12 @@ export class MaturityLevelsRepository
   async findByFramework(frameworkId: string): Promise<MaturityLevelEntity[]> {
     return await this.getRepo().find({
       where: { frameworkId },
+      select: {
+        id: true,
+        color: true,
+        shortName: true,
+        name: true,
+      },
       order: { order: 'ASC' },
     })
   }

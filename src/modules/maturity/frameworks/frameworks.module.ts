@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common'
-import { FRAMEWORKS_REPOSITORY } from './tokens'
-import { MaturityFrameworksRepository } from './repositories'
-import { MaturityFrameworksController } from './controllers/maturity-frameworks.controller'
-import { MaturityFrameworkFactory } from './factories'
-import { MaturityLevelsIntegrityValidator } from './validators'
+import { MaturityFrameworksController } from './controllers/frameworks.controller'
+import { FrameworkFactory } from './factories'
 
 // Use Cases
 import {
@@ -13,33 +10,17 @@ import {
   FindFrameworksUseCase,
   DeleteFrameworkUseCase,
   ActivateFrameworkUseCase,
-} from './use-cases/frameworks'
+} from './use-cases'
+import { FrameworkDomainValidator, LevelSequenceValidator } from './validators'
+import { LevelsModule } from '../levels'
 
-/**
- * Frameworks Module
- *
- * Submódulo de MaturityModule para gestión de frameworks de madurez
- * (COBIT 5, CMMI, ISO/IEC 15504, etc.)
- *
- * Responsabilidades:
- * - CRUD de frameworks
- * - Activación/desactivación
- * - Consultas y filtros
- */
 @Module({
-  imports: [],
+  imports: [LevelsModule],
   controllers: [MaturityFrameworksController],
   providers: [
-    // Alias: map class to token provided by @core/persistence
-    {
-      provide: MaturityFrameworksRepository,
-      useExisting: FRAMEWORKS_REPOSITORY,
-    },
-
-    MaturityFrameworkFactory,
-    MaturityLevelsIntegrityValidator,
-
-    // Use Cases
+    FrameworkFactory,
+    LevelSequenceValidator,
+    FrameworkDomainValidator,
     CreateFrameworkUseCase,
     UpdateFrameworkUseCase,
     FindFrameworkUseCase,
@@ -47,12 +28,6 @@ import {
     DeleteFrameworkUseCase,
     ActivateFrameworkUseCase,
   ],
-  exports: [
-    // Export repository for LevelsModule
-    MaturityFrameworksRepository,
-    // Export use cases for LevelsModule and other modules
-    FindFrameworkUseCase,
-    FindFrameworksUseCase,
-  ],
+  exports: [],
 })
 export class FrameworksModule {}

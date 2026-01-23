@@ -11,7 +11,6 @@ import type { UpdateMaturityLevelDto } from '../dtos/update-maturity-level.dto'
  */
 @Injectable()
 export class MaturityLevelFactory {
-
   /**
    * Actualiza una entidad existente.
    * Solo actualiza los campos que vienen definidos en el DTO.
@@ -20,6 +19,7 @@ export class MaturityLevelFactory {
    * @param dto - Los datos a actualizar (Partial)
    * @returns La misma entidad con los datos nuevos
    */
+
   updateFromDto(
     level: MaturityLevelEntity,
     dto: UpdateMaturityLevelDto,
@@ -38,10 +38,6 @@ export class MaturityLevelFactory {
 
     if (dto.color !== undefined) {
       level.color = dto.color.trim().toUpperCase()
-    }
-
-    if (dto.icon !== undefined) {
-      level.icon = dto.icon?.trim() || null
     }
 
     if (dto.recommendations !== undefined) {

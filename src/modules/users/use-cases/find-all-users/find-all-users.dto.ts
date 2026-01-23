@@ -1,9 +1,9 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator'
+import { IsOptional, IsString, IsEnum, IsUUID } from 'class-validator'
 import { PaginationDto } from '@core/dtos'
 import { Role, UserEntity } from '../../entities/user.entity'
 import { IsBoolean, IsIn } from '@core/i18n'
 import { Transform } from 'class-transformer'
-import { ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 
 /**
  * Campos por los que se puede ordenar la lista de usuarios
@@ -67,10 +67,35 @@ export class FindUsersDto extends PaginationDto {
   /**
    * Filtrar por organización
    */
+  @ApiPropertyOptional({
+    description: 'Filtrar usuarios por ID de organización (UUID)',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
   @IsOptional()
-  @IsString()
+  @IsUUID('4', { message: 'El organizationId debe ser un UUID válido' })
   organizationId?: string
 
+  @ApiProperty({
+    description: 'Campo por el cual ordenar (Solo uno)',
+    required: false,
+    enum: USER_SORTABLE_FIELDS, // Esto crea el dropdown en Swagger
+    example: 'createdAt', // Esto sugiere un valor limpio
+  })
+  @Transform(({ value }) => {
+    if (!value) return value
+
+    // PASO 1: Si Swagger envía algo como '"createdAt", "name"', lo convertimos a string
+    let cleanValue = String(value)
+
+    // PASO 2: Si viene con comas (varios valores), nos quedamos SOLO CON EL PRIMERO
+    if (cleanValue.includes(',')) {
+      cleanValue = cleanValue.split(',')[0]
+    }
+
+    // PASO 3: Quitamos comillas dobles, simples, corchetes o espacios que Swagger agregue
+    // Elimina " ' [ ] y espacios
+    return cleanValue.replace(/['"\[\]]+/g, '').trim()
+  })
   @IsOptional()
   @IsIn(USER_SORTABLE_FIELDS)
   sortBy?: string = 'createdAt'

@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common'
-import {
-  MaturityFrameworksRepository,
-  MaturityLevelsRepository,
-} from '../../../repositories'
+import { Inject, Injectable } from '@nestjs/common'
+
 import { MaturityFrameworkNotFoundException } from '../../../exceptions'
 import type { MaturityLevelEntity } from '../../../entities/maturity-level.entity'
+import { FRAMEWORKS_REPOSITORY } from 'src/modules/maturity/frameworks'
+import type { IFrameworksRepository } from 'src/modules/maturity/frameworks'
+import type { IMaturityLevelsRepository } from '../../../repositories'
+import { LEVELS_REPOSITORY } from '../../../tokens'
 
 /**
  * Find Levels By Framework Use Case
@@ -14,8 +15,10 @@ import type { MaturityLevelEntity } from '../../../entities/maturity-level.entit
 @Injectable()
 export class FindLevelsByFrameworkUseCase {
   constructor(
-    private readonly frameworksRepository: MaturityFrameworksRepository,
-    private readonly levelsRepository: MaturityLevelsRepository,
+    @Inject(FRAMEWORKS_REPOSITORY)
+    private readonly frameworksRepository: IFrameworksRepository,
+    @Inject(LEVELS_REPOSITORY)
+    private readonly levelsRepository: IMaturityLevelsRepository,
   ) {}
 
   /**

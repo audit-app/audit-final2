@@ -72,16 +72,6 @@ export class CreateNestedMaturityLevelDto {
   color: string
 
   @ApiPropertyOptional({
-    description: 'Icono o emoji representativo',
-    example: '🟡',
-    maxLength: 10,
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(10, { message: 'El icono no puede exceder 10 caracteres' })
-  icon?: string
-
-  @ApiPropertyOptional({
     description: 'Recomendaciones para alcanzar este nivel',
     example: 'Implementar métricas de rendimiento y monitoreo continuo.',
   })

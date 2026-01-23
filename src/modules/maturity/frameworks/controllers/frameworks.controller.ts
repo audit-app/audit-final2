@@ -22,7 +22,7 @@ import { ResponseMessage } from '@core/decorators'
 import {
   CreateMaturityFrameworkDto,
   UpdateMaturityFrameworkDto,
-  QueryMaturityFrameworkDto,
+  FindMaturityFrameworksDto,
 } from '../dtos'
 import { MaturityFrameworkEntity } from '../entities/maturity-framework.entity'
 import {
@@ -64,7 +64,7 @@ export class MaturityFrameworksController {
   })
   @ApiOkResponse(MaturityFrameworkEntity, 'Lista de frameworks', true)
   @ApiStandardResponses({ exclude: [400] })
-  async findAll(@Query() query: QueryMaturityFrameworkDto) {
+  async findAll(@Query() query: FindMaturityFrameworksDto) {
     return await this.findFrameworksUseCase.execute(query)
   }
 
@@ -136,20 +136,9 @@ export class MaturityFrameworksController {
       'Cambia el estado isActive a true. Retorna un mensaje de confirmación.',
   })
   async activate(@Param() { id }: UuidParamDto) {
-    await this.activateFrameworkUseCase.execute(id, true)
+    await this.activateFrameworkUseCase.execute(id)
   }
 
-  // OPCIÓN 1: Devolver entidad actualizada
-  // @Patch(':id/deactivate')
-  // @ApiCustom(MaturityFrameworkEntity, {
-  //   summary: 'Desactivar un framework de madurez',
-  //   description: 'Cambia el estado isActive a false.',
-  // })
-  // async deactivate(@Param() { id }: UuidParamDto) {
-  //   return await this.activateFrameworkUseCase.execute(id, false)
-  // }
-
-  // OPCIÓN 2: Devolver mensaje genérico (usa TransformInterceptor + @ResponseMessage)
   @Patch(':id/deactivate')
   @ResponseMessage('Framework de madurez desactivado exitosamente')
   @ApiUpdateWithMessage({
@@ -158,6 +147,6 @@ export class MaturityFrameworksController {
       'Cambia el estado isActive a false. Retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    await this.activateFrameworkUseCase.execute(id, false)
+    await this.activateFrameworkUseCase.execute(id)
   }
 }

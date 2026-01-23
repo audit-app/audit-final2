@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common'
-import { MaturityFrameworksRepository } from '../../../repositories'
-import { MaturityFrameworkNotFoundException } from '../../../exceptions'
-import type { MaturityFrameworkEntity } from '../../../entities/maturity-framework.entity'
+import { Inject, Injectable } from '@nestjs/common'
+import type { IFrameworksRepository } from '../../repositories'
+import { MaturityFrameworkNotFoundException } from '../../exceptions'
+import type { MaturityFrameworkEntity } from '../../entities/maturity-framework.entity'
+import { FRAMEWORKS_REPOSITORY } from '../../tokens'
 
 /**
  * Find Maturity Framework Use Case
@@ -11,7 +12,8 @@ import type { MaturityFrameworkEntity } from '../../../entities/maturity-framewo
 @Injectable()
 export class FindFrameworkUseCase {
   constructor(
-    private readonly frameworksRepository: MaturityFrameworksRepository,
+    @Inject(FRAMEWORKS_REPOSITORY)
+    private readonly frameworksRepository: IFrameworksRepository,
   ) {}
 
   /**

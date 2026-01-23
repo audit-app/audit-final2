@@ -1,7 +1,6 @@
 import {
   IsString,
   IsOptional,
-  IsBoolean,
   IsInt,
   IsArray,
   MinLength,
@@ -11,7 +10,7 @@ import {
   Matches,
   ValidateNested,
   ArrayMinSize,
-} from 'class-validator'
+} from '@core/i18n'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { CreateNestedMaturityLevelDto } from '../../levels/dtos'
@@ -71,7 +70,7 @@ export class CreateMaturityFrameworkDto {
   @IsInt({ message: 'El nivel mínimo debe ser un número entero' })
   @Min(0, { message: 'El nivel mínimo no puede ser menor a 0' })
   @Max(10, { message: 'El nivel mínimo no puede ser mayor a 10' })
-  minLevel?: number
+  minLevel: number
 
   @ApiProperty({
     description: 'Nivel máximo del framework',
@@ -79,22 +78,13 @@ export class CreateMaturityFrameworkDto {
     default: 5,
     minimum: 1,
     maximum: 10,
+    required: false,
   })
   @IsOptional()
   @IsInt({ message: 'El nivel máximo debe ser un número entero' })
   @Min(1, { message: 'El nivel máximo no puede ser menor a 1' })
   @Max(10, { message: 'El nivel máximo no puede ser mayor a 10' })
-  maxLevel?: number
-
-  @ApiProperty({
-    description: 'Indica si el framework está activo',
-    example: true,
-    default: true,
-    required: false,
-  })
-  @IsOptional()
-  @IsBoolean()
-  isActive?: boolean
+  maxLevel: number
 
   @ApiProperty({
     description:

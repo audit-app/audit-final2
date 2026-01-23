@@ -1,21 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common'
 import { CreateNestedMaturityLevelDto } from '../../levels/dtos'
 
-/**
- * Validador de Integridad de Niveles de Madurez
- *
- * Asegura que los niveles proporcionados sean consistentes y completos.
- *
- * Validaciones implementadas:
- * 1. Cantidad correcta de niveles (debe coincidir con maxLevel - minLevel + 1)
- * 2. Sin duplicados en números de nivel
- * 3. Todos los niveles dentro del rango permitido
- * 4. Sin huecos en la secuencia (ej: 0,1,2,4,5 → falta 3)
- * 5. Sin nombres duplicados
- * 6. Sin colores duplicados (evita confusión visual)
- */
 @Injectable()
-export class MaturityLevelsIntegrityValidator {
+export class LevelSequenceValidator {
   /**
    * Valida la integridad de los niveles de madurez
    *
@@ -24,7 +11,7 @@ export class MaturityLevelsIntegrityValidator {
    * @param maxLevel - Nivel máximo del framework
    * @throws {BadRequestException} Si hay inconsistencias
    */
-  validate(
+  verifySequence(
     levels: CreateNestedMaturityLevelDto[],
     minLevel: number,
     maxLevel: number,

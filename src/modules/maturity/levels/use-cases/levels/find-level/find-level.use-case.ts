@@ -1,6 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { MaturityLevelsRepository } from '../../../repositories'
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import type { IMaturityLevelsRepository } from '../../../repositories'
 import type { MaturityLevelEntity } from '../../../entities/maturity-level.entity'
+import { LEVELS_REPOSITORY } from '../../../tokens'
 
 /**
  * Find Level Use Case
@@ -10,7 +11,8 @@ import type { MaturityLevelEntity } from '../../../entities/maturity-level.entit
 @Injectable()
 export class FindLevelUseCase {
   constructor(
-    private readonly levelsRepository: MaturityLevelsRepository,
+    @Inject(LEVELS_REPOSITORY)
+    private readonly levelsRepository: IMaturityLevelsRepository,
   ) {}
 
   /**

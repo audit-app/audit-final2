@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { Repository } from 'typeorm'
+import { Brackets, Repository } from 'typeorm'
 import { BaseRepository } from '@core/repositories'
 import { TransactionService, AuditService } from '@core/database'
 import { MaturityFrameworkEntity } from '../entities/maturity-framework.entity'
-import type { IMaturityFrameworksRepository } from './interfaces/maturity-frameworks-repository.interface'
+import type { IFrameworksRepository } from './interfaces/frameworks-repository.interface'
+import { FindMaturityFrameworksDto, FRAMEWORK_SEARCH_FIELDS } from '../dtos'
+import { PaginatedData } from '@core/dtos'
 
 /**
  * Maturity Frameworks Repository
@@ -15,7 +17,7 @@ import type { IMaturityFrameworksRepository } from './interfaces/maturity-framew
 @Injectable()
 export class MaturityFrameworksRepository
   extends BaseRepository<MaturityFrameworkEntity>
-  implements IMaturityFrameworksRepository
+  implements IFrameworksRepository
 {
   constructor(
     @InjectRepository(MaturityFrameworkEntity)
@@ -39,18 +41,6 @@ export class MaturityFrameworksRepository
   }
 
   /**
-   * Obtiene todos los frameworks activos
-   *
-   * @returns Lista de frameworks activos ordenados por nombre
-   */
-  async findActive(): Promise<MaturityFrameworkEntity[]> {
-    return await this.getRepo().find({
-      where: { isActive: true },
-      order: { name: 'ASC' },
-    })
-  }
-
-  /**
    * Obtiene un framework con sus niveles
    *
    * @param id - ID del framework
@@ -59,7 +49,9 @@ export class MaturityFrameworksRepository
   async findOneWithLevels(id: string): Promise<MaturityFrameworkEntity | null> {
     return await this.getRepo().findOne({
       where: { id },
-      relations: ['levels'],
+      relations: {
+        levels: true,
+      },
       order: {
         levels: {
           order: 'ASC',
@@ -68,34 +60,34 @@ export class MaturityFrameworksRepository
     })
   }
 
-  /**
-   * Cambia el estado activo de un framework
-   *
-   * @param id - ID del framework
-   * @param isActive - Nuevo estado
-   * @returns Framework actualizado o null si no existe
-   */
-  async updateActiveStatus(
-    id: string,
-    isActive: boolean,
-  ): Promise<MaturityFrameworkEntity | null> {
-    const framework = await this.findById(id)
-    if (!framework) {
-      return null
-    }
-    framework.isActive = isActive
-    return await this.getRepo().save(framework)
-  }
+  async paginateFrameworks(
+    query: FindMaturityFrameworksDto,
+  ): Promise<PaginatedData<MaturityFrameworkEntity>> {
+    const { search, isActive } = query
 
-  /**
-   * Busca todos los frameworks con opciones de filtrado
-   *
-   * @param options - Opciones de búsqueda de TypeORM
-   * @returns Lista de frameworks
-   */
-  async findAllFrameworks(
-    options?: Parameters<typeof this.findAll>[0],
-  ): Promise<MaturityFrameworkEntity[]> {
-    return await this.findAll(options)
+    // 1. Usamos getRepo() (del padre) para soportar Transacciones automáticamente
+    const qb = this.getRepo().createQueryBuilder('framework')
+
+    // 2. Filtro Exacto: isActive
+    // Verificamos undefined para que funcione con false
+    if (isActive !== undefined) {
+      qb.andWhere('framework.isActive = :isActive', { isActive })
+    }
+
+    // 3. Búsqueda Difusa (Search) usando Brackets
+    if (search) {
+      qb.andWhere(
+        new Brackets((innerQb) => {
+          FRAMEWORK_SEARCH_FIELDS.forEach((field) => {
+            // LOWER para búsqueda case-insensitive
+            innerQb.orWhere(`LOWER(framework.${field}) LIKE LOWER(:search)`, {
+              search: `%${search}%`,
+            })
+          })
+        }),
+      )
+    }
+
+    return await this.paginateQueryBuilder(qb, query)
   }
 }

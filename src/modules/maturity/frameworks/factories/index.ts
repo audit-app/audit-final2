@@ -1,1 +1,1 @@
-export * from './maturity-framework.factory'
+export * from './framework.factory'
