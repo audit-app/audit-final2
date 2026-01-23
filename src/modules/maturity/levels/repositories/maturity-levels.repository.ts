@@ -39,7 +39,7 @@ export class MaturityLevelsRepository
         id: true,
         color: true,
         shortName: true,
-        name: true,
+        level: true,
       },
       order: { order: 'ASC' },
     })
