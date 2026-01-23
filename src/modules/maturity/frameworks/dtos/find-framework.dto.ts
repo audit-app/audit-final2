@@ -60,7 +60,5 @@ export class FindMaturityFrameworksDto extends PaginationDto {
   sortBy?: string = 'createdAt'
 
   @IsOptional()
-  @IsOptional()
-  @IsIn(FRAMEWORK_SEARCH_FIELDS)
   search?: string
 }

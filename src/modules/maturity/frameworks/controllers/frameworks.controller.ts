@@ -32,6 +32,7 @@ import {
   FindFrameworksUseCase,
   DeleteFrameworkUseCase,
   ActivateFrameworkUseCase,
+  DeactivateFrameworkUseCase,
 } from '../use-cases'
 
 @ApiTags('maturity-frameworks')
@@ -44,6 +45,7 @@ export class MaturityFrameworksController {
     private readonly findFrameworksUseCase: FindFrameworksUseCase,
     private readonly deleteFrameworkUseCase: DeleteFrameworkUseCase,
     private readonly activateFrameworkUseCase: ActivateFrameworkUseCase,
+    private readonly deactivateFrameworkUseCase: DeactivateFrameworkUseCase,
   ) {}
 
   @Post()
@@ -147,6 +149,6 @@ export class MaturityFrameworksController {
       'Cambia el estado isActive a false. Retorna un mensaje de confirmación.',
   })
   async deactivate(@Param() { id }: UuidParamDto) {
-    await this.activateFrameworkUseCase.execute(id)
+    await this.deactivateFrameworkUseCase.execute(id)
   }
 }
