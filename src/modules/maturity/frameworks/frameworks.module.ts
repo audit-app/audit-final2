@@ -9,6 +9,7 @@ import {
   FindFrameworkUseCase,
   FindFrameworksUseCase,
   DeleteFrameworkUseCase,
+  DeactivateFrameworkUseCase,
   ActivateFrameworkUseCase,
 } from './use-cases'
 import { FrameworkDomainValidator, LevelSequenceValidator } from './validators'
@@ -27,6 +28,7 @@ import { LevelsModule } from '../levels'
     FindFrameworksUseCase,
     DeleteFrameworkUseCase,
     ActivateFrameworkUseCase,
+    DeactivateFrameworkUseCase,
   ],
   exports: [],
 })
