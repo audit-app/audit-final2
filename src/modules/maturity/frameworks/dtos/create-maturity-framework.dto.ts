@@ -12,7 +12,7 @@ import {
   ValidateNested,
   ArrayMinSize,
 } from 'class-validator'
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
+import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { CreateNestedMaturityLevelDto } from '../../levels/dtos'
 

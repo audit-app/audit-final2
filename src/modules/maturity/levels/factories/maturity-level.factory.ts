@@ -1,33 +1,16 @@
 import { Injectable } from '@nestjs/common'
 import { MaturityLevelEntity } from '../entities'
-import type { CreateMaturityLevelDto } from '../dtos/create-maturity-level.dto'
 import type { UpdateMaturityLevelDto } from '../dtos/update-maturity-level.dto'
 
+/**
+ * Factory para niveles de madurez
+ *
+ * NOTA: Este factory NO incluye createFromDto porque los niveles
+ * se crean SIEMPRE de forma anidada con el framework (creación atómica).
+ * TypeORM cascade se encarga de la creación automática.
+ */
 @Injectable()
 export class MaturityLevelFactory {
-  /**
-   * Crea una nueva entidad MaturityLevelEntity desde el DTO.
-   * Aplica normalización de datos (trim).
-   *
-   * @param dto - Datos del level a crear
-   * @returns Nueva instancia de MaturityLevelEntity (lista para guardar)
-   */
-  createFromDto(dto: CreateMaturityLevelDto): MaturityLevelEntity {
-    const level = new MaturityLevelEntity()
-    level.frameworkId = dto.frameworkId
-    level.level = dto.level
-    level.name = dto.name.trim()
-    level.shortName = dto.shortName?.trim() || null
-    level.description = dto.description.trim()
-    level.color = dto.color.trim().toUpperCase()
-    level.icon = dto.icon?.trim() || null
-    level.recommendations = dto.recommendations?.trim() || null
-    level.observations = dto.observations?.trim() || null
-    level.order = dto.order
-    level.isMinimumAcceptable = dto.isMinimumAcceptable ?? false
-    level.isTarget = dto.isTarget ?? false
-    return level
-  }
 
   /**
    * Actualiza una entidad existente.

@@ -62,14 +62,14 @@ export class CreateFrameworkUseCase {
     // 3. Validar integridad de los levels (OBLIGATORIO)
     this.levelsIntegrityValidator.validate(dto.levels, minLevel, maxLevel)
 
-    // Asignar order automáticamente si no se especifica
+    // 4. Asignar order automáticamente si no se especifica (order === level por defecto)
     dto.levels.forEach((level) => {
       if (level.order === undefined) {
         level.order = level.level
       }
     })
 
-    // 4. Crear el framework (TypeORM cascade guardará los levels automáticamente)
+    // 5. Crear el framework (TypeORM cascade guardará los levels automáticamente)
     const framework = await this.frameworksRepository.save({
       name: dto.name,
       code: dto.code,

@@ -98,7 +98,8 @@ export class CreateNestedMaturityLevelDto {
   observations?: string
 
   @ApiPropertyOptional({
-    description: 'Orden de visualización (si no se especifica, usa el número de nivel)',
+    description:
+      'Orden de visualización (si no se especifica, usa el número de nivel)',
     example: 3,
     minimum: 0,
   })

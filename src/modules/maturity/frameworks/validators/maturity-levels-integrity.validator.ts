@@ -4,7 +4,15 @@ import { CreateNestedMaturityLevelDto } from '../../levels/dtos'
 /**
  * Validador de Integridad de Niveles de Madurez
  *
- * Asegura que los niveles proporcionados sean consistentes y completos
+ * Asegura que los niveles proporcionados sean consistentes y completos.
+ *
+ * Validaciones implementadas:
+ * 1. Cantidad correcta de niveles (debe coincidir con maxLevel - minLevel + 1)
+ * 2. Sin duplicados en números de nivel
+ * 3. Todos los niveles dentro del rango permitido
+ * 4. Sin huecos en la secuencia (ej: 0,1,2,4,5 → falta 3)
+ * 5. Sin nombres duplicados
+ * 6. Sin colores duplicados (evita confusión visual)
  */
 @Injectable()
 export class MaturityLevelsIntegrityValidator {
@@ -79,21 +87,55 @@ export class MaturityLevelsIntegrityValidator {
       )
     }
 
-    // 6. Validar que el orden sea coherente (si se especifica)
-    levels.forEach((level) => {
-      if (level.order !== undefined && level.order !== level.level) {
-        // Advertencia: permitimos que order sea diferente, pero debería ser consistente
-        // En producción, podrías querer forzar que order === level
-      }
-    })
+    // 6. Validar que no haya nombres duplicados
+    const names = levels.map((l) => l.name.trim().toLowerCase())
+    const uniqueNames = new Set(names)
+
+    if (uniqueNames.size !== names.length) {
+      const duplicateNames = this.findDuplicateStrings(
+        levels.map((l) => l.name),
+      )
+      throw new BadRequestException(
+        `Se encontraron nombres de nivel duplicados: ${duplicateNames.join(', ')}`,
+      )
+    }
+
+    // 7. Validar que no haya colores duplicados (evitar confusión visual)
+    const colors = levels.map((l) => l.color.toUpperCase())
+    const uniqueColors = new Set(colors)
+
+    if (uniqueColors.size !== colors.length) {
+      const duplicateColors = this.findDuplicateStrings(colors)
+      throw new BadRequestException(
+        `Se encontraron colores duplicados: ${duplicateColors.join(', ')}. ` +
+          `Cada nivel debe tener un color único para evitar confusión visual.`,
+      )
+    }
   }
 
   /**
-   * Encuentra elementos duplicados en un array
+   * Encuentra elementos numéricos duplicados en un array
    */
   private findDuplicates(arr: number[]): number[] {
     const seen = new Set<number>()
     const duplicates = new Set<number>()
+
+    arr.forEach((item) => {
+      if (seen.has(item)) {
+        duplicates.add(item)
+      }
+      seen.add(item)
+    })
+
+    return Array.from(duplicates)
+  }
+
+  /**
+   * Encuentra elementos string duplicados en un array
+   */
+  private findDuplicateStrings(arr: string[]): string[] {
+    const seen = new Set<string>()
+    const duplicates = new Set<string>()
 
     arr.forEach((item) => {
       if (seen.has(item)) {

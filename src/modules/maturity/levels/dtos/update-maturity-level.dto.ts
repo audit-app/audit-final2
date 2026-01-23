@@ -1,5 +1,12 @@
 import { PartialType, OmitType } from '@nestjs/swagger'
-import { CreateMaturityLevelDto } from './create-maturity-level.dto'
+import { CreateNestedMaturityLevelDto } from './create-nested-maturity-level.dto'
+
+/**
+ * DTO para actualizar un nivel de madurez existente
+ *
+ * Omite 'level' porque no se permite cambiar el número de nivel (es inmutable)
+ * Todos los demás campos son opcionales
+ */
 export class UpdateMaturityLevelDto extends PartialType(
-  OmitType(CreateMaturityLevelDto, ['frameworkId', 'order', 'level'] as const),
+  OmitType(CreateNestedMaturityLevelDto, ['level'] as const),
 ) {}
