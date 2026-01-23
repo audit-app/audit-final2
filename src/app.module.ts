@@ -102,10 +102,6 @@ import { NavigationModule } from './modules/navigation/navigation.module'
     // ========================================
     // Global Filters
     // ========================================
-    {
-      provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
-    },
 
     // ========================================
     // Global Interceptors (orden de ejecución)
