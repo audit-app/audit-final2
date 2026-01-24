@@ -27,7 +27,7 @@ import { PermissionsGuard } from './modules/authorization/guards/permissions.gua
 import { TemplatesModule } from './modules/audit-library/templates/templates.module'
 import { StandardsModule } from './modules/audit-library/standards/standards.module'
 import { MaturityModule } from './modules/maturity/maturity.module'
-// import { ImportModule } from './modules/audit-library/import/import.module' // Módulo obsoleto, funcionalidad movida a TemplatesModule
+
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
 import { NavigationModule } from './modules/navigation/navigation.module'
@@ -102,6 +102,10 @@ import { NavigationModule } from './modules/navigation/navigation.module'
     // ========================================
     // Global Filters
     // ========================================
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
 
     // ========================================
     // Global Interceptors (orden de ejecución)

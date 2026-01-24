@@ -31,7 +31,7 @@ export class GetDynamicTemplatesUseCase {
         sortBy: 'createdAt',
         sortOrder: SortOrder.ASC,
         page: 1,
-        limit: 50, // Limitar para no sobrecargar el sidebar
+        limit: 50,
       })
 
     // Convertir plantillas a items de navegación
@@ -39,7 +39,7 @@ export class GetDynamicTemplatesUseCase {
       id: template.id,
       title: template.name,
       description: `${template.description || ''} (v${template.version})`,
-      url: `/templates/${template.id}`,
+      url: `/admin/controls/?templateId=${template.id}`,
       icon: 'file-text',
       type: 'dynamic' as const,
       badge: template.version,

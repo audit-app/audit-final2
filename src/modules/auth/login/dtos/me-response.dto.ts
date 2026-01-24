@@ -54,6 +54,12 @@ export class UserResponseDto {
   })
   roles: Role[]
 
+  ci: string
+
+  address: string | null
+
+  phone: string | null
+
   @ApiProperty({
     enum: Role,
     description: 'Rol activo actual del usuario en esta sesión',
