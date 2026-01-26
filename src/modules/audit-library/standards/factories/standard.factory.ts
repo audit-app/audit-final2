@@ -44,9 +44,9 @@ export class StandardFactory {
     standard: StandardEntity,
     dto: UpdateStandardDto,
   ): StandardEntity {
-    if (dto.code !== undefined) {
+    /*  if (dto.code !== undefined) {
       standard.code = dto.code.trim()
-    }
+    } */
 
     if (dto.title !== undefined) {
       standard.title = dto.title.trim()

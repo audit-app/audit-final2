@@ -19,5 +19,5 @@ import { CreateStandardDto } from './create-standard.dto'
  * Todos los campos son opcionales (partial)
  */
 export class UpdateStandardDto extends PartialType(
-  OmitType(CreateStandardDto, ['templateId', 'parentId'] as const),
+  OmitType(CreateStandardDto, ['templateId', 'parentId', 'code'] as const),
 ) {}

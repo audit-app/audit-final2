@@ -11,7 +11,8 @@ import {
   FindStandardUseCase,
   ReorderStandardUseCase,
   GetTemplateStandardsTreeUseCase,
-  ToggleAuditableUseCase,
+  ActivateAuditableUseCase,
+  DeactivateAuditableUseCase,
 } from './use-cases'
 
 @Module({
@@ -28,7 +29,8 @@ import {
     GetTemplateStandardsTreeUseCase,
     FindStandardUseCase,
     ReorderStandardUseCase,
-    ToggleAuditableUseCase,
+    ActivateAuditableUseCase,
+    DeactivateAuditableUseCase,
   ],
   exports: [],
 })

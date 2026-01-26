@@ -17,7 +17,6 @@ export abstract class BaseEntity {
   @UpdateDateColumn({ type: 'timestamp', name: 'updated_at' })
   updatedAt: Date
 
-  @Exclude()
   @Column({
     type: 'varchar',
     name: 'created_by',

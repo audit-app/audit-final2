@@ -45,13 +45,13 @@ export class UpdateStandardUseCase {
     await this.standardValidator.validateCanModifyContent(standard.templateId)
 
     // 3. Validar código único si se está cambiando
-    if (dto.code !== undefined && dto.code !== standard.code) {
+    /*     if (dto.code !== undefined && dto.code !== standard.code) {
       await this.standardValidator.validateUniqueCode(
         standard.templateId,
         dto.code,
         id,
       )
-    }
+    } */
 
     // 4. Actualizar campos usando factory
     const updatedStandard = this.standardFactory.updateFromDto(standard, dto)

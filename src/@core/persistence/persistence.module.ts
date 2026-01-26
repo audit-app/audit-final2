@@ -25,57 +25,6 @@ import { LEVELS_REPOSITORY } from '../../modules/maturity/levels/tokens'
 import { TEMPLATES_REPOSITORY } from 'src/modules/audit-library/templates/tokens'
 import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens'
 
-/**
- * Módulo de Persistencia Centralizado
- *
- * 🎯 Propósito:
- * - Eliminar dependencias circulares entre módulos
- * - Centralizar configuración de TypeORM
- * - Proveer repositorios globalmente sin re-importar
- *
- * 🔧 Es @Global() para:
- * - No tener que importar este módulo en cada feature module
- * - Los repositorios están disponibles automáticamente en toda la app
- *
- * 📝 Cómo agregar un nuevo módulo:
- * 1. Importar entity en la sección ENTITIES
- * 2. Importar repository en la sección REPOSITORIES
- * 3. Importar token en la sección TOKENS
- * 4. Agregar entity en TypeOrmModule.forFeature([...])
- * 5. Agregar provider en providers: [...]
- * 6. Agregar token en exports: [...]
- *
- * @example
- * // Agregar AuditsModule:
- *
- * // 1. Imports
- * import { AuditEntity } from '../../modules/audits/entities/audit.entity'
- * import { AuditsRepository } from '../../modules/audits/repositories/audits.repository'
- * import { AUDITS_REPOSITORY } from '../../modules/audits/repositories'
- *
- * // 2. TypeOrmModule
- * TypeOrmModule.forFeature([
- *   UserEntity,
- *   OrganizationEntity,
- *   AuditEntity, // ✅ Agregar aquí
- * ]),
- *
- * // 3. Providers
- * providers: [
- *   // ... otros
- *   {
- *     provide: AUDITS_REPOSITORY,
- *     useClass: AuditsRepository,
- *   },
- * ],
- *
- * // 4. Exports
- * exports: [
- *   USERS_REPOSITORY,
- *   ORGANIZATION_REPOSITORY,
- *   AUDITS_REPOSITORY, // ✅ Exportar aquí
- * ]
- */
 @Global()
 @Module({
   imports: [
@@ -124,22 +73,14 @@ import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens
       provide: LEVELS_REPOSITORY,
       useClass: MaturityLevelsRepository,
     },
-
-    // ========== TODO: Agregar nuevos repositorios aquí ==========
-    // {
-    //   provide: AUDITS_REPOSITORY,
-    //   useClass: AuditsRepository,
-    // },
   ],
   exports: [
-    // Exportar tokens para que estén disponibles globalmente
     USERS_REPOSITORY,
     ORGANIZATION_REPOSITORY,
     TEMPLATES_REPOSITORY,
     STANDARDS_REPOSITORY,
     FRAMEWORKS_REPOSITORY,
     LEVELS_REPOSITORY,
-    // TODO: Exportar nuevos tokens aquí
   ],
 })
 export class PersistenceModule {}

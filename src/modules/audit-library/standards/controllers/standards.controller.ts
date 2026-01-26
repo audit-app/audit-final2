@@ -25,7 +25,6 @@ import {
   UpdateStandardDto,
   StandardResponseDto,
   ReorderStandardDto,
-  ToggleAuditableDto,
   FindStandardsDto,
 } from '../dtos'
 import {
@@ -34,7 +33,8 @@ import {
   DeleteStandardUseCase,
   FindStandardUseCase,
   ReorderStandardUseCase,
-  ToggleAuditableUseCase,
+  ActivateAuditableUseCase,
+  DeactivateAuditableUseCase,
   GetTemplateStandardsTreeUseCase,
 } from '../use-cases'
 
@@ -48,7 +48,8 @@ export class StandardsController {
     private readonly findStandard: FindStandardUseCase,
     private readonly getTemplatesTreeUseCase: GetTemplateStandardsTreeUseCase,
     private readonly reorderStandard: ReorderStandardUseCase,
-    private readonly toggleAuditableUseCase: ToggleAuditableUseCase,
+    private readonly activateAuditable: ActivateAuditableUseCase,
+    private readonly deactivateAuditable: DeactivateAuditableUseCase,
   ) {}
 
   @Post()
@@ -116,6 +117,23 @@ export class StandardsController {
     return await this.reorderStandard.execute(id, reorderDto)
   }
 
+  @Patch(':id/activate')
+  @ApiOperation({
+    summary: 'Activar si un estándar es auditable',
+    description:
+      'Marca un estándar como auditable (control evaluable) o no auditable (solo agrupador organizacional).',
+  })
+  @ApiOkResponse(
+    StandardResponseDto,
+    'Estado auditable actualizado exitosamente',
+    false,
+  )
+  @ApiNotFoundResponse('Estándar no encontrado')
+  @ApiStandardResponses({ exclude: [200, 404] })
+  async activate(@Param() { id }: UuidParamDto) {
+    return await this.activateAuditable.execute(id)
+  }
+
   @Patch(':id/toggle-auditable')
   @ApiOperation({
     summary: 'Activar/desactivar si un estándar es auditable',
@@ -129,10 +147,7 @@ export class StandardsController {
   )
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [200, 404] })
-  async toggleAuditable(
-    @Param() { id }: UuidParamDto,
-    @Body() toggleDto: ToggleAuditableDto,
-  ) {
-    return await this.toggleAuditableUseCase.execute(id, toggleDto)
+  async deactivate(@Param() { id }: UuidParamDto) {
+    return await this.deactivateAuditable.execute(id)
   }
 }

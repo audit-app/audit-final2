@@ -4,10 +4,6 @@ import Redis from 'ioredis'
 import { CacheService } from './cache.service'
 import { REDIS_CLIENT } from './cache.tokens'
 
-/**
- * Módulo de caché global usando Redis
- * @Global - Disponible en toda la aplicación sin necesidad de importar
- */
 @Global()
 @Module({
   providers: [
@@ -28,12 +24,10 @@ import { REDIS_CLIENT } from './cache.tokens'
           lazyConnect: false,
         })
 
-        // Log de conexión exitosa
         redis.on('connect', () => {
           console.log('✅ Redis conectado correctamente')
         })
 
-        // Log de errores
         redis.on('error', (err) => {
           console.error('❌ Error de conexión con Redis:', err.message)
         })

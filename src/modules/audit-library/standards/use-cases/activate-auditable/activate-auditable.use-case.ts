@@ -20,7 +20,7 @@ import type { IStandardsRepository } from '../../repositories'
  * - El template debe ser editable (DRAFT)
  */
 @Injectable()
-export class ToggleAuditableUseCase {
+export class ActivateAuditableUseCase {
   constructor(
     @Inject(STANDARDS_REPOSITORY)
     private readonly standardsRepository: IStandardsRepository,
@@ -38,7 +38,7 @@ export class ToggleAuditableUseCase {
    * @throws {StandardWithChildrenCannotBeAuditableException} Si tiene hijos y se intenta marcar como auditable
    */
   @Transactional()
-  async execute(id: string, dto: ToggleAuditableDto): Promise<StandardEntity> {
+  async execute(id: string): Promise<StandardEntity> {
     // 1. Validar y obtener standard
     const standard = await this.standardValidator.validateAndGetStandard(id)
 
@@ -46,10 +46,10 @@ export class ToggleAuditableUseCase {
     await this.standardValidator.validateCanModifyStructure(standard.templateId)
 
     // 3. Validar que puede ser auditable (si tiene hijos, solo puede ser agrupador)
-    await this.standardValidator.validateCanBeAuditable(id, dto.isAuditable)
+    await this.standardValidator.validateCanBeAuditable(id, true)
 
     // 4. Actualizar isAuditable
-    standard.isAuditable = dto.isAuditable
+    standard.isAuditable = true
 
     // 5. Guardar
     return await this.standardsRepository.save(standard)
