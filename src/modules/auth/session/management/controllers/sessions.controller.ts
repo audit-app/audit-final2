@@ -8,16 +8,9 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common'
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-} from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
 import { ResponseMessage } from '@core/decorators'
-import {
-  MessageResponseDto,
-  MessageWithCountResponseDto,
-} from '@core/dtos'
+import { MessageResponseDto, MessageWithCountResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request } from 'express'
 import {
@@ -26,20 +19,11 @@ import {
   RevokeAllSessionsUseCase,
 } from '../use-cases'
 import { SessionResponseDto, RevokeSessionDto } from '../dtos'
-import { JwtAuthGuard } from '../../../core'
+import { GetUser, JwtAuthGuard } from '../../../core'
+import type { JwtPayload } from '../../../core'
 import { TokensService } from '../../../core/services'
 import { CookieService } from '@core/http/services/cookie.service'
 
-/**
- * SessionsController
- *
- * Maneja la gestión de sesiones activas (refresh tokens) del usuario.
- *
- * Endpoints:
- * - GET /auth/sessions - Listar sesiones activas
- * - DELETE /auth/sessions/:id - Revocar una sesión específica
- * - DELETE /auth/sessions - Revocar todas las sesiones
- */
 @UseGuards(JwtAuthGuard)
 @ApiTags('Sessions')
 @Controller('auth/sessions')
@@ -53,22 +37,6 @@ export class SessionsController {
     private readonly cookieService: CookieService,
   ) {}
 
-  /**
-   * GET /auth/sessions
-   *
-   * Lista todas las sesiones activas del usuario autenticado.
-   * Si existe refresh token en cookie, identifica la sesión actual.
-   *
-   * @param req - Request con usuario autenticado
-   * @returns Lista de sesiones activas
-   *
-   * @example
-   * ```json
-   * GET /auth/sessions
-   * Authorization: Bearer {access_token}
-   * Cookie: refreshToken=... (opcional)
-   * ```
-   */
   @Get()
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Sesiones activas obtenidas exitosamente')
@@ -80,9 +48,10 @@ export class SessionsController {
     type: SessionResponseDto,
     isArray: true,
   })
-  async listSessions(@Req() req: Request): Promise<SessionResponseDto[]> {
-    const userId = req.user!.sub
-
+  async listSessions(
+    @Req() req: Request,
+    @GetUser() user: JwtPayload,
+  ): Promise<SessionResponseDto[]> {
     // Intentar obtener el tokenId actual (opcional)
     let currentTokenId: string | undefined
     try {
@@ -92,11 +61,10 @@ export class SessionsController {
         currentTokenId = payload.tokenId
       }
     } catch {
-      // Si no hay refresh token o es inválido, simplemente no marcamos ninguna sesión como actual
       currentTokenId = undefined
     }
 
-    return await this.listSessionsUseCase.execute(userId, currentTokenId)
+    return await this.listSessionsUseCase.execute(user.sub, currentTokenId)
   }
 
   /**
@@ -135,10 +103,9 @@ export class SessionsController {
   async revokeSession(
     @Req() req: Request,
     @Body() dto: RevokeSessionDto,
+    @GetUser() user: JwtPayload,
   ): Promise<MessageResponseDto> {
-    const userId = req.user!.sub
-
-    return await this.revokeSessionUseCase.execute(userId, dto.sessionId)
+    return await this.revokeSessionUseCase.execute(user.sub, dto.sessionId)
   }
 
   /**
@@ -169,9 +136,8 @@ export class SessionsController {
   })
   async revokeAllSessions(
     @Req() req: Request,
+    @GetUser() user: JwtPayload,
   ): Promise<MessageWithCountResponseDto> {
-    const userId = req.user!.sub
-
-    return await this.revokeAllSessionsUseCase.execute(userId)
+    return await this.revokeAllSessionsUseCase.execute(user.sub)
   }
 }

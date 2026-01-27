@@ -20,6 +20,15 @@ export enum AuditAction {
 }
 
 /**
+ * Formato de un cambio individual en el audit log
+ */
+export interface AuditChange {
+  field: string
+  oldValue: unknown
+  newValue: unknown
+}
+
+/**
  * Entidad de Auditoría Granular
  *
  * Guarda un snapshot completo de cada cambio realizado en Template y Standard.
@@ -124,27 +133,29 @@ export class AuditLogEntity {
   // ========================================
 
   /**
-   * Objeto con los cambios realizados
+   * Array de cambios realizados
    *
-   * Formato: { campo: { old: valor_anterior, new: valor_nuevo } }
+   * Formato: [{ field: campo, oldValue: valor_anterior, newValue: valor_nuevo }]
    *
-   * Para CREATE: null o {}
+   * Para CREATE: null o []
    * Para DELETE/ARCHIVE: null o snapshot del estado final
    *
    * @example
-   * {
-   *   "title": {
-   *     "old": "Contraseñas",
-   *     "new": "Política de Contraseñas"
+   * [
+   *   {
+   *     "field": "title",
+   *     "oldValue": "Contraseñas",
+   *     "newValue": "Política de Contraseñas"
    *   },
-   *   "isActive": {
-   *     "old": false,
-   *     "new": true
+   *   {
+   *     "field": "isActive",
+   *     "oldValue": false,
+   *     "newValue": true
    *   }
-   * }
+   * ]
    */
   @Column({ type: 'jsonb', nullable: true })
-  changes: Record<string, { old: unknown; new: unknown }> | null
+  changes: AuditChange[] | null
 
   /**
    * Metadata adicional opcional (para extensibilidad futura)

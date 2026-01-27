@@ -3,21 +3,6 @@ import { RateLimitService } from '@core/security'
 import { TooManyAttemptsException } from '../exceptions/too-many-attempts.exception'
 import { envs } from '@core/config'
 
-/**
- * Política de Rate Limiting para Login
- *
- * Protege contra:
- * - Ataques de fuerza bruta
- * - Credential stuffing
- * - Enumeración de usuarios
- *
- * Límites:
- * - Máximo 5 intentos fallidos por email
- * - Ventana de bloqueo: 15 minutos
- *
- * Implementación simplificada: Wrapper directo sobre RateLimitService
- * sin abstracciones innecesarias
- */
 @Injectable()
 export class LoginRateLimitPolicy {
   private readonly contextPrefix = 'login'

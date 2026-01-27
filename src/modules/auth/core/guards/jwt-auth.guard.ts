@@ -33,17 +33,15 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
    * @returns true si se puede acceder, false si no
    */
   canActivate(context: ExecutionContext) {
-    // Verificar si la ruta es pública
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
       context.getHandler(),
       context.getClass(),
     ])
 
     if (isPublic) {
-      return true // Skip autenticación
+      return true
     }
 
-    // Delegar a la estrategia JWT
     return super.canActivate(context)
   }
 }

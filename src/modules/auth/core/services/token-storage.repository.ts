@@ -28,23 +28,18 @@ export class TokenStorageRepository extends AbstractUserSetRepository<StoredSess
     })
   }
 
-  // Implementación obligatoria: ¿Cuál es el ID?
   protected getItemId(item: StoredSession): string {
     return item.tokenId
   }
 
-  // Implementación obligatoria: ¿Cómo ordenamos?
   protected getLastActive(item: StoredSession): number {
     return item.lastActiveAt
   }
 
-  // Helper específico de este dominio
   generateTokenId(): string {
     return uuidv4()
   }
 
-  // Funcionalidad específica de Auth (Blacklist global)
-  // Esto no encaja en la clase base porque no es "por usuario", es global
   async blacklistToken(
     token: string,
     userId: string,

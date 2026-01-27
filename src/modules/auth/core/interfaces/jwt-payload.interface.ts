@@ -1,11 +1,5 @@
 import { Role } from '../../../users/entities/user.entity'
 
-/**
- * Payload del Access Token JWT
- *
- * Contiene la información del usuario autenticado que se incluye
- * en el access token. Este token es de corta duración (15min).
- */
 export interface JwtPayload {
   /** ID del usuario (subject) */
   sub: string

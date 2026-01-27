@@ -130,12 +130,10 @@ export class TokensService {
 
   // --- REVOCACIÓN (Refresh Tokens - Stateful) ---
   async revokeRefreshToken(userId: string, tokenId: string): Promise<void> {
-    // CAMBIO: El método delete ahora viene de la clase abstracta
     await this.tokenStorage.delete(userId, tokenId)
   }
 
   async revokeAllUserTokens(userId: string): Promise<void> {
-    // CAMBIO: El método deleteAllForUser ahora viene de la clase abstracta
     await this.tokenStorage.deleteAllForUser(userId)
   }
 
@@ -144,7 +142,6 @@ export class TokensService {
     userId: string,
     tokenId: string,
   ): Promise<boolean> {
-    // CAMBIO: validate viene de la clase abstracta (verifica Set + JSON)
     return this.tokenStorage.validate(userId, tokenId)
   }
 

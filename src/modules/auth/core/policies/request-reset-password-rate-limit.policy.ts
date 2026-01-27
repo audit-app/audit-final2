@@ -2,23 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
 import { envs } from '@core/config'
 
-/**
- * Política de Rate Limiting para Request Reset Password
- *
- * Protege contra:
- * - Spam de emails de reset password
- * - Enumeración de usuarios
- * - Abuso del sistema de correos
- *
- * Límites:
- * - Máximo 3 solicitudes por email cada 15 minutos
- *
- * Implementación simplificada: Wrapper directo sobre RateLimitService
- * sin abstracciones innecesarias
- *
- * IMPORTANTE: Usa patrón "Silent Drop" - no lanza excepción si excede límite,
- * solo retorna false y no envía email (para evitar enumeración de usuarios)
- */
 @Injectable()
 export class RequestResetPasswordRateLimitPolicy {
   private readonly contextPrefix = 'reset-password'

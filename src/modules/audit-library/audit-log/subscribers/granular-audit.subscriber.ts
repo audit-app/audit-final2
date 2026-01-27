@@ -11,7 +11,11 @@ import { AuditService } from '@core/database/audit.service'
 import { TemplateEntity } from '../../templates/entities/template.entity'
 import { StandardEntity } from '../../standards/entities/standard.entity'
 import { TemplateStatus } from '../../templates/constants/template-status.enum'
-import { AuditLogEntity, AuditAction } from '../entities/audit-log.entity'
+import {
+  AuditLogEntity,
+  AuditAction,
+  AuditChange,
+} from '../entities/audit-log.entity'
 
 type SafeData = Record<string, unknown>
 // Tipo unión para acceso seguro a propiedades
@@ -52,7 +56,7 @@ export class GranularAuditSubscriber implements EntitySubscriberInterface<Object
     const changes = this.calculateChanges(event)
 
     // 5. Guardar solo si hay diferencias reales
-    if (Object.keys(changes).length > 0) {
+    if (changes.length > 0) {
       await this.saveLog(event, AuditAction.UPDATE, changes)
     }
   }
@@ -138,11 +142,10 @@ export class GranularAuditSubscriber implements EntitySubscriberInterface<Object
   }
   /**
    * Calcula las diferencias entre el estado anterior y el nuevo
+   * Retorna un array de cambios en lugar de un objeto anidado
    */
-  private calculateChanges(
-    event: UpdateEvent<ObjectLiteral>,
-  ): Record<string, { old: unknown; new: unknown }> {
-    const changes: Record<string, { old: unknown; new: unknown }> = {}
+  private calculateChanges(event: UpdateEvent<ObjectLiteral>): AuditChange[] {
+    const changes: AuditChange[] = []
 
     // Forzamos el tipado a ObjectLiteral para asegurar acceso por índice
     const oldData = event.databaseEntity as unknown as SafeData | undefined
@@ -172,7 +175,11 @@ export class GranularAuditSubscriber implements EntitySubscriberInterface<Object
         const cleanOld = oldVal === undefined ? null : oldVal
 
         if (cleanOld !== cleanNew) {
-          changes[key] = { old: cleanOld, new: cleanNew }
+          changes.push({
+            field: key,
+            oldValue: cleanOld,
+            newValue: cleanNew,
+          })
         }
       }
     })
@@ -185,7 +192,7 @@ export class GranularAuditSubscriber implements EntitySubscriberInterface<Object
   private async saveLog(
     event: UpdateEvent<ObjectLiteral> | SoftRemoveEvent<ObjectLiteral>,
     action: AuditAction,
-    changes: Record<string, unknown> | null,
+    changes: AuditChange[] | null,
   ): Promise<void> {
     const user = this.auditService.getCurrentUser()
 
@@ -233,8 +240,7 @@ export class GranularAuditSubscriber implements EntitySubscriberInterface<Object
     log.entityId = entity.id
     log.rootId = rootId || entity.id
     log.action = action
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    log.changes = changes as any
+    log.changes = changes
 
     await event.manager.save(AuditLogEntity, log)
   }
