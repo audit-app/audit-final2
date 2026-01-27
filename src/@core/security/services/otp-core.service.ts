@@ -78,7 +78,7 @@ export class OtpCoreService {
     const storedJson = await this.cacheService.get(key)
 
     if (!storedJson) {
-      return { isValid: false, payload: null } // Expiró o no existe
+      return { isValid: false, payload: null }
     }
 
     const data = JSON.parse(storedJson) as OtpStorage<T>

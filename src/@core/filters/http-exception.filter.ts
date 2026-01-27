@@ -25,9 +25,10 @@ interface ErrorResponse {
   method: string
   message: string | string[]
   error?: string
-  errors?: string[]
+  errors?: unknown[] // Puede ser string[] (class-validator) o custom validation errors
   validationErrors?: Record<string, unknown>
   summary?: Record<string, unknown>
+  totalErrors?: number // Total de errores encontrados
   details?: unknown
 }
 
@@ -39,6 +40,8 @@ interface ParsedException {
   details?: unknown
   validationErrors?: Record<string, unknown>
   summary?: Record<string, unknown>
+  errors?: unknown[] // Para errores de validación personalizados (template import, etc.)
+  totalErrors?: number // Total de errores encontrados
 }
 
 // 4. Interfaz para el contexto de usuario en logs
@@ -93,6 +96,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
       errorResponse.validationErrors = parsed.validationErrors
     if (Array.isArray(parsed.message)) errorResponse.errors = parsed.message
     if (parsed.summary) errorResponse.summary = parsed.summary
+
+    // Custom validation errors (template import, etc.)
+    if (parsed.errors) errorResponse.errors = parsed.errors
+    if (parsed.totalErrors !== undefined)
+      errorResponse.totalErrors = parsed.totalErrors
 
     // Detalles solo en desarrollo
     if (parsed.details && !envs.app.isProduction) {
@@ -165,12 +173,25 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         // Extracción segura de detalles
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { message, error, statusCode, ...additionalInfo } = responseObj
+        const {
+          message,
+          error,
+          statusCode,
+          errors,
+          totalErrors,
+          ...additionalInfo
+        } = responseObj
 
         return {
           statusCode: status,
           message: (message as string | string[]) || exception.message,
           error: (error as string) || exception.name,
+          errors: errors
+            ? Array.isArray(errors)
+              ? errors
+              : [errors]
+            : undefined,
+          totalErrors: totalErrors as number | undefined,
           details:
             Object.keys(additionalInfo).length > 0 ? additionalInfo : undefined,
         }

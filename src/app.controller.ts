@@ -7,7 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common'
 import { AppService } from './app.service'
-import { Public } from './modules/auth/shared/decorators/public.decorator'
+import { Public } from './modules/auth/core/decorators/public.decorator'
 
 @Public()
 @Controller()

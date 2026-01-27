@@ -32,16 +32,8 @@ export class TemplateFactory {
     template: TemplateEntity,
     dto: UpdateTemplateDto,
   ): TemplateEntity {
-    if (dto.code !== undefined) {
-      template.code = dto.code.trim().toUpperCase()
-    }
-
     if (dto.name !== undefined) {
       template.name = dto.name.trim()
-    }
-
-    if (dto.version !== undefined) {
-      template.version = dto.version.trim()
     }
 
     if (dto.description !== undefined) {

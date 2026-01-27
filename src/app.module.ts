@@ -31,6 +31,7 @@ import { MaturityModule } from './modules/maturity/maturity.module'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
 import { NavigationModule } from './modules/navigation/navigation.module'
+import { JwtAuthGuard } from './modules/auth/core'
 
 @Module({
   imports: [
@@ -94,10 +95,10 @@ import { NavigationModule } from './modules/navigation/navigation.module'
     // 2. JwtAuthGuard (registrado en AuthModule)
     // 3. RolesGuard (registrado en AuthModule)
     // 4. PermissionsGuard (Casbin - DESPUÉS de Auth)
-    /*     {
+    {
       provide: APP_GUARD,
-      useClass: PermissionsGuard,
-    }, */
+      useClass: JwtAuthGuard,
+    },
 
     // ========================================
     // Global Filters

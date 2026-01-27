@@ -6,84 +6,96 @@ import { envs } from '@core/config'
 import type * as ms from 'ms'
 
 // ========================================
-// LOGIN CONTEXT
+// CORE - Shared Infrastructure
+// ========================================
+import {
+  TokensService,
+  TokenStorageRepository,
+  JwtStrategy,
+  GoogleStrategy,
+  JwtAuthGuard,
+  LoginRateLimitPolicy,
+  RequestResetPasswordRateLimitPolicy,
+  Resend2FARateLimitPolicy,
+} from './core'
+
+// ========================================
+// AUTHENTICATION - Local (Login/Logout/Refresh/Switch-Role)
 // ========================================
 import {
   AuthController,
-  TokensService,
   LoginUseCase,
   RefreshTokenUseCase,
   LogoutUseCase,
-  LoginRateLimitPolicy,
-  GoogleLoginUseCase,
   SwitchRoleUseCase,
-} from './login'
+} from './authentication/local'
 
 // ========================================
-// TWO-FACTOR CONTEXT
+// AUTHENTICATION - OAuth (Google)
+// ========================================
+import {
+  GoogleAuthController,
+  GoogleLoginUseCase,
+} from './authentication/oauth'
+
+// ========================================
+// AUTHENTICATION - Two-Factor (2FA)
 // ========================================
 import {
   TwoFactorController,
   TwoFactorTokenService,
   Verify2FACodeUseCase,
   Resend2FACodeUseCase,
-  // Generate2FARateLimitPolicy, // TODO: Implementar si se necesita rate limiting en generate
-  Resend2FARateLimitPolicy,
-} from './two-factor'
+} from './authentication/two-factor'
 
 // ========================================
-// PASSWORD RESET CONTEXT
+// AUTHENTICATION - Setup (First-time credentials)
+// ========================================
+import {
+  SetupCredentialsController,
+  SetupPasswordUseCase,
+} from './authentication/setup'
+
+// ========================================
+// RECOVERY - Password Reset
 // ========================================
 import {
   PasswordResetController,
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
-} from './password-reset'
+} from './recovery/password'
 
 // ========================================
-// EMAIL VERIFICATION CONTEXT
+// RECOVERY - Email Verification
 // ========================================
 import {
   EmailVerificationController,
   EmailVerificationTokenService,
   RequestEmailVerificationUseCase,
   VerifyEmailUseCase,
-} from './email-verification'
+} from './recovery/email'
 
 // ========================================
-// TRUSTED DEVICES CONTEXT
-// ========================================
-import {
-  TrustedDeviceRepository,
-  DeviceFingerprintService,
-  TrustedDevicesController,
-  ListTrustedDevicesUseCase,
-  RevokeTrustedDeviceUseCase,
-  RevokeAllTrustedDevicesUseCase,
-} from './trusted-devices'
-
-// ========================================
-// SESSIONS CONTEXT
+// SESSION - Management (Sessions CRUD)
 // ========================================
 import {
   SessionsController,
   ListSessionsUseCase,
   RevokeSessionUseCase,
   RevokeAllSessionsUseCase,
-} from './sessions'
+} from './session/management'
 
 // ========================================
-// GOOGLE OAUTH CONTEXT
+// SESSION - Devices (Trusted Devices)
 // ========================================
-import { GoogleAuthController } from './google'
-import { GoogleStrategy } from './strategies/google.strategy'
-
-// ========================================
-// SHARED INFRASTRUCTURE
-// ========================================
-import { JwtStrategy, JwtAuthGuard } from './shared'
-import { RequestResetPasswordRateLimitPolicy } from './password-reset/policies'
-import { TokenStorageRepository } from './login/services/token-storage.repository'
+import {
+  TrustedDevicesController,
+  TrustedDeviceRepository,
+  DeviceFingerprintService,
+  ListTrustedDevicesUseCase,
+  RevokeTrustedDeviceUseCase,
+  RevokeAllTrustedDevicesUseCase,
+} from './session/devices'
 
 @Module({
   imports: [
@@ -118,6 +130,7 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     PasswordResetController,
     TwoFactorController,
     EmailVerificationController,
+    SetupCredentialsController,
     SessionsController,
     TrustedDevicesController,
     GoogleAuthController,
@@ -170,6 +183,9 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     RequestEmailVerificationUseCase,
     VerifyEmailUseCase,
 
+    // Setup Credentials
+    SetupPasswordUseCase,
+
     // Sessions Management
     ListSessionsUseCase,
     RevokeSessionUseCase,
@@ -186,13 +202,6 @@ import { TokenStorageRepository } from './login/services/token-storage.repositor
     JwtStrategy,
     GoogleStrategy,
     JwtAuthGuard,
-    // ========================================
-    // Global Guards (registrados como APP_GUARD)
-    // ========================================
-    /*     {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard, // ✅ Protege TODAS las rutas por defecto (usar @Public() para excepciones)
-    }, */
     TokenStorageRepository,
   ],
 

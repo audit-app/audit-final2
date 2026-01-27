@@ -1,5 +1,11 @@
 import { Controller, Get, Param, Query } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { GetAuditHistoryUseCase } from '../use-cases'
 import { GetAuditHistoryDto } from '../dtos'
@@ -10,6 +16,7 @@ import { AuditLogEntity } from '../entities'
  *
  * Endpoints para consultar el historial de cambios de templates y standards
  */
+@ApiBearerAuth()
 @ApiTags('audit-log')
 @Controller('audit-log')
 export class AuditLogController {
