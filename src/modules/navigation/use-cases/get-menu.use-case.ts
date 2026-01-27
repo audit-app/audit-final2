@@ -47,10 +47,7 @@ export class GetMenuUseCase {
    * @param templates - Plantillas dinámicas
    * @returns Navegación combinada
    */
-  private combineNavigation(
-    staticNav: any[],
-    templates: any[],
-  ): any[] {
+  private combineNavigation(staticNav: any[], templates: any[]): any[] {
     // Buscar el item "Controles" en la navegación estática
     const controlesItemIndex = staticNav.findIndex(
       (item) =>

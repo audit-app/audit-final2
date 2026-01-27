@@ -26,12 +26,20 @@ const COMMON_ROUTES: NavigationItemDto[] = [
 // ========================================
 const ADMIN_ROUTES: NavigationItemDto[] = [
   {
+    title: 'Organizaciones',
+    description: 'Gestión de Organizaciones',
+    url: '/admin/organizations',
+    icon: 'folder',
+    type: 'static',
+    order: 10,
+  },
+  {
     title: 'Usuarios',
     description: 'Gestión de usuarios del sistema',
     url: '/admin/users',
     icon: 'users',
     type: 'static',
-    order: 10,
+    order: 20,
   },
   {
     title: 'Frameworks',
@@ -39,7 +47,7 @@ const ADMIN_ROUTES: NavigationItemDto[] = [
     url: '/admin/frameworks',
     icon: 'layers',
     type: 'static',
-    order: 20,
+    order: 30,
   },
   {
     title: 'Plantillas',
@@ -47,7 +55,7 @@ const ADMIN_ROUTES: NavigationItemDto[] = [
     url: '/admin/templates',
     icon: 'folder',
     type: 'static',
-    order: 30,
+    order: 40,
   },
   {
     title: 'Controles',
@@ -55,8 +63,7 @@ const ADMIN_ROUTES: NavigationItemDto[] = [
     url: '/admin/standards',
     icon: 'files',
     type: 'static',
-    order: 40,
-    // Las plantillas dinámicas se insertarán aquí como items
+    order: 50,
   },
 ]
 
