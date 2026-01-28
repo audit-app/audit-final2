@@ -1,8 +1,8 @@
 import { Entity, Column, OneToMany, Index } from 'typeorm'
-import { BaseEntity } from '@core/entities/base.entity'
 import { StandardEntity } from '../../standards/entities/standard.entity'
 import { TemplateStatus } from '../constants/template-status.enum'
 import { TEMPLATE_CONSTRAINTS } from '../constants'
+import { BaseEntity } from '@core/entities'
 @Entity('templates')
 @Index(['name', 'version'], { unique: true })
 export class TemplateEntity extends BaseEntity {

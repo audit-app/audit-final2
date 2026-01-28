@@ -14,15 +14,6 @@
         "include": "**/*.hbs",
         "outDir": "dist"
       }
-    ],
-    "plugins": [
-      {
-        "name": "@nestjs/swagger",
-        "options": {
-          "classValidatorShim": true,
-          "introspectComments": true
-        }
-      }
     ]
   }
 }
