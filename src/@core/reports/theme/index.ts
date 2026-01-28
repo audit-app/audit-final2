@@ -119,8 +119,8 @@ export const MODERN_THEME: DocumentTheme = {
     error: 'e74c3c', // Rojo moderno
   },
   fonts: {
-    heading: 'Segoe UI',
-    body: 'Segoe UI',
+    heading: 'Calibri',
+    body: 'Calibri',
     monospace: 'Consolas',
   },
   headings: {
@@ -228,9 +228,9 @@ export const CREATIVE_THEME: DocumentTheme = {
     error: 'e74c3c', // Rojo
   },
   fonts: {
-    heading: 'Georgia',
-    body: 'Georgia',
-    monospace: 'Courier New',
+    heading: 'Calibri',
+    body: 'Calibri',
+    monospace: 'Consolas',
   },
   headings: {
     h1: {
