@@ -104,10 +104,24 @@ export class SimpleDocumentBuilderService {
       config.tableOfContents?.enabled &&
       config.tableOfContents?.insertAtBeginning
     ) {
+      // Instrucciones para actualizar TOC (solo visible en Word)
       children.push(
-        new Paragraph({ children: [new TextRun({ text: '', break: 1 })] }),
+        new Paragraph({
+          spacing: { before: 240, after: 120 },
+          children: [
+            new TextRun({
+              text: '(Haga clic derecho aquí y seleccione "Actualizar campo" para generar la tabla de contenidos)',
+              size: 18,
+              color: '808080',
+              italics: true,
+            }),
+          ],
+        }),
         this.createTableOfContents(config),
-        new Paragraph({ children: [new TextRun({ text: '', break: 1 })] }),
+        new Paragraph({
+          spacing: { before: 240, after: 240 },
+          children: [new TextRun({ text: '' })],
+        }),
       )
     }
 
@@ -181,8 +195,32 @@ export class SimpleDocumentBuilderService {
 
         return processedSections
 
-      case 'tableOfContents':
-        return this.createTableOfContents(config)
+      case 'tableOfContents': {
+        // Si insertAtBeginning está habilitado, el TOC ya fue insertado al inicio
+        // Evitamos duplicarlo aquí
+        if (config.tableOfContents?.insertAtBeginning) {
+          return []
+        }
+
+        // Retornar array con instrucciones, TOC y espaciado
+        const instructionsParagraph = new Paragraph({
+          spacing: { before: 240, after: 120 },
+          children: [
+            new TextRun({
+              text: '(Haga clic derecho aquí y seleccione "Actualizar campo" para generar la tabla de contenidos)',
+              size: 18,
+              color: '808080',
+              italics: true,
+            }),
+          ],
+        })
+        const toc = this.createTableOfContents(config)
+        const spacer = new Paragraph({
+          spacing: { before: 240, after: 240 },
+          children: [new TextRun({ text: '' })],
+        })
+        return [instructionsParagraph, toc, spacer]
+      }
 
       case 'spacer':
         return new Paragraph({
@@ -450,6 +488,9 @@ export class SimpleDocumentBuilderService {
       : undefined
 
     return new Document({
+      features: {
+        updateFields: true, // CRÍTICO: permite que TOC se actualice al abrir el documento
+      },
       styles: this.buildDocumentStyles(config.theme),
       sections: [
         {
@@ -751,8 +792,8 @@ export class SimpleDocumentBuilderService {
     // Convertir porcentajes a DXA (Document Units)
     // Ancho de página A4 con márgenes típicos: ~9000 DXA
     const TABLE_WIDTH_DXA = 9000
-    const columnWidthsDxa = columnWidthsPercentage.map(
-      (percent) => Math.round((percent / 100) * TABLE_WIDTH_DXA),
+    const columnWidthsDxa = columnWidthsPercentage.map((percent) =>
+      Math.round((percent / 100) * TABLE_WIDTH_DXA),
     )
 
     // Crear fila de headers
@@ -829,32 +870,32 @@ export class SimpleDocumentBuilderService {
       borders: {
         top: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6, // ~0.75pt (6/8 = 0.75pt) - visible en Google Docs
           color: finalTheme.borderColor,
         },
         bottom: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6,
           color: finalTheme.borderColor,
         },
         left: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6,
           color: finalTheme.borderColor,
         },
         right: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6,
           color: finalTheme.borderColor,
         },
         insideHorizontal: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6,
           color: finalTheme.borderColor,
         },
         insideVertical: {
           style: BorderStyle.SINGLE,
-          size: 1,
+          size: 6,
           color: finalTheme.borderColor,
         },
       },
@@ -905,8 +946,8 @@ export class SimpleDocumentBuilderService {
 
     // Convertir porcentajes a DXA
     const TABLE_WIDTH_DXA = 9000
-    const columnWidthsDxa = columnWidthsPercentage.map(
-      (percent) => Math.round((percent / 100) * TABLE_WIDTH_DXA),
+    const columnWidthsDxa = columnWidthsPercentage.map((percent) =>
+      Math.round((percent / 100) * TABLE_WIDTH_DXA),
     )
 
     const cells: TableCell[] = config.columns.map((column, index) => {
@@ -949,7 +990,7 @@ export class SimpleDocumentBuilderService {
 
   private createTableBorders(config: HeaderFooterConfig, theme: DocumentTheme) {
     const borderStyle = config.showBorder
-      ? { style: BorderStyle.SINGLE, size: 1, color: theme.colors.text }
+      ? { style: BorderStyle.SINGLE, size: 6, color: theme.colors.text }
       : { style: BorderStyle.NONE, size: 0 }
 
     return {
@@ -1242,8 +1283,12 @@ export class SimpleDocumentBuilderService {
 
   private createTableOfContents(config: DocumentConfig): TableOfContents {
     const tocConfig = config.tableOfContents || config.theme.tableOfContents
+    const title =
+      tocConfig?.title ||
+      config.theme.tableOfContents?.title ||
+      'Tabla de Contenido'
 
-    return new TableOfContents('Tabla de Contenido', {
+    return new TableOfContents(title, {
       hyperlink: true,
       headingStyleRange: `1-${tocConfig?.maxLevel || 3}`,
     })
