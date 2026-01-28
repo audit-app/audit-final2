@@ -741,11 +741,29 @@ export class SimpleDocumentBuilderService {
       ? { ...theme.table, ...overrideTheme }
       : theme.table
 
+    // Calcular anchos de columna en DXA
+    const numColumns = config.headers.length
+    const columnWidthsPercentage = this.calculateColumnWidths(
+      numColumns,
+      content.columnWidths,
+    )
+
+    // Convertir porcentajes a DXA (Document Units)
+    // Ancho de página A4 con márgenes típicos: ~9000 DXA
+    const TABLE_WIDTH_DXA = 9000
+    const columnWidthsDxa = columnWidthsPercentage.map(
+      (percent) => Math.round((percent / 100) * TABLE_WIDTH_DXA),
+    )
+
     // Crear fila de headers
     const headerRow = new TableRow({
       children: config.headers.map(
-        (header: string | { content: string }) =>
+        (header: string | { content: string }, index: number) =>
           new TableCell({
+            width: {
+              size: columnWidthsDxa[index],
+              type: WidthType.DXA,
+            },
             children: [
               new Paragraph({
                 alignment: AlignmentType.CENTER,
@@ -773,8 +791,12 @@ export class SimpleDocumentBuilderService {
       (row: (string | { content: string })[], rowIndex: number) =>
         new TableRow({
           children: row.map(
-            (cell: string | { content: string }) =>
+            (cell: string | { content: string }, cellIndex: number) =>
               new TableCell({
+                width: {
+                  size: columnWidthsDxa[cellIndex],
+                  type: WidthType.DXA,
+                },
                 children: [
                   new Paragraph({
                     children: [
@@ -801,7 +823,8 @@ export class SimpleDocumentBuilderService {
     )
 
     return new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
+      width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
+      columnWidths: columnWidthsDxa,
       rows: [headerRow, ...dataRows],
       borders: {
         top: {
@@ -871,13 +894,19 @@ export class SimpleDocumentBuilderService {
     type: 'header' | 'footer',
   ): Table {
     const numColumns = config.columns.length
-    const columnWidths = this.calculateColumnWidths(
+    const columnWidthsPercentage = this.calculateColumnWidths(
       numColumns,
       config.columnWidths,
     )
     const alignments = this.calculateColumnAlignments(
       numColumns,
       config.alignment,
+    )
+
+    // Convertir porcentajes a DXA
+    const TABLE_WIDTH_DXA = 9000
+    const columnWidthsDxa = columnWidthsPercentage.map(
+      (percent) => Math.round((percent / 100) * TABLE_WIDTH_DXA),
     )
 
     const cells: TableCell[] = config.columns.map((column, index) => {
@@ -890,7 +919,7 @@ export class SimpleDocumentBuilderService {
             children: content,
           }),
         ],
-        width: { size: columnWidths[index], type: WidthType.PERCENTAGE },
+        width: { size: columnWidthsDxa[index], type: WidthType.DXA },
         margins: config.padding
           ? {
               top: config.padding.top || 72,
@@ -911,7 +940,8 @@ export class SimpleDocumentBuilderService {
     const row = new TableRow({ children: cells })
 
     return new Table({
-      width: { size: 100, type: WidthType.PERCENTAGE },
+      width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
+      columnWidths: columnWidthsDxa,
       rows: [row],
       borders: this.createTableBorders(config, theme),
     })
@@ -1128,35 +1158,42 @@ export class SimpleDocumentBuilderService {
       const breakRun = new TextRun({ text: '', break: 1 })
 
       switch (content.captionPosition) {
-        case 'above':
+        case 'above': {
           // caption arriba, luego imagen (ambos en el mismo párrafo para mantener firma)
           return new Paragraph({
             alignment,
             spacing: { before: 120, after: 60 },
             children: [captionRun, breakRun, imageRun],
           })
+        }
 
-        case 'below':
+        case 'below': {
           // imagen y luego caption en la misma línea/ párrafo (separados con break)
           return new Paragraph({
             alignment,
             spacing: { before: 60, after: 120 },
             children: [imageRun, breakRun, captionRun],
           })
+        }
 
-        case 'side':
+        case 'side': {
           // lado a lado: tabla con 2 celdas. IMPORTANTE: las celdas reciben Paragraphs
+          const TABLE_WIDTH_DXA = 9000
+          const leftWidth = Math.round(TABLE_WIDTH_DXA * 0.7)
+          const rightWidth = Math.round(TABLE_WIDTH_DXA * 0.3)
+
           const leftCell = new TableCell({
-            width: { size: 70, type: WidthType.PERCENTAGE },
+            width: { size: leftWidth, type: WidthType.DXA },
             children: [new Paragraph({ children: [imageRun] })],
           })
           const rightCell = new TableCell({
-            width: { size: 30, type: WidthType.PERCENTAGE },
+            width: { size: rightWidth, type: WidthType.DXA },
             children: [new Paragraph({ children: [captionRun] })],
           })
 
           return new Table({
-            width: { size: 100, type: WidthType.PERCENTAGE },
+            width: { size: TABLE_WIDTH_DXA, type: WidthType.DXA },
+            columnWidths: [leftWidth, rightWidth],
             rows: [new TableRow({ children: [leftCell, rightCell] })],
             borders: {
               top: { style: BorderStyle.NONE, size: 0 },
@@ -1167,6 +1204,7 @@ export class SimpleDocumentBuilderService {
               insideVertical: { style: BorderStyle.NONE, size: 0 },
             },
           })
+        }
 
         default:
           // comportamiento por defecto: caption debajo

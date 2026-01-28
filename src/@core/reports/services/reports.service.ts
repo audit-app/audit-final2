@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { SimpleDocumentBuilderService } from './component.service'
 import { ThemeManagerService } from './theme.service'
-import { UserStyleOverridesDto } from '../dto/report.-congi.dto'
+import { UserStyleOverridesDto } from '../dto/report-config.dto'
 import { DocumentConfig } from '../interfaces'
 import { MODERN_THEME } from '../theme'
 
 @Injectable()
-export class DocumentExampleService {
+export class ReportsService {
   constructor(
     private readonly builder: SimpleDocumentBuilderService,
     private readonly themeManager: ThemeManagerService,
@@ -14,8 +14,10 @@ export class DocumentExampleService {
   ) {}
 
   async generateFullDocumentWithOptions(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     dto?: UserStyleOverridesDto,
   ): Promise<Buffer> {
+    // TODO: Implementar uso de dto para personalizar el documento
     const tinyPngBase64 =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII='
     const tinyPngBuffer = Buffer.from(tinyPngBase64, 'base64')

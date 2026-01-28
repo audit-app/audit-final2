@@ -1,19 +1,24 @@
 import { Module } from '@nestjs/common'
-import { DocumentExampleController } from './reports.controller'
-import { DocumentExampleService } from './services/exampl.service'
+import { ReportsController } from './reports.controller'
+import { ReportsService } from './services/reports.service'
 
 import { ThemeManagerService } from './services/theme.service'
 import { SimpleDocumentBuilderService } from './services/component.service'
 import { HtmlToSectionsConverterService } from './services/html-docx.service'
 
 @Module({
-  controllers: [DocumentExampleController],
+  controllers: [ReportsController],
   providers: [
-    DocumentExampleService,
+    ReportsService,
     HtmlToSectionsConverterService,
     ThemeManagerService,
     SimpleDocumentBuilderService,
   ],
-  exports: [],
+  exports: [
+    ReportsService,
+    ThemeManagerService,
+    SimpleDocumentBuilderService,
+    HtmlToSectionsConverterService,
+  ],
 })
 export class ReportsModule {}

@@ -87,20 +87,20 @@ export const BUSINESS_THEME: DocumentTheme = {
     maxLevel: 3,
   },
   list: {
-    fontSize: 0,
+    fontSize: 11,
     spacing: {
-      before: 0,
-      after: 0,
-      between: 0,
+      before: 60,
+      after: 120,
+      between: 80,
     },
-    indent: 0,
+    indent: 360,
     bullet: {
-      symbol: '',
-      color: undefined,
+      symbol: '•',
+      color: '1f4e79',
     },
     numbered: {
       format: 'decimal',
-      color: undefined,
+      color: '1f4e79',
     },
   },
 }
@@ -196,20 +196,20 @@ export const MODERN_THEME: DocumentTheme = {
     maxLevel: 4,
   },
   list: {
-    fontSize: 0,
+    fontSize: 11,
     spacing: {
-      before: 0,
-      after: 0,
-      between: 0,
+      before: 60,
+      after: 150,
+      between: 90,
     },
-    indent: 0,
+    indent: 360,
     bullet: {
-      symbol: '',
-      color: undefined,
+      symbol: '•',
+      color: '3498db',
     },
     numbered: {
       format: 'decimal',
-      color: undefined,
+      color: '3498db',
     },
   },
 }
@@ -302,20 +302,20 @@ export const CREATIVE_THEME: DocumentTheme = {
     maxLevel: 3,
   },
   list: {
-    fontSize: 0,
+    fontSize: 12,
     spacing: {
-      before: 0,
-      after: 0,
-      between: 0,
+      before: 80,
+      after: 160,
+      between: 100,
     },
-    indent: 0,
+    indent: 400,
     bullet: {
-      symbol: '',
-      color: undefined,
+      symbol: '•',
+      color: '9b59b6',
     },
     numbered: {
       format: 'decimal',
-      color: undefined,
+      color: 'f39c12',
     },
   },
 }

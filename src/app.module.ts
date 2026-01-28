@@ -32,6 +32,7 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
 import { NavigationModule } from './modules/navigation/navigation.module'
 import { JwtAuthGuard } from './modules/auth/core'
+import { ReportsModule } from '@core/reports/reports.module'
 
 @Module({
   imports: [
@@ -66,7 +67,7 @@ import { JwtAuthGuard } from './modules/auth/core'
     AuditLogModule, // Granular audit log for Templates/Standards
     SecurityModule, // Password hashing
     HttpModule, // Cookie management
-
+    ReportsModule,
     // Authentication & Authorization
     AuthModule, // Guards: JwtAuthGuard, RolesGuard
     AuthorizationModule, // Casbin-based permissions (ABAC)

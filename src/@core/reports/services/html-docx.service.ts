@@ -3,10 +3,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { JSDOM } from 'jsdom'
 import {
   DocumentSection,
-  HeadingSection,
   ParagraphSection,
-  ListSection,
-  TableSection,
   createHeadingSection,
   createParagraphSection,
   createListSection,
@@ -34,7 +31,7 @@ export class HtmlToSectionsConverterService {
       const sections: DocumentSection[] = []
 
       // Procesar todos los nodos hijos del body
-      for (const node of Array.from(body.childNodes)) {
+      for (const node of Array.from(body.childNodes) as Node[]) {
         const convertedSections = this.convertNodeToSections(node)
         sections.push(...convertedSections)
       }
@@ -106,10 +103,11 @@ export class HtmlToSectionsConverterService {
         // Si llegan aquí es porque no están dentro de un párrafo
         return [this.convertInlineElementToParagraph(element)]
 
-      default:
+      default: {
         // Para elementos no reconocidos, extraer su contenido como párrafo
         const text = element.textContent?.trim()
         return text ? [createParagraphSection(text)] : []
+      }
     }
   }
 
