@@ -5,9 +5,9 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
 import { Test, TestingModule } from '@nestjs/testing'
 import { ConfigService } from '@nestjs/config'
-import { LoggerService } from '@core/logger'
 import { LocalStorageService } from './local-storage.service'
 import * as path from 'path'
+import { LoggerService } from '@nestjs/common'
 
 // Mock fs/promises
 jest.mock('fs/promises', () => ({

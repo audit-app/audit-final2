@@ -107,7 +107,7 @@ export class StandardsController {
     description:
       'Cambia el orden de visualización de un estándar entre sus hermanos. Útil para drag & drop en la interfaz.',
   })
-  @ApiOkResponse(StandardResponseDto, 'Estándar reordenado exitosamente', false)
+  @ApiOkResponse(StandardResponseDto, 'Estándar reordenado exitosamente')
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [200, 404] })
   async reorder(
@@ -126,7 +126,6 @@ export class StandardsController {
   @ApiOkResponse(
     StandardResponseDto,
     'Estado auditable actualizado exitosamente',
-    false,
   )
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [200, 404] })
@@ -143,7 +142,6 @@ export class StandardsController {
   @ApiOkResponse(
     StandardResponseDto,
     'Estado auditable actualizado exitosamente',
-    false,
   )
   @ApiNotFoundResponse('Estándar no encontrado')
   @ApiStandardResponses({ exclude: [200, 404] })

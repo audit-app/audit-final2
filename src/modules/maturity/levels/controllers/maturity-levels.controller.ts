@@ -50,7 +50,7 @@ export class MaturityLevelsController {
     description:
       'Retorna todos los niveles de madurez asociados a un framework específico.',
   })
-  @ApiOkResponse(MaturityLevelEntity, 'Lista de niveles', true)
+  @ApiOkResponse(MaturityLevelEntity, 'Lista de niveles')
   @ApiNotFoundResponse('Framework no encontrado')
   @ApiStandardResponses({ exclude: [400] })
   async findByFramework(@Param('frameworkId') frameworkId: string) {

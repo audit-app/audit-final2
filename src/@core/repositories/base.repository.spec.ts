@@ -1,7 +1,8 @@
 import { Repository, EntityManager, Entity, Column } from 'typeorm'
 import { BaseRepository } from './base.repository'
 import { BaseEntity } from '@core/entities'
-import { TransactionService, AuditService } from '@core/database'
+import { TransactionService } from '@core/database'
+import { AuditService } from '@core/context'
 
 /**
  * Tests para BaseRepository - Solo lógica de conmutación de repositorio

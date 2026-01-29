@@ -2,13 +2,24 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm'
 import { BaseEntity } from '@core/entities/base.entity'
 import { OrganizationEntity } from '../../organizations/entities/organization.entity'
 import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
+import { Role } from '@core/context' // ← Importamos para usar en la entidad
 
-export enum Role {
-  ADMIN = 'admin',
-  GERENTE = 'gerente',
-  AUDITOR = 'auditor',
-  CLIENTE = 'cliente',
-}
+/**
+ * ⚠️ NOTA: Role enum movido a @core/context
+ *
+ * El enum Role ahora vive en @core/context/enums/role.enum.ts
+ * porque es un concepto transversal usado en autenticación, autorización,
+ * auditoría, navegación, etc.
+ *
+ * Se re-exporta aquí para mantener compatibilidad con imports existentes.
+ *
+ * ✅ NUEVO (preferido):
+ * import { Role } from '@core/context'
+ *
+ * ⚠️ LEGACY (funciona pero deprecado):
+ * import { Role } from 'src/modules/users/entities/user.entity'
+ */
+export { Role } // ← Re-exportamos para compatibilidad
 @Index(['email'], { unique: true, where: '"deletedAt" IS NULL' })
 @Index(['username'], { unique: true, where: '"deletedAt" IS NULL' })
 @Index(['ci'], { unique: true, where: '"deletedAt" IS NULL' })

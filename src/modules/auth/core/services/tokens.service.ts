@@ -6,8 +6,8 @@ import {
   NotBeforeError,
 } from '@nestjs/jwt'
 import ms from 'ms'
-import { ConnectionMetadataService } from '@core/common'
-import type { ConnectionMetadata } from '@core/common'
+import { ConnectionMetadataService } from '@core/http'
+import type { ConnectionMetadata } from '@core/http'
 import { LoggerService } from '@core/logger'
 import {
   TokenStorageRepository,

@@ -1,8 +1,20 @@
 export * from './database.module'
 export * from './transaction.service'
-export * from './audit.service'
 export * from './transactional.decorator'
 export * from './transaction-discovery.service'
 export { ENTITY_MANAGER_KEY } from './transaction.service'
-export { CURRENT_USER_ID_KEY } from './audit.service'
 export { TRANSACTIONAL_METADATA_KEY } from './transactional.decorator'
+
+// Persistence layer (repositories and entities registration)
+export * from './persistence'
+
+/**
+ * NOTA: AuditService ahora vive en @core/context
+ *
+ * ❌ DEPRECADO:
+ * export * from './audit.service'
+ * export { CURRENT_USER_ID_KEY } from './audit.service'
+ *
+ * ✅ NUEVO:
+ * import { AuditService, CURRENT_USER_ID_KEY } from '@core/context'
+ */

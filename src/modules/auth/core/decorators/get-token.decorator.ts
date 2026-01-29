@@ -1,35 +1,13 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
-import type { Request } from 'express'
-
 /**
- * Decorator para extraer el access token del header Authorization
+ * ⚠️ DEPRECADO: Decorador movido a @core/http
  *
- * Este decorator extrae el token JWT del header Authorization
- * después de que JwtAuthGuard lo haya validado.
+ * El decorador @GetToken() ahora vive en @core/http/decorators/
+ * porque es infraestructura HTTP genérica, no lógica de negocio de auth.
  *
- * @returns Access token (sin el prefijo "Bearer")
- * @throws UnauthorizedException si no hay token (manejado por el guard)
+ * ✅ NUEVO:
+ * import { GetToken } from '@core/http'
  *
- * @example
- * ```typescript
- * @Post('logout')
- * @UseGuards(JwtAuthGuard)
- * async logout(@GetToken() token: string) {
- *   // token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
- *   await this.logoutService.revokeToken(token)
- * }
- * ```
+ * Este archivo se mantiene temporalmente para re-exportar.
  */
-export const GetToken = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): string | undefined => {
-    const request = ctx.switchToHttp().getRequest<Request>()
-    const authHeader = request.headers.authorization
 
-    if (!authHeader) {
-      return undefined
-    }
-
-    const [type, token] = authHeader.split(' ')
-    return type === 'Bearer' ? token : undefined
-  },
-)
+export { GetToken } from '@core/http'

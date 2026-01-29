@@ -2,7 +2,7 @@ import { Injectable, Inject, BadRequestException } from '@nestjs/common'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { TokensService } from '../../../core/services'
-import type { ConnectionMetadata } from '@core/common'
+import type { ConnectionMetadata } from '@core/http'
 import type { LoginResponseDto } from '../../local/dtos'
 import {
   UserNotActiveException,

@@ -11,8 +11,8 @@ import { ResponseMessage } from '@core/decorators'
 import { MessageResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Response } from 'express'
-import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
-import { CookieService } from '@core/http/services/cookie.service'
+import { ConnectionInfo, type ConnectionMetadata } from '@core/http'
+import { CookieService } from '@core/http'
 import {
   Verify2FACodeDto,
   Verify2FAResponseDto,

@@ -1,47 +1,15 @@
-import { Role } from '../../../users/entities/user.entity'
-
-export interface JwtPayload {
-  /** ID del usuario (subject) */
-  sub: string
-
-  /** Email del usuario */
-  email: string
-
-  /** Username del usuario */
-  username: string
-
-  /** Roles del usuario (todos los roles asignados) */
-  roles: Role[]
-
-  /** Rol activo actual (el rol que está usando en esta sesión) */
-  currentRole: Role
-
-  /** ID de la organización a la que pertenece */
-  organizationId: string
-
-  /** Timestamp de emisión (issued at) - generado automáticamente por JWT */
-  iat?: number
-
-  /** Timestamp de expiración - generado automáticamente por JWT */
-  exp?: number
-}
-
 /**
- * Payload del Refresh Token JWT
+ * ⚠️ DEPRECADO: Interfaces movidas a @core/context
  *
- * Contiene información mínima para renovar tokens.
- * Este token es de larga duración (7 días) y se almacena en Redis.
+ * Las interfaces JwtPayload, JwtRefreshPayload y el enum Role
+ * ahora viven en @core/context porque son conceptos transversales
+ * usados en auditoría, logging, cookies, etc.
+ *
+ * ✅ NUEVO:
+ * import { JwtPayload, JwtRefreshPayload, Role } from '@core/context'
+ *
+ * Este archivo se mantiene temporalmente para re-exportar
+ * y evitar romper imports existentes, pero eventualmente se eliminará.
  */
-export interface JwtRefreshPayload {
-  /** ID del usuario (subject) */
-  sub: string
 
-  /** ID único del token para rotation tracking */
-  tokenId: string
-
-  /** Timestamp de emisión */
-  iat?: number
-
-  /** Timestamp de expiración */
-  exp?: number
-}
+export type { JwtPayload, JwtRefreshPayload } from '@core/context'

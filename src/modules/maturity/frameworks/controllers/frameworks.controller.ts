@@ -64,7 +64,7 @@ export class MaturityFrameworksController {
     summary: 'Obtener todos los frameworks de madurez',
     description: 'Retorna una lista de frameworks con filtros opcionales.',
   })
-  @ApiOkResponse(MaturityFrameworkEntity, 'Lista de frameworks', true)
+  @ApiOkResponse(MaturityFrameworkEntity, 'Lista de frameworks')
   @ApiStandardResponses({ exclude: [400] })
   async findAll(@Query() query: FindMaturityFrameworksDto) {
     return await this.findFrameworksUseCase.execute(query)

@@ -7,7 +7,7 @@ import {
   ObjectLiteral,
 } from 'typeorm'
 import { Injectable, Logger } from '@nestjs/common'
-import { AuditService } from '@core/database/audit.service'
+import { AuditService } from '@core/context'
 import { TemplateEntity } from '../../templates/entities/template.entity'
 import { StandardEntity } from '../../standards/entities/standard.entity'
 import { TemplateStatus } from '../../templates/constants/template-status.enum'

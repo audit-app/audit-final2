@@ -22,7 +22,7 @@ import { SessionResponseDto, RevokeSessionDto } from '../dtos'
 import { GetUser, JwtAuthGuard } from '../../../core'
 import type { JwtPayload } from '../../../core'
 import { TokensService } from '../../../core/services'
-import { CookieService } from '@core/http/services/cookie.service'
+import { CookieService } from '@core/http'
 
 @UseGuards(JwtAuthGuard)
 @ApiTags('Sessions')

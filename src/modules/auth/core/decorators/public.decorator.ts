@@ -1,23 +1,13 @@
-import { SetMetadata } from '@nestjs/common'
-
 /**
- * Key para identificar rutas públicas
+ * ⚠️ DEPRECADO: Decorador movido a @core/http
+ *
+ * El decorador @Public() y IS_PUBLIC_KEY ahora viven en @core/http/decorators/
+ * porque son infraestructura HTTP genérica, no lógica de negocio de auth.
+ *
+ * ✅ NUEVO:
+ * import { Public, IS_PUBLIC_KEY } from '@core/http'
+ *
+ * Este archivo se mantiene temporalmente para re-exportar.
  */
-export const IS_PUBLIC_KEY = 'isPublic'
 
-/**
- * Decorator @Public()
- *
- * Marca una ruta como pública (no requiere autenticación)
- * Bypass del JwtAuthGuard global
- *
- * @example
- * ```typescript
- * @Public()
- * @Get('stats')
- * async getPublicStats() {
- *   return { totalUsers: 100 }
- * }
- * ```
- */
-export const Public = () => SetMetadata(IS_PUBLIC_KEY, true)
+export { Public, IS_PUBLIC_KEY } from '@core/http'

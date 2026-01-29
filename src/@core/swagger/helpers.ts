@@ -179,7 +179,6 @@ export function ApiCreate(
   descriptionOrOptions?:
     | string
     | { summary?: string; description?: string; [key: string]: any },
-  _deprecated?: any,
 ) {
   const description =
     typeof descriptionOrOptions === 'string'
@@ -201,12 +200,12 @@ export function ApiList(
   descriptionOrOptions?:
     | string
     | { summary?: string; description?: string; [key: string]: any },
-  _deprecated?: any,
 ) {
   const description =
     typeof descriptionOrOptions === 'string'
       ? descriptionOrOptions
-      : descriptionOrOptions?.description || 'Lista de recursos obtenida exitosamente'
+      : descriptionOrOptions?.description ||
+        'Lista de recursos obtenida exitosamente'
 
   return ApiWrappedResponse({
     status: HttpStatus.OK,
@@ -224,7 +223,6 @@ export function ApiFindOne(
   descriptionOrOptions?:
     | string
     | { summary?: string; description?: string; [key: string]: any },
-  _deprecated?: any,
 ) {
   const description =
     typeof descriptionOrOptions === 'string'
@@ -311,7 +309,6 @@ export function ApiOkResponse(
   descriptionOrOptions?:
     | string
     | { summary?: string; description?: string; [key: string]: any },
-  _deprecated?: any,
 ) {
   const description =
     typeof descriptionOrOptions === 'string'

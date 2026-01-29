@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
 import { CacheService } from '@core/cache'
 import * as crypto from 'crypto'
 
@@ -15,7 +14,7 @@ export interface OtpSessionResponse {
  * Estructura interna de lo que guardamos en Redis
  */
 interface OtpStorage<T> {
-  code: string // El OTP real
+  code: string
   payload: T
 }
 
@@ -23,11 +22,8 @@ interface OtpStorage<T> {
 export class OtpCoreService {
   private readonly defaultOtpLength: number
 
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly cacheService: CacheService,
-  ) {
-    this.defaultOtpLength = this.configService.get('OTP_LENGTH', 6)
+  constructor(private readonly cacheService: CacheService) {
+    this.defaultOtpLength = 6
   }
 
   // ==========================================

@@ -20,8 +20,8 @@ import {
 import { ResponseMessage } from '@core/decorators'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request, Response } from 'express'
-import { CookieService } from '@core/http/services/cookie.service'
-import { ConnectionInfo, type ConnectionMetadata } from '@core/common'
+import { CookieService } from '@core/http'
+import { ConnectionInfo, type ConnectionMetadata } from '@core/http'
 import {
   LoginDto,
   LoginResponseDto,

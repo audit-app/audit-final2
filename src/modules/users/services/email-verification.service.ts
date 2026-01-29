@@ -43,10 +43,8 @@ export class EmailVerificationService {
     private readonly usersRepository: IUsersRepository,
     private readonly cacheService: CacheService,
     private readonly emailEventService: EmailEventService,
-    private readonly configService: ConfigService,
   ) {
-    this.frontendUrl =
-      this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000'
+    this.frontendUrl = 'http://localhost:3000'
   }
 
   /**

@@ -3,9 +3,10 @@ import { EventEmitterModule } from '@nestjs/event-emitter'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { EmailModule } from '@core/email/email.module'
+import { ContextModule } from '@core/context'
 import { DatabaseModule } from '@core/database'
 import { SecurityModule } from '@core/security'
-import { HttpModule } from '@core/http/http.module'
+import { HttpModule } from '@core/http'
 import { APP_INTERCEPTOR, APP_FILTER, APP_GUARD } from '@nestjs/core'
 import { LoggerModule } from '@core/logger'
 import { HttpExceptionFilter } from '@core/filters'
@@ -14,11 +15,10 @@ import {
   AuditInterceptor,
   TransformInterceptor,
 } from '@core/interceptors'
-import { AppConfigModule, envs } from '@core/config'
+import { envs } from '@core/config'
 import { FilesModule } from '@core/files'
-import { PersistenceModule } from '@core/persistence'
+import { PersistenceModule } from '@core/database'
 import { CacheModule } from '@core/cache'
-import { CommonModule } from '@core/common/common.module'
 import { UsersModule } from './modules/users/users.module'
 import { OrganizationsModule } from './modules/organizations/organizations.module'
 import { AuthModule } from './modules/auth/auth.module'
@@ -31,13 +31,12 @@ import { MaturityModule } from './modules/maturity/maturity.module'
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
 import { NavigationModule } from './modules/navigation/navigation.module'
-import { JwtAuthGuard } from './modules/auth/core'
+import { JwtAuthGuard } from '@core/http'
 import { ReportsModule } from '@core/reports/reports.module'
 
 @Module({
   imports: [
     // Core modules (centralized configuration)
-    AppConfigModule,
     // EventEmitter para emails asíncronos (en memoria, NO requiere Redis)
     EventEmitterModule.forRoot({
       wildcard: false,
@@ -46,9 +45,9 @@ import { ReportsModule } from '@core/reports/reports.module'
       verboseMemoryLeak: true,
       ignoreErrors: false,
     }),
-    DatabaseModule,
+    ContextModule, // ← CLS + AuditService (MUST be imported before DatabaseModule)
+    DatabaseModule, // ← Depends on ContextModule for ClsModule
     CacheModule, // Redis cache module
-    CommonModule, // Decoradores y servicios comunes (@ConnectionInfo, ConnectionMetadataService)
 
     // Throttling global (protección contra DoS)
     // ✅ Migrated to use validated envs object
@@ -66,7 +65,7 @@ import { ReportsModule } from '@core/reports/reports.module'
     PersistenceModule,
     AuditLogModule, // Granular audit log for Templates/Standards
     SecurityModule, // Password hashing
-    HttpModule, // Cookie management
+    HttpModule, // Cookie management + Connection metadata (@ConnectionInfo)
     ReportsModule,
     // Authentication & Authorization
     AuthModule, // Guards: JwtAuthGuard, RolesGuard

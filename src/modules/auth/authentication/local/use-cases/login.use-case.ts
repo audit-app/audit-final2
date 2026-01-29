@@ -16,7 +16,7 @@ import {
   EmailNotVerifiedException,
 } from '../../../core/exceptions'
 
-import { ConnectionMetadata } from '@core/common'
+import { ConnectionMetadata } from '@core/http'
 import { TokensService } from '../../../core/services'
 
 @Injectable()

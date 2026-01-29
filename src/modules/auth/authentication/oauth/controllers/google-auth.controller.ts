@@ -9,11 +9,11 @@ import {
 import type { Response, Request } from 'express'
 import { GoogleLoginUseCase } from '../use-cases'
 import { envs } from '@core/config'
-import { CookieService } from '@core/http/services/cookie.service'
+import { CookieService } from '@core/http'
 import { Public } from '../../../core'
 import { GoogleUser } from '../../../core/interfaces'
-import { ConnectionInfo } from '@core/common'
-import type { ConnectionMetadata } from '@core/common'
+import { ConnectionInfo } from '@core/http'
+import type { ConnectionMetadata } from '@core/http'
 
 // TRUCO DE TYPESCRIPT:
 // 1. Tomamos el Request de Express.

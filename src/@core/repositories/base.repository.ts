@@ -11,7 +11,8 @@ import {
 } from 'typeorm'
 import type { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity'
 import { IBaseRepository } from './base-repository.interface'
-import { TransactionService, AuditService } from '@core/database'
+import { TransactionService } from '@core/database'
+import { AuditService } from '@core/context'
 import { PaginationDto, PaginatedData } from '@core/dtos'
 
 export abstract class BaseRepository<

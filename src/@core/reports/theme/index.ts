@@ -1,5 +1,6 @@
 // themes/business.theme.ts
 import { DocumentTheme } from '../interfaces'
+import { FONTS_FAMILY } from '../const/fonts'
 
 export const BUSINESS_THEME: DocumentTheme = {
   name: 'Business',
@@ -14,9 +15,9 @@ export const BUSINESS_THEME: DocumentTheme = {
     error: 'c5504b', // Rojo
   },
   fonts: {
-    heading: 'Calibri',
-    body: 'Calibri',
-    monospace: 'Consolas',
+    heading: FONTS_FAMILY.CALIBRI,
+    body: FONTS_FAMILY.CALIBRI,
+    monospace: FONTS_FAMILY.COURIER_NEW,
   },
   headings: {
     h1: {
@@ -119,9 +120,9 @@ export const MODERN_THEME: DocumentTheme = {
     error: 'e74c3c', // Rojo moderno
   },
   fonts: {
-    heading: 'Calibri',
-    body: 'Calibri',
-    monospace: 'Consolas',
+    heading: FONTS_FAMILY.ARIAL,
+    body: FONTS_FAMILY.ARIAL,
+    monospace: FONTS_FAMILY.COURIER_NEW,
   },
   headings: {
     h1: {
@@ -228,9 +229,9 @@ export const CREATIVE_THEME: DocumentTheme = {
     error: 'e74c3c', // Rojo
   },
   fonts: {
-    heading: 'Calibri',
-    body: 'Calibri',
-    monospace: 'Consolas',
+    heading: FONTS_FAMILY.GEORGIA,
+    body: FONTS_FAMILY.GEORGIA,
+    monospace: FONTS_FAMILY.COURIER_NEW,
   },
   headings: {
     h1: {

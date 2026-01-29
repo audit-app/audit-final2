@@ -3,21 +3,6 @@ import { SeederOptions } from 'typeorm-extension'
 import { TypeOrmDatabaseLogger } from '@core/logger'
 import { envs } from '@core/config'
 
-/**
- * Configuración de TypeORM para CLI (migrations y seeds)
- *
- * PROPÓSITO:
- * - Configuración SOLO para comandos CLI
- * - Usada por: migration:generate, migration:run, migration:revert, seed:run, etc.
- *
- * ✅ Migrated to use validated envs object (Joi-validated)
- *
- * @see src/@core/config/database.config.ts - Configuración para la app
- */
-
-/**
- * Genera las opciones de configuración para TypeORM CLI
- */
 function getTypeORMConfigForCLI(): DataSourceOptions & SeederOptions {
   const projectRoot = process.cwd()
 

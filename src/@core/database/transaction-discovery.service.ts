@@ -5,12 +5,6 @@ import { TransactionService } from './transaction.service'
 import { TRANSACTIONAL_METADATA_KEY } from './transactional.decorator'
 import { LoggerService } from '@core/logger'
 
-/**
- * Servicio que descubre automáticamente todos los métodos marcados con @Transactional()
- * y los envuelve con lógica de transacción
- *
- * Esto elimina la necesidad de inyectar TransactionService manualmente en cada servicio
- */
 @Injectable()
 export class TransactionDiscoveryService implements OnModuleInit {
   constructor(
@@ -21,10 +15,6 @@ export class TransactionDiscoveryService implements OnModuleInit {
     private readonly logger: LoggerService,
   ) {}
 
-  /**
-   * Se ejecuta cuando el módulo se inicializa
-   * Busca todos los proveedores y aplica el wrapper transaccional
-   */
   onModuleInit(): void {
     this.logger.log('Iniciando escaneo de métodos @Transactional()...')
 
@@ -39,9 +29,7 @@ export class TransactionDiscoveryService implements OnModuleInit {
         continue
       }
 
-      // Obtenemos el prototipo de la clase
       const prototype = Object.getPrototypeOf(instance) as object | null
-
       if (!prototype) {
         continue
       }
@@ -71,13 +59,10 @@ export class TransactionDiscoveryService implements OnModuleInit {
     }
 
     this.logger.log(
-      `✅ Escaneo completado: ${wrappedCount} métodos envueltos con @Transactional()`,
+      `Escaneo completado: ${wrappedCount} métodos envueltos con @Transactional()`,
     )
   }
 
-  /**
-   * Envuelve un método con lógica de transacción
-   */
   private wrapMethodWithTransaction(
     instance: object,
     prototype: object,
@@ -85,7 +70,7 @@ export class TransactionDiscoveryService implements OnModuleInit {
     wrapper: InstanceWrapper,
   ): void {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const prototypeAny = prototype as any
+    const prototypeAny = prototype
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     const originalMethod = prototypeAny[methodName]
 

@@ -9,7 +9,7 @@ import { TokensService } from '../../../core/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { Verify2FACodeDto } from '../dtos/verify-2fa-code.dto'
-import type { ConnectionMetadata } from '@core/common'
+import type { ConnectionMetadata } from '@core/http'
 import { envs } from '@core/config'
 
 /**

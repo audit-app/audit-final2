@@ -1,19 +1,23 @@
 import { Global, Module } from '@nestjs/common'
 import { DiscoveryModule } from '@nestjs/core'
-import { ClsModule } from 'nestjs-cls'
 import { TransactionService } from './transaction.service'
 import { TransactionDiscoveryService } from './transaction-discovery.service'
-import { AuditService } from './audit.service'
 import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm'
 import { TypeOrmDatabaseLogger } from '@core/logger'
 import { envs } from '@core/config'
+import { ContextModule } from '@core/context'
 
 /**
  * Módulo global de database implementa:
- * - CLS (Continuation Local Storage) para request scope
- * - TransactionService para manejar transacciones
- * - AuditService para auditoría automática (createdBy/updatedBy)
+ * - TypeORM para conexión a base de datos PostgreSQL
+ * - TransactionService para manejar transacciones con CLS
  * - Discovery automático de métodos @Transactional()
+ *
+ * Depende de:
+ * - ContextModule: Proporciona ClsModule para almacenar EntityManager en CLS
+ *
+ * NOTA: AuditService ahora vive en @core/context porque la auditoría
+ * es un cross-cutting concern (no específico de database)
  */
 @Global()
 @Module({
@@ -31,16 +35,10 @@ import { envs } from '@core/config'
         }
       },
     }),
-    ClsModule.forRoot({
-      global: true,
-      middleware: {
-        mount: true,
-        generateId: true,
-      },
-    }),
+    ContextModule, // ← Importa ContextModule para acceder a ClsModule
     DiscoveryModule,
   ],
-  providers: [TransactionService, AuditService, TransactionDiscoveryService],
-  exports: [TransactionService, AuditService, ClsModule],
+  providers: [TransactionService, TransactionDiscoveryService],
+  exports: [TransactionService],
 })
 export class DatabaseModule {}

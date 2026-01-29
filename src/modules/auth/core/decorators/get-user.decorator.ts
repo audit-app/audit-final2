@@ -1,45 +1,13 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
-import { Request } from 'express'
-import type { JwtPayload } from '../interfaces'
-
 /**
- * Decorator @GetUser()
+ * ⚠️ DEPRECADO: Decorador movido a @core/http
  *
- * Obtiene el usuario autenticado del request (req.user)
- * Inyectado por JwtStrategy después de validar el token
+ * El decorador @GetUser() ahora vive en @core/http/decorators/
+ * porque es infraestructura HTTP genérica, no lógica de negocio de auth.
  *
- * @param data - Campo específico del usuario a extraer (opcional)
+ * ✅ NUEVO:
+ * import { GetUser } from '@core/http'
  *
- * @example
- * ```typescript
- * // Obtener todo el payload
- * @Get('profile')
- * async getProfile(@GetUser() user: JwtPayload) {
- *   console.log(user.sub, user.email, user.roles)
- * }
- *
- * // Obtener solo el ID
- * @Get('me')
- * async getMe(@GetUser('sub') userId: string) {
- *   return this.usersService.findOne(userId)
- * }
- *
- * // Obtener solo el email
- * @Get('settings')
- * async getSettings(@GetUser('email') email: string) {
- *   return { email }
- * }
- * ```
+ * Este archivo se mantiene temporalmente para re-exportar.
  */
-export const GetUser = createParamDecorator(
-  (data: keyof JwtPayload | undefined, ctx: ExecutionContext) => {
-    const request = ctx.switchToHttp().getRequest<Request>()
-    const user = request.user as JwtPayload
 
-    if (!user) {
-      return null
-    }
-
-    return data ? user[data] : user
-  },
-)
+export { GetUser } from '@core/http'

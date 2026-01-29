@@ -1,35 +1,9 @@
-/**
- * Eventos de Email
- *
- * Estos eventos se emiten cuando se necesita enviar un email.
- * Los listeners manejan el envío real de forma asíncrona.
- */
-
-export interface TwoFactorEmailPayload {
-  to: string
-  userName: string
-  code: string
-  expiresInMinutes: number
-}
-
-export interface ResetPasswordEmailPayload {
-  to: string
-  userName: string
-  resetLink: string
-  expiresInMinutes: number
-}
-
-export interface VerificationEmailPayload {
-  to: string
-  userName: string
-  verificationLink: string
-}
-
-export interface WelcomeEmailPayload {
-  to: string
-  userName: string
-  loginLink: string
-}
+import {
+  ResetPasswordEmailData,
+  TwoFactorEmailData,
+  VerifyEmailData,
+  WelcomeEmailData,
+} from '../interfaces'
 
 /**
  * Clase base para eventos de email
@@ -45,7 +19,7 @@ export abstract class EmailEvent {
  * Evento: Enviar código 2FA
  */
 export class Send2FAEmailEvent extends EmailEvent {
-  constructor(public readonly payload: TwoFactorEmailPayload) {
+  constructor(public readonly payload: TwoFactorEmailData) {
     super('email.send.2fa', payload)
   }
 }
@@ -54,7 +28,7 @@ export class Send2FAEmailEvent extends EmailEvent {
  * Evento: Enviar email de reset password
  */
 export class SendResetPasswordEmailEvent extends EmailEvent {
-  constructor(public readonly payload: ResetPasswordEmailPayload) {
+  constructor(public readonly payload: ResetPasswordEmailData) {
     super('email.send.reset-password', payload)
   }
 }
@@ -63,7 +37,7 @@ export class SendResetPasswordEmailEvent extends EmailEvent {
  * Evento: Enviar email de verificación
  */
 export class SendVerificationEmailEvent extends EmailEvent {
-  constructor(public readonly payload: VerificationEmailPayload) {
+  constructor(public readonly payload: VerifyEmailData) {
     super('email.send.verification', payload)
   }
 }
@@ -72,7 +46,7 @@ export class SendVerificationEmailEvent extends EmailEvent {
  * Evento: Enviar email de bienvenida
  */
 export class SendWelcomeEmailEvent extends EmailEvent {
-  constructor(public readonly payload: WelcomeEmailPayload) {
+  constructor(public readonly payload: WelcomeEmailData) {
     super('email.send.welcome', payload)
   }
 }

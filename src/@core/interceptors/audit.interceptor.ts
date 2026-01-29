@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { Request } from 'express'
-import { AuditService } from '@core/database/audit.service'
+import { AuditService } from '@core/context'
+import { JwtPayload } from 'src/modules/auth/core'
 
 /**
  * Interceptor que captura el usuario autenticado de la petición HTTP
@@ -44,17 +45,14 @@ export class AuditInterceptor implements NestInterceptor {
 
       // El usuario es añadido por JwtAuthGuard en request.user
       // Estructura típica: { sub: 'userId', email: 'user@example.com', names, lastNames, ... }
-      const user = request.user as any
+      const user = request.user as JwtPayload
 
       if (user?.sub) {
         // Guardar snapshot completo del usuario para auditoría granular
-        const fullName = user.names && user.lastNames
-          ? `${user.names} ${user.lastNames}`.trim()
-          : user.username || 'Usuario Desconocido'
-
+        // Usamos username como fullName (names/lastNames no están en el token)
         this.auditService.setCurrentUser({
           userId: user.sub,
-          fullName,
+          fullName: user.username || 'Usuario Desconocido',
           email: user.email || 'no-email@unknown.com',
           username: user.username,
         })
