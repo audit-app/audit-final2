@@ -3,11 +3,27 @@
 /* eslint-disable @typescript-eslint/no-unsafe-call */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-require-imports */
+
+// Define constants FIRST (before any imports that might use them)
+const mockUploadsDir = '/test/uploads'
+const mockAppUrl = 'http://localhost:3001'
+
+// Mock @core/config BEFORE any other imports
+jest.mock('@core/config', () => ({
+  envs: {
+    files: {
+      uploadsDir: '/test/uploads', // Use literal values here
+    },
+    app: {
+      url: 'http://localhost:3001',
+    },
+  },
+}))
+
 import { Test, TestingModule } from '@nestjs/testing'
-import { ConfigService } from '@nestjs/config'
+import { LoggerService } from '../../logger'
 import { LocalStorageService } from './local-storage.service'
 import * as path from 'path'
-import { LoggerService } from '@nestjs/common'
 
 // Mock fs/promises
 jest.mock('fs/promises', () => ({
@@ -23,23 +39,11 @@ const mockFsPromises = require('fs/promises')
 
 describe('LocalStorageService', () => {
   let service: LocalStorageService
-  let configService: jest.Mocked<ConfigService>
   let loggerService: jest.Mocked<LoggerService>
-
-  const mockUploadsDir = '/test/uploads'
-  const mockAppUrl = 'http://localhost:3001'
 
   beforeEach(async () => {
     // Reset all mocks
     jest.clearAllMocks()
-
-    const mockConfigService: Partial<jest.Mocked<ConfigService>> = {
-      get: jest.fn((key: string) => {
-        if (key === 'UPLOADS_DIR') return mockUploadsDir
-        if (key === 'APP_URL') return mockAppUrl
-        return undefined
-      }) as any,
-    }
 
     const mockLoggerService: Partial<jest.Mocked<LoggerService>> = {
       log: jest.fn(),
@@ -55,10 +59,6 @@ describe('LocalStorageService', () => {
       providers: [
         LocalStorageService,
         {
-          provide: ConfigService,
-          useValue: mockConfigService,
-        },
-        {
           provide: LoggerService,
           useValue: mockLoggerService,
         },
@@ -66,7 +66,6 @@ describe('LocalStorageService', () => {
     }).compile()
 
     service = module.get<LocalStorageService>(LocalStorageService)
-    configService = module.get(ConfigService)
     loggerService = module.get(LoggerService)
   })
 
@@ -75,26 +74,9 @@ describe('LocalStorageService', () => {
   })
 
   describe('Constructor & Initialization', () => {
-    it('should initialize with default values when config is not provided', async () => {
-      // Arrange
-      configService.get = jest.fn().mockReturnValue(undefined)
-      mockFsPromises.access = jest.fn().mockResolvedValue(undefined)
-
-      // Act
-      const module = await Test.createTestingModule({
-        providers: [
-          LocalStorageService,
-          { provide: ConfigService, useValue: configService },
-          { provide: LoggerService, useValue: loggerService },
-        ],
-      }).compile()
-
-      const newService = module.get<LocalStorageService>(LocalStorageService)
-
-      // Assert
-      expect(newService).toBeDefined()
-      expect(configService.get).toHaveBeenCalledWith('UPLOADS_DIR')
-      expect(configService.get).toHaveBeenCalledWith('APP_URL')
+    it('should be defined and initialized', () => {
+      expect(service).toBeDefined()
+      expect(loggerService).toBeDefined()
     })
 
     it('should create uploads directory if it does not exist', async () => {
@@ -108,7 +90,6 @@ describe('LocalStorageService', () => {
       const module = await Test.createTestingModule({
         providers: [
           LocalStorageService,
-          { provide: ConfigService, useValue: configService },
           { provide: LoggerService, useValue: loggerService },
         ],
       }).compile()

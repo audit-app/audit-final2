@@ -8,6 +8,26 @@ import {
 import { Request, Response } from 'express'
 import { LoggerService } from '../logger/logger.service'
 import { envs } from '../config'
+import { ErrorResponseDto } from '@core/dtos'
+
+/**
+ * HTTP Exception Filter
+ *
+ * Captura TODAS las excepciones de la aplicación y las formatea usando ErrorResponseDto.
+ * Este filter usa el DTO unificado como ÚNICO punto de verdad para errores.
+ *
+ * Funcionalidades:
+ * - Captura HttpException, Database Errors y errores genéricos
+ * - Formatea respuestas usando ErrorResponseDto
+ * - Loguea excepciones con contexto de usuario
+ * - Oculta detalles en producción
+ *
+ * IMPORTANTE: NO duplicar la estructura de ErrorResponseDto.
+ * El DTO está en @core/dtos/responses/ y es usado por:
+ * - Este filter (implementación)
+ * - Swagger (documentación)
+ * - Interceptors (tipo de respuesta)
+ */
 
 // 1. Definimos una interfaz para el Error de DB (Postgres/TypeORM)
 interface DatabaseError extends Error {
@@ -15,21 +35,6 @@ interface DatabaseError extends Error {
   detail?: string
   table?: string
   constraint?: string
-}
-
-// 2. Tipado estricto para la respuesta
-interface ErrorResponse {
-  statusCode: number
-  timestamp: string
-  path: string
-  method: string
-  message: string | string[]
-  error?: string
-  errors?: unknown[] // Puede ser string[] (class-validator) o custom validation errors
-  validationErrors?: Record<string, unknown>
-  summary?: Record<string, unknown>
-  totalErrors?: number // Total de errores encontrados
-  details?: unknown
 }
 
 // 3. Interfaz interna para el resultado del parsing
@@ -79,17 +84,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
     // Loguear la excepción
     this.logException(exception, parsed, request, userContext)
 
-    // Construir respuesta de error
-    const errorResponse: ErrorResponse = {
-      statusCode: parsed.statusCode,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      message: Array.isArray(parsed.message)
-        ? 'Error de validación'
-        : parsed.message,
-      error: parsed.error,
-    }
+    // Construir respuesta de error usando el DTO unificado
+    const errorResponse = new ErrorResponseDto()
+    errorResponse.success = false
+    errorResponse.statusCode = parsed.statusCode
+    errorResponse.timestamp = new Date().toISOString()
+    errorResponse.path = request.url
+    errorResponse.method = request.method
+    errorResponse.message = Array.isArray(parsed.message)
+      ? 'Error de validación'
+      : parsed.message
+    errorResponse.error = parsed.error
 
     // Asignación condicional limpia
     if (parsed.validationErrors)
@@ -172,7 +177,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
 
         // Extracción segura de detalles
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
         const {
           message,
           error,

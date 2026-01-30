@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/decorators'
+import { ResponseMessage } from '@core/http'
 import { MessageResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import {
@@ -9,10 +9,7 @@ import {
   ResetPasswordDto,
 } from '../dtos'
 import { Public } from '../../../core/decorators'
-import {
-  RequestResetPasswordUseCase,
-  ResetPasswordUseCase,
-} from '../use-cases'
+import { RequestResetPasswordUseCase, ResetPasswordUseCase } from '../use-cases'
 
 /**
  * PasswordResetController

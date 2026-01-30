@@ -100,7 +100,7 @@ export class ThemeManagerService {
     content: HeadingContent,
     theme: DocumentTheme,
   ): ProcessedHeadingConfig {
-    const headingKey = `h${content.level}` as keyof typeof theme.headings
+    const headingKey = `h${content.level}`
     const headingConfig = theme.headings[headingKey]
 
     return {

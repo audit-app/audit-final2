@@ -24,9 +24,17 @@ const codeExpiresInSeconds = parseTimeToSeconds(envs.twoFactor.codeExpiresIn)
 console.log('📋 Configuración actual:')
 console.log('  - Longitud del código:', envs.twoFactor.codeLength, 'dígitos')
 console.log('  - Expiración:', codeExpiresInSeconds, 'segundos')
-console.log('  - Resend cooldown:', envs.twoFactor.resendCooldownSeconds, 'segundos')
+console.log(
+  '  - Resend cooldown:',
+  envs.twoFactor.resendCooldownSeconds,
+  'segundos',
+)
 console.log('  - Max intentos:', envs.twoFactor.verifyMaxAttempts)
-console.log('  - Ventana de intentos:', envs.twoFactor.verifyWindowMinutes, 'minutos')
+console.log(
+  '  - Ventana de intentos:',
+  envs.twoFactor.verifyWindowMinutes,
+  'minutos',
+)
 console.log('')
 
 // Validaciones
@@ -38,15 +46,22 @@ if (envs.twoFactor.codeLength < 4 || envs.twoFactor.codeLength > 8) {
 }
 
 if (codeExpiresInSeconds < 60) {
-  warnings.push('⚠️  Expiración muy corta (< 1 minuto). Puede causar problemas de usabilidad.')
+  warnings.push(
+    '⚠️  Expiración muy corta (< 1 minuto). Puede causar problemas de usabilidad.',
+  )
 }
 
 if (codeExpiresInSeconds > 600) {
-  warnings.push('⚠️  Expiración muy larga (> 10 minutos). Puede ser un riesgo de seguridad.')
+  warnings.push(
+    '⚠️  Expiración muy larga (> 10 minutos). Puede ser un riesgo de seguridad.',
+  )
 }
 
 if (codeExpiresInSeconds >= 60 && codeExpiresInSeconds <= 600) {
-  console.log('✅ Expiración del código OK:', `${codeExpiresInSeconds / 60} minutos`)
+  console.log(
+    '✅ Expiración del código OK:',
+    `${codeExpiresInSeconds / 60} minutos`,
+  )
 }
 
 if (!envs.twoFactor.jwtSecret || envs.twoFactor.jwtSecret.length < 32) {

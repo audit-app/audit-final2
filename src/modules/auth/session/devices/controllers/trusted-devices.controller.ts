@@ -7,16 +7,9 @@ import {
   HttpStatus,
   Req,
 } from '@nestjs/common'
-import {
-  ApiTags,
-  ApiOperation,
-  ApiBearerAuth,
-} from '@nestjs/swagger'
-import { ResponseMessage } from '@core/decorators'
-import {
-  MessageResponseDto,
-  MessageWithCountResponseDto,
-} from '@core/dtos'
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
+import { ResponseMessage } from '@core/http'
+import { MessageResponseDto, MessageWithCountResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request } from 'express'
 import {

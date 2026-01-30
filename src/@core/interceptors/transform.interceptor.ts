@@ -8,21 +8,31 @@ import { Reflector } from '@nestjs/core'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 import { Request, Response } from 'express'
-import { RESPONSE_MESSAGE_KEY } from '../decorators/response-message.decorator'
-import { PaginationMeta } from '@core/dtos'
+import { RESPONSE_MESSAGE_KEY } from '../http/decorators/response-message.decorator'
+import {
+  SuccessResponseDto,
+  PaginatedResponseDto,
+  PaginationMeta,
+} from '@core/dtos'
 
-// ---------------------------------------------------------------------------
-// Interfaces
-// ---------------------------------------------------------------------------
-
-export interface StandardResponse<T> {
-  success: boolean
-  statusCode: number
-  message: string
-  data: T | null
-  meta?: PaginationMeta
-  timestamp: string
-}
+/**
+ * Transform Interceptor
+ *
+ * Transforma todas las respuestas exitosas al formato estándar definido en SuccessResponseDto.
+ * Este interceptor usa los DTOs unificados como ÚNICO punto de verdad.
+ *
+ * Funcionalidades:
+ * - Envuelve respuestas en SuccessResponseDto
+ * - Detecta respuestas paginadas y usa PaginatedResponseDto
+ * - Aplica mensajes personalizados del decorador @ResponseMessage
+ * - Genera mensajes automáticos según el método HTTP
+ *
+ * IMPORTANTE: NO duplicar las estructuras de respuesta.
+ * Los DTOs están en @core/dtos/responses/ y son usados por:
+ * - Este interceptor (implementación)
+ * - Swagger (documentación)
+ * - Filters (errores)
+ */
 
 // Interfaz interna para detectar si viene paginado
 interface PaginatedResult<T> {
@@ -30,21 +40,17 @@ interface PaginatedResult<T> {
   meta: PaginationMeta
 }
 
-// ---------------------------------------------------------------------------
-// Interceptor
-// ---------------------------------------------------------------------------
-
 @Injectable()
 export class TransformInterceptor<T> implements NestInterceptor<
   T,
-  StandardResponse<T | T[]>
+  SuccessResponseDto<T> | PaginatedResponseDto<T>
 > {
   constructor(private readonly reflector: Reflector) {}
 
   intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<StandardResponse<T | T[]>> {
+  ): Observable<SuccessResponseDto<T> | PaginatedResponseDto<T>> {
     return next.handle().pipe(
       map((data: unknown) => {
         const ctx = context.switchToHttp()
@@ -62,27 +68,29 @@ export class TransformInterceptor<T> implements NestInterceptor<
 
         const message = customMessage || this.getDefaultMessage(method)
 
-        // 2. Definir la estructura base
-        const result: StandardResponse<T | T[]> = {
-          success: true,
-          statusCode,
-          message,
-          data: null,
-          timestamp: new Date().toISOString(),
-        }
-
-        // 3. Lógica de Aplanamiento (Unwrapping)
+        // 2. Detectar si es una respuesta paginada
         if (this.isPaginatedResponse(data)) {
-          // Si entra aquí, TypeScript YA SABE que data tiene .data y .meta
-          result.data = data.data
-          result.meta = data.meta
-        } else {
-          // Si no, es data normal (o null)
-          // Hacemos un cast seguro porque si no es paginado, es T
-          result.data = (data as T) ?? null
-        }
+          // Crear respuesta paginada usando el DTO
+          const paginatedResponse = new PaginatedResponseDto<T>()
+          paginatedResponse.success = true
+          paginatedResponse.statusCode = statusCode
+          paginatedResponse.message = message
+          paginatedResponse.data = data.data
+          paginatedResponse.meta = data.meta
+          paginatedResponse.timestamp = new Date().toISOString()
 
-        return result
+          return paginatedResponse
+        } else {
+          // Crear respuesta normal usando el DTO
+          const successResponse = new SuccessResponseDto<T>()
+          successResponse.success = true
+          successResponse.statusCode = statusCode
+          successResponse.message = message
+          successResponse.data = (data as T) ?? null
+          successResponse.timestamp = new Date().toISOString()
+
+          return successResponse
+        }
       }),
     )
   }
@@ -92,15 +100,12 @@ export class TransformInterceptor<T> implements NestInterceptor<
    * Esto permite a TypeScript acceder a .data y .meta sin errores.
    */
   private isPaginatedResponse(data: unknown): data is PaginatedResult<T> {
-    // 1. Verificar si es un objeto válido y no es null
     if (typeof data !== 'object' || data === null) {
       return false
     }
 
-    // 2. Casteo seguro: "Si es objeto, tiene claves string y valores desconocidos"
     const record = data as Record<string, unknown>
 
-    // 3. Validar propiedades sin usar 'any'
     const hasData = 'data' in record && Array.isArray(record.data)
     const hasMeta =
       'meta' in record &&
@@ -110,6 +115,9 @@ export class TransformInterceptor<T> implements NestInterceptor<
     return hasData && hasMeta
   }
 
+  /**
+   * Genera mensaje automático según el método HTTP
+   */
   private getDefaultMessage(method: string): string {
     switch (method.toUpperCase()) {
       case 'POST':
@@ -125,3 +133,6 @@ export class TransformInterceptor<T> implements NestInterceptor<
     }
   }
 }
+
+// Re-export para compatibilidad backwards
+export type StandardResponse<T> = SuccessResponseDto<T>

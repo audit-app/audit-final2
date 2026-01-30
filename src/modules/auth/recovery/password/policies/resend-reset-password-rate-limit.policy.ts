@@ -28,9 +28,7 @@ export class ResendResetPasswordRateLimitPolicy {
   private readonly contextPrefix = 'reset-password-resend'
   private readonly cooldownSeconds: number
 
-  constructor(
-    private readonly rateLimitService: RateLimitService,
-  ) {
+  constructor(private readonly rateLimitService: RateLimitService) {
     this.cooldownSeconds = envs.passwordReset.resendCooldownSeconds
   }
 

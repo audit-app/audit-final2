@@ -1,27 +1,37 @@
 import { Module } from '@nestjs/common'
-import { TypeOrmModule } from '@nestjs/typeorm'
-import { ReportsController } from './reports.controller'
-import { ReportsService } from './services/reports.service'
-
 import { ThemeManagerService } from './services/theme.service'
 import { SimpleDocumentBuilderService } from './services/component.service'
 import { HtmlToSectionsConverterService } from './services/html-docx.service'
 
-// Importamos las entidades para poder acceder a los repositorios
-import { TemplateEntity } from '../../modules/audit-library/templates/entities/template.entity'
-import { StandardEntity } from '../../modules/audit-library/standards/entities/standard.entity'
-
+/**
+ * ReportsModule - Sistema de generación de reportes DOCX
+ *
+ * Módulo de infraestructura para generar documentos Word (.docx) profesionales
+ * con soporte para HTML, tablas, listas, estilos personalizados y temas.
+ *
+ * IMPORTANTE: Este módulo NO incluye controllers ni servicios de ejemplo.
+ * Es infraestructura pura y reutilizable.
+ *
+ * Los módulos de negocio deben:
+ * 1. Importar este módulo
+ * 2. Inyectar los servicios necesarios
+ * 3. Crear sus propios controllers
+ *
+ * Servicios disponibles:
+ * - SimpleDocumentBuilderService: Constructor de documentos DOCX
+ * - ThemeManagerService: Gestión de temas y estilos
+ * - HtmlToSectionsConverterService: Conversión de HTML a DOCX
+ *
+ * Ver: REPORTS_USAGE.md para ejemplos de uso
+ * Test: npm run reports:test (genera ejemplo en uploads/reports/)
+ */
 @Module({
-  imports: [TypeOrmModule.forFeature([TemplateEntity, StandardEntity])],
-  controllers: [ReportsController],
   providers: [
-    ReportsService,
     HtmlToSectionsConverterService,
     ThemeManagerService,
     SimpleDocumentBuilderService,
   ],
   exports: [
-    ReportsService,
     ThemeManagerService,
     SimpleDocumentBuilderService,
     HtmlToSectionsConverterService,

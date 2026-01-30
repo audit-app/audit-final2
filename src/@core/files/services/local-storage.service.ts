@@ -36,9 +36,7 @@ export class LocalStorageService implements IStorageService {
   private readonly uploadsDir: string
   private readonly baseUrl: string
 
-  constructor(
-    private readonly logger: LoggerService,
-  ) {
+  constructor(private readonly logger: LoggerService) {
     // Directorio raíz para uploads (configuración centralizada)
     this.uploadsDir = envs.files.uploadsDir
 

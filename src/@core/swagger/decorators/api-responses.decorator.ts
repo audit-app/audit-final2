@@ -20,6 +20,7 @@ import {
   CONFLICT_RESPONSE,
   INTERNAL_SERVER_ERROR_RESPONSE,
 } from '../responses/standard-responses'
+import { ErrorResponseDto } from '@core/dtos'
 
 /**
  * Aplica respuestas estándar comunes a todos los endpoints
@@ -45,7 +46,9 @@ export function ApiStandardResponses(options?: {
   exclude?: number[]
 }): MethodDecorator {
   const exclude = options?.exclude || []
-  const decorators: MethodDecorator[] = []
+  const decorators: MethodDecorator[] = [
+    ApiExtraModels(ErrorResponseDto), // Include ErrorResponseDto for Swagger schema
+  ]
 
   if (!exclude.includes(400)) {
     decorators.push(ApiResponse(VALIDATION_ERROR_RESPONSE))

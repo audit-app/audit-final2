@@ -7,7 +7,7 @@ import {
   Res,
 } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/decorators'
+import { ResponseMessage } from '@core/http'
 import { MessageResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Response } from 'express'
@@ -19,10 +19,7 @@ import {
   Resend2FACodeDto,
 } from '../dtos'
 import { Public } from '../../../core/decorators'
-import {
-  Verify2FACodeUseCase,
-  Resend2FACodeUseCase,
-} from '../use-cases'
+import { Verify2FACodeUseCase, Resend2FACodeUseCase } from '../use-cases'
 
 /**
  * TwoFactorController

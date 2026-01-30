@@ -12,12 +12,8 @@ import {
   UnauthorizedException,
   UseGuards,
 } from '@nestjs/common'
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger'
-import { ResponseMessage } from '@core/decorators'
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
+import { ResponseMessage } from '@core/http'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request, Response } from 'express'
 import { CookieService } from '@core/http'

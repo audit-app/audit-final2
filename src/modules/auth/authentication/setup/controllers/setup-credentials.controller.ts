@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common'
 import { ApiTags, ApiOperation } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/decorators'
+import { ResponseMessage } from '@core/http'
 import { MessageResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import { Public } from '../../../core/decorators'

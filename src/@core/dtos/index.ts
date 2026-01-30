@@ -3,3 +3,6 @@ export * from './paginated-response.dto'
 export * from './uuid-param.dto'
 export * from './standard-response.dto'
 export * from './message-response.dto'
+
+// Response DTOs (Single Source of Truth)
+export * from './responses'

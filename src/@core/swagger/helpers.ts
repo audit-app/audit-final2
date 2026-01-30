@@ -1,6 +1,6 @@
 import { Type, applyDecorators, HttpStatus } from '@nestjs/common'
 import { ApiResponse, ApiExtraModels, getSchemaPath } from '@nestjs/swagger'
-import { ApiStandardResponseDto, MessageResponseDto } from '@core/dtos'
+import { SuccessResponseDto, MessageResponseDto } from '@core/dtos'
 
 /**
  * Configuración para respuestas envueltas de Swagger
@@ -63,13 +63,13 @@ export function ApiWrappedResponse(options: ApiWrappedResponseOptions) {
   // Si no hay type, significa que data es null o el DTO es simple (message)
   if (!type) {
     return applyDecorators(
-      ApiExtraModels(ApiStandardResponseDto),
+      ApiExtraModels(SuccessResponseDto),
       ApiResponse({
         status,
         description,
         schema: {
           allOf: [
-            { $ref: getSchemaPath(ApiStandardResponseDto) },
+            { $ref: getSchemaPath(SuccessResponseDto) },
             {
               properties: {
                 data: {
@@ -86,13 +86,13 @@ export function ApiWrappedResponse(options: ApiWrappedResponseOptions) {
 
   // Si hay type, documentamos el campo 'data' con el tipo especificado
   return applyDecorators(
-    ApiExtraModels(ApiStandardResponseDto, type),
+    ApiExtraModels(SuccessResponseDto, type),
     ApiResponse({
       status,
       description,
       schema: {
         allOf: [
-          { $ref: getSchemaPath(ApiStandardResponseDto) },
+          { $ref: getSchemaPath(SuccessResponseDto) },
           {
             properties: {
               data: isArray
@@ -145,13 +145,13 @@ export function ApiMessageResponse(
   exampleMessage?: string,
 ) {
   return applyDecorators(
-    ApiExtraModels(ApiStandardResponseDto),
+    ApiExtraModels(SuccessResponseDto),
     ApiResponse({
       status,
       description,
       schema: {
         allOf: [
-          { $ref: getSchemaPath(ApiStandardResponseDto) },
+          { $ref: getSchemaPath(SuccessResponseDto) },
           {
             properties: {
               data: {

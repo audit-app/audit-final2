@@ -24,7 +24,7 @@ import {
   ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
-import { ResponseMessage } from '@core/decorators'
+import { ResponseMessage } from '@core/http'
 import { OrganizationResponseDto } from '../dtos'
 import {
   CreateOrganizationUseCase,

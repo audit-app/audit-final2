@@ -7,7 +7,7 @@ import {
   ApiStandardResponses,
 } from '@core/swagger'
 import { UuidParamDto } from '@core/dtos'
-import { ResponseMessage } from '@core/decorators'
+import { ResponseMessage } from '@core/http'
 import { UpdateMaturityLevelDto } from '../dtos'
 import { MaturityLevelEntity } from '../entities/maturity-level.entity'
 import {

@@ -42,6 +42,7 @@
     "files:test": "ts-node --files -r tsconfig-paths/register src/@core/files/files.test.ts",
     "files:verify": "ts-node --files -r tsconfig-paths/register src/@core/files/verify-setup.ts",
     "i18n:test": "ts-node --files -r tsconfig-paths/register src/@core/i18n/i18n.test.ts",
+    "reports:test": "ts-node --files -r tsconfig-paths/register src/@core/reports/reports.test.ts",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f",

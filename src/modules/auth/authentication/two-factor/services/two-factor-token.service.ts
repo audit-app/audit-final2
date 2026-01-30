@@ -13,7 +13,10 @@ interface TwoFactorPayload {
 /**
  * Helper: Convierte formato de tiempo (5m, 1h) a segundos, o devuelve número directo
  */
-function parseTimeToSeconds(value: string | number, defaultSeconds: number): number {
+function parseTimeToSeconds(
+  value: string | number,
+  defaultSeconds: number,
+): number {
   if (!value) return defaultSeconds
   if (typeof value === 'number') return value
   if (/^\d+$/.test(value)) return parseInt(value, 10)
@@ -66,7 +69,10 @@ function parseTimeToSeconds(value: string | number, defaultSeconds: number): num
 export class TwoFactorTokenService {
   private readonly contextPrefix = '2fa-login' // Prefijo para Redis
   private readonly codeLength = envs.twoFactor.codeLength
-  private readonly codeExpiry = parseTimeToSeconds(envs.twoFactor.codeExpiresIn, 300) // En segundos
+  private readonly codeExpiry = parseTimeToSeconds(
+    envs.twoFactor.codeExpiresIn,
+    300,
+  ) // En segundos
 
   constructor(private readonly otpCoreService: OtpCoreService) {}
 

@@ -69,9 +69,8 @@ export class TransactionDiscoveryService implements OnModuleInit {
     methodName: string,
     wrapper: InstanceWrapper,
   ): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const prototypeAny = prototype
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const originalMethod = prototypeAny[methodName]
 
     if (typeof originalMethod !== 'function') {
@@ -89,7 +88,7 @@ export class TransactionDiscoveryService implements OnModuleInit {
 
     // Reemplazamos el método con el wrapper
     // Usamos una arrow function que captura el contexto correctamente
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+
     prototypeAny[methodName] = async function (
       this: any,
       ...args: unknown[]
