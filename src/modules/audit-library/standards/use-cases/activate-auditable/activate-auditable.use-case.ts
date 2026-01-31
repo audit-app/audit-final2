@@ -36,6 +36,7 @@ export class ActivateAuditableUseCase {
    * @throws {StandardNotFoundException} Si el standard no existe
    * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
    * @throws {StandardWithChildrenCannotBeAuditableException} Si tiene hijos y se intenta marcar como auditable
+   * @throws {StandardWeightSumExceededException} Si la suma de pesos excede 100
    */
   @Transactional()
   async execute(id: string): Promise<StandardEntity> {
@@ -48,10 +49,18 @@ export class ActivateAuditableUseCase {
     // 3. Validar que puede ser auditable (si tiene hijos, solo puede ser agrupador)
     await this.standardValidator.validateCanBeAuditable(id, true)
 
-    // 4. Actualizar isAuditable
+    // 4. Validar suma de pesos (al activar como auditable, su weight se suma al total)
+    await this.standardValidator.validateWeightSum(
+      standard.templateId,
+      standard.weight,
+      true,
+      id, // Excluir este standard del cálculo
+    )
+
+    // 5. Actualizar isAuditable
     standard.isAuditable = true
 
-    // 5. Guardar
+    // 6. Guardar
     return await this.standardsRepository.save(standard)
   }
 }

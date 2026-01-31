@@ -6,6 +6,7 @@ import {
   IsBoolean,
   Length,
   Min,
+  Max,
 } from 'class-validator'
 import { Type } from 'class-transformer'
 // TODO: Mover IsNotEmptyString cuando se migre import/clone
@@ -61,4 +62,15 @@ export class ImportStandardDto {
   @IsBoolean()
   @Type(() => Boolean)
   isAuditable: boolean
+
+  @IsOptional()
+  @IsNumber()
+  @Type(() => Number)
+  @Min(0, { message: 'El peso debe ser mayor o igual a 0' })
+  @Max(100, { message: 'El peso debe ser menor o igual a 100' })
+  weight?: number
+
+  @IsOptional()
+  @IsString({ message: 'La guía del auditor debe ser una cadena de texto' })
+  auditorGuidance?: string
 }

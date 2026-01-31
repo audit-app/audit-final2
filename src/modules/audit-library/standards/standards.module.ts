@@ -32,6 +32,9 @@ import {
     ActivateAuditableUseCase,
     DeactivateAuditableUseCase,
   ],
-  exports: [],
+  exports: [
+    // Export validator for use in other modules (e.g., TemplatesModule)
+    StandardValidator,
+  ],
 })
 export class StandardsModule {}

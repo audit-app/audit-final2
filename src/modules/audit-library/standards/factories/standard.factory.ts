@@ -28,16 +28,18 @@ export class StandardFactory {
     standard.order = order
     standard.level = level
     standard.isAuditable = false
+    standard.weight = dto.weight ?? 0
+    standard.auditorGuidance = dto.auditorGuidance?.trim() || null
     return standard
   }
 
   /**
    * Actualiza una entidad existente.
-   * Solo actualiza campos de texto (code, title, description)
+   * Actualiza: title, description, weight, auditorGuidance
    * Los campos order e isAuditable tienen endpoints específicos
    *
    * @param standard - La entidad original recuperada de la BD
-   * @param dto - Los datos a actualizar (solo textos)
+   * @param dto - Los datos a actualizar
    * @returns La misma entidad con los datos nuevos
    */
   updateFromDto(
@@ -54,6 +56,14 @@ export class StandardFactory {
 
     if (dto.description !== undefined) {
       standard.description = dto.description?.trim() || null
+    }
+
+    if (dto.weight !== undefined) {
+      standard.weight = dto.weight
+    }
+
+    if (dto.auditorGuidance !== undefined) {
+      standard.auditorGuidance = dto.auditorGuidance?.trim() || null
     }
 
     return standard

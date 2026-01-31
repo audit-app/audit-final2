@@ -63,6 +63,21 @@ export class StandardResponseDto {
   isAuditable: boolean
 
   @ApiProperty({
+    example: 15.5,
+    description:
+      'Peso/ponderación del estándar (0-100). Solo aplica si isAuditable = true',
+  })
+  weight: number
+
+  @ApiProperty({
+    example:
+      'Verificar existencia de política documentada y firmada por gerencia. Revisar fecha de última actualización.',
+    description: 'Guía/recomendaciones para el auditor sobre qué verificar',
+    nullable: true,
+  })
+  auditorGuidance: string | null
+
+  @ApiProperty({
     example: '2024-01-20T10:30:00Z',
     description: 'Fecha de creación',
   })

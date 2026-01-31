@@ -123,6 +123,27 @@ export class StandardEntity extends BaseEntity {
   @Column({ type: 'boolean', default: true })
   isAuditable: boolean
 
+  /**
+   * Peso/ponderación del estándar en evaluaciones (0-100)
+   * Solo aplica si isAuditable = true
+   * La suma de pesos de todos los standards auditables del template debe ser 100
+   */
+  @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
+  weight: number
+
+  /**
+   * Guía/Recomendaciones para el auditor
+   * Describe qué debe revisar, verificar o evaluar el auditor
+   * Puede estar en cualquier nivel (auditable o no)
+   *
+   * @example
+   * "Verificar existencia de política documentada y firmada por gerencia.
+   *  Revisar fecha de última actualización (debe ser < 1 año).
+   *  Confirmar que todo el personal conoce la política."
+   */
+  @Column({ type: 'text', nullable: true })
+  auditorGuidance: string | null
+
   changeOrder(newOrder: number) {
     if (newOrder < 0) throw new BadRequestException('Orden inválido')
     this.order = newOrder
@@ -130,5 +151,21 @@ export class StandardEntity extends BaseEntity {
 
   toggleAuditable(isAuditable: boolean) {
     this.isAuditable = isAuditable
+  }
+
+  setWeight(weight: number) {
+    if (!this.isAuditable) {
+      throw new BadRequestException(
+        'No se puede asignar peso a un estándar no auditable',
+      )
+    }
+    if (weight < 0 || weight > 100) {
+      throw new BadRequestException('El peso debe estar entre 0 y 100')
+    }
+    this.weight = weight
+  }
+
+  setAuditorGuidance(guidance: string | null) {
+    this.auditorGuidance = guidance
   }
 }

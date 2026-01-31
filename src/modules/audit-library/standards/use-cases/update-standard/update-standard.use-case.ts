@@ -35,6 +35,7 @@ export class UpdateStandardUseCase {
    * @returns Standard actualizado
    * @throws {StandardNotFoundException} Si el standard no existe
    * @throws {StandardCannotModifyContentException} Si no se puede modificar el contenido
+   * @throws {StandardWeightSumExceededException} Si la suma de pesos excede 100
    */
   @Transactional()
   async execute(id: string, dto: UpdateStandardDto): Promise<StandardEntity> {
@@ -53,10 +54,20 @@ export class UpdateStandardUseCase {
       )
     } */
 
-    // 4. Actualizar campos usando factory
+    // 4. Validar suma de pesos si se está actualizando el peso
+    if (dto.weight !== undefined && standard.isAuditable) {
+      await this.standardValidator.validateWeightSum(
+        standard.templateId,
+        dto.weight,
+        true,
+        id, // Excluir este standard del cálculo
+      )
+    }
+
+    // 5. Actualizar campos usando factory
     const updatedStandard = this.standardFactory.updateFromDto(standard, dto)
 
-    // 5. Guardar cambios
+    // 6. Guardar cambios
     return await this.standardsRepository.save(updatedStandard)
   }
 }

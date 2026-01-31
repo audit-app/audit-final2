@@ -1,4 +1,13 @@
-import { IsString, IsOptional, IsUUID, MinLength, MaxLength } from '@core/i18n'
+import {
+  IsString,
+  IsOptional,
+  IsUUID,
+  MinLength,
+  MaxLength,
+  IsNumber,
+  Min,
+  Max,
+} from '@core/i18n'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { STANDARDS_CONSTRAINTS } from '../constants'
 
@@ -48,4 +57,27 @@ export class CreateStandardDto {
   @IsString()
   @MaxLength(STANDARDS_CONSTRAINTS.DESCRIPTION.MAX_LENGTH)
   description?: string
+
+  @ApiPropertyOptional({
+    description:
+      'Peso/ponderación del estándar (0-100). Solo aplica si isAuditable = true. Se puede configurar después.',
+    example: 15.5,
+    minimum: 0,
+    maximum: 100,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  weight?: number
+
+  @ApiPropertyOptional({
+    description:
+      'Guía/recomendaciones para el auditor. Describe qué debe verificar o evaluar. Puede estar en cualquier nivel.',
+    example:
+      'Verificar existencia de política documentada y firmada por gerencia. Revisar fecha de última actualización (debe ser < 1 año).',
+  })
+  @IsOptional()
+  @IsString()
+  auditorGuidance?: string
 }

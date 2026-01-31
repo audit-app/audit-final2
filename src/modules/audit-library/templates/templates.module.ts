@@ -21,9 +21,10 @@ import {
   TemplateExampleService,
 } from './services'
 import { TEMPLATES_REPOSITORY } from './tokens'
+import { StandardsModule } from '../standards/standards.module'
 
 @Module({
-  imports: [],
+  imports: [StandardsModule],
   controllers: [TemplatesController],
   providers: [
     {

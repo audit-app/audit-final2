@@ -40,6 +40,7 @@ export class CreateStandardUseCase {
    * @throws {TemplateNotFoundException} Si el template no existe
    * @throws {StandardCannotModifyStructureException} Si no se puede modificar la estructura
    * @throws {StandardNotFoundException} Si el padre no existe
+   * @throws {StandardWeightSumExceededException} Si la suma de pesos excede 100
    */
   @Transactional()
   async execute(dto: CreateStandardDto): Promise<StandardEntity> {
@@ -67,7 +68,19 @@ export class CreateStandardUseCase {
     // 5. Crear el standard usando factory
     const standard = this.standardFactory.createFromDto(dto, level, order)
 
-    // 6. Guardar
+    // 6. Validar suma de pesos si se proporciona peso > 0
+    // NOTA: Por defecto isAuditable=false, pero si el usuario pasa weight > 0
+    // validamos que no exceda el límite para prevenir problemas futuros
+    if (dto.weight && dto.weight > 0) {
+      await this.standardValidator.validateWeightSum(
+        dto.templateId,
+        dto.weight,
+        false, // Por ahora no es auditable, solo verificamos que no exceda
+        undefined, // No excluir ningún standard (es creación)
+      )
+    }
+
+    // 7. Guardar
     return await this.standardsRepository.save(standard)
   }
 }

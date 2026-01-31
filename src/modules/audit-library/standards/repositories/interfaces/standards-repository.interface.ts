@@ -25,4 +25,8 @@ export interface IStandardsRepository extends IBaseRepository<StandardEntity> {
     templateId: string,
     parentId: string | null,
   ): Promise<number>
+  getTotalWeightByTemplate(
+    templateId: string,
+    excludeId?: string,
+  ): Promise<number>
 }

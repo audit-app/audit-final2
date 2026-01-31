@@ -119,6 +119,8 @@ export class TemplateExportService {
       { header: 'Nivel', key: 'level', width: 10 },
       { header: 'Orden', key: 'order', width: 10 },
       { header: 'Auditable', key: 'isAuditable', width: 15 },
+      { header: 'Peso (%)', key: 'weight', width: 12 },
+      { header: 'Guía Auditor', key: 'auditorGuidance', width: 60 },
     ]
 
     // Estilo del header (Tu estilo original)
@@ -150,6 +152,8 @@ export class TemplateExportService {
         level: standard.level,
         order: standard.order,
         isAuditable: standard.isAuditable ? 'Sí' : 'No',
+        weight: standard.weight || 0,
+        auditorGuidance: standard.auditorGuidance || '',
       }
     })
 

@@ -14,7 +14,7 @@ const COMMON_ROUTES: NavigationItemDto[] = [
   {
     title: 'Home',
     description: 'Página principal',
-    url: '/',
+    url: '/admin',
     icon: 'home',
     type: 'static',
     order: 1,

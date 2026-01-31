@@ -7,6 +7,7 @@ import { CreateTemplateDto } from '../../dtos'
 import { TemplateValidator } from '../../validators'
 import { TemplateFactory } from '../../factories'
 import { TemplateImportService } from '../../services'
+import { StandardValidator } from '../../../standards/validators'
 
 @Injectable()
 export class ImportTemplateUseCase {
@@ -16,6 +17,7 @@ export class ImportTemplateUseCase {
     private readonly templateValidator: TemplateValidator,
     private readonly templateFactory: TemplateFactory,
     private readonly templateImportService: TemplateImportService,
+    private readonly standardValidator: StandardValidator,
   ) {}
 
   /**
@@ -25,6 +27,7 @@ export class ImportTemplateUseCase {
    * @param metadata - Metadatos del template (name, version, description)
    * @returns Template creado con todos sus standards
    * @throws {BadRequestException} Si hay errores de validación
+   * @throws {StandardWeightSumInvalidException} Si la suma de pesos no es 100
    */
   @Transactional()
   async execute(
@@ -43,13 +46,20 @@ export class ImportTemplateUseCase {
     // 3. Guardar template primero para obtener el ID
     const savedTemplate = await this.templateRespository.save(template)
 
-    // B. Vincular el Template ID al árbol de Standards
+    // 4. Vincular el Template ID al árbol de Standards
     // Usamos el helper público de tu servicio
     this.templateImportService.assignTemplateToTree(
       rootStandards,
       savedTemplate,
     )
     savedTemplate.standards = rootStandards
-    return await this.templateRespository.save(savedTemplate)
+    const finalTemplate = await this.templateRespository.save(savedTemplate)
+
+    // 5. Validar que la suma de pesos de standards auditables sea exactamente 100
+    await this.standardValidator.validateTotalWeightEquals100(
+      finalTemplate.id,
+    )
+
+    return finalTemplate
   }
 }

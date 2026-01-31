@@ -7,6 +7,8 @@ import {
   StandardCannotModifyStructureException,
   StandardCannotModifyContentException,
   StandardWithChildrenCannotBeAuditableException,
+  StandardWeightSumExceededException,
+  StandardWeightSumInvalidException,
 } from '../exceptions'
 import { TemplateNotFoundException } from '../../templates/exceptions'
 import { STANDARDS_REPOSITORY } from '../tokens'
@@ -171,6 +173,63 @@ export class StandardValidator {
         standardId,
         childCount,
       )
+    }
+  }
+
+  /**
+   * Valida que la suma de pesos no exceda 100
+   *
+   * Regla: La suma total de pesos de todos los standards auditables debe ser <= 100
+   *
+   * @param templateId - ID del template
+   * @param weight - Peso a agregar/actualizar
+   * @param isAuditable - Si el standard es auditable (solo valida si es true)
+   * @param excludeId - ID del standard a excluir del cálculo (para updates)
+   * @throws {StandardWeightSumExceededException} Si la suma excede 100
+   */
+  async validateWeightSum(
+    templateId: string,
+    weight: number,
+    isAuditable: boolean,
+    excludeId?: string,
+  ): Promise<void> {
+    // Solo validar si el standard es auditable y tiene peso > 0
+    if (!isAuditable || weight === 0) {
+      return
+    }
+
+    // Calcular suma actual (excluyendo este standard si es update)
+    const currentSum =
+      await this.standardsRepository.getTotalWeightByTemplate(
+        templateId,
+        excludeId,
+      )
+
+    // Verificar si excede 100
+    const totalSum = currentSum + weight
+
+    if (totalSum > 100) {
+      throw new StandardWeightSumExceededException(templateId, currentSum, weight)
+    }
+  }
+
+  /**
+   * Valida que la suma total de pesos sea exactamente 100
+   *
+   * Útil para validar templates importados o después de configurar todos los pesos
+   *
+   * @param templateId - ID del template
+   * @throws {StandardWeightSumInvalidException} Si la suma no es exactamente 100
+   */
+  async validateTotalWeightEquals100(templateId: string): Promise<void> {
+    const totalWeight =
+      await this.standardsRepository.getTotalWeightByTemplate(templateId)
+
+    // Tolerancia de 0.01 para evitar problemas de precisión decimal
+    const tolerance = 0.01
+
+    if (Math.abs(totalWeight - 100) > tolerance) {
+      throw new StandardWeightSumInvalidException(templateId, totalWeight)
     }
   }
 }

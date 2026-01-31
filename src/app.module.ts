@@ -27,6 +27,7 @@ import { PermissionsGuard } from './modules/authorization/guards/permissions.gua
 import { TemplatesModule } from './modules/audit-library/templates/templates.module'
 import { StandardsModule } from './modules/audit-library/standards/standards.module'
 import { MaturityModule } from './modules/maturity/maturity.module'
+import { AuditsModule } from './modules/audits/audits.module'
 
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler'
 import { AuditLogModule } from './modules/audit-library/audit-log/audit-log.module'
@@ -36,8 +37,6 @@ import { ReportsModule } from '@core/reports/reports.module'
 
 @Module({
   imports: [
-    // Core modules (centralized configuration)
-    // EventEmitter para emails asíncronos (en memoria, NO requiere Redis)
     EventEmitterModule.forRoot({
       wildcard: false,
       delimiter: '.',
@@ -45,16 +44,13 @@ import { ReportsModule } from '@core/reports/reports.module'
       verboseMemoryLeak: true,
       ignoreErrors: false,
     }),
-    ContextModule, // ← CLS + AuditService (MUST be imported before DatabaseModule)
-    DatabaseModule, // ← Depends on ContextModule for ClsModule
-    CacheModule, // Redis cache module
-
-    // Throttling global (protección contra DoS)
-    // ✅ Migrated to use validated envs object
+    ContextModule,
+    DatabaseModule,
+    CacheModule,
     ThrottlerModule.forRoot([
       {
         name: 'default',
-        ttl: envs.security.throttleTtl, // Already in milliseconds
+        ttl: envs.security.throttleTtl,
         limit: envs.security.throttleLimit,
       },
     ]),
@@ -63,22 +59,21 @@ import { ReportsModule } from '@core/reports/reports.module'
     LoggerModule,
     EmailModule,
     PersistenceModule,
-    AuditLogModule, // Granular audit log for Templates/Standards
-    SecurityModule, // Password hashing
-    HttpModule, // Cookie management + Connection metadata (@ConnectionInfo)
+    AuditLogModule,
+    SecurityModule,
+    HttpModule,
     ReportsModule,
-    // Authentication & Authorization
-    AuthModule, // Guards: JwtAuthGuard, RolesGuard
-    AuthorizationModule, // Casbin-based permissions (ABAC)
+    AuthModule,
+    AuthorizationModule,
 
     // Feature modules
     OrganizationsModule,
     UsersModule,
-    TemplatesModule, // Must be imported before StandardsModule (dependency)
+    TemplatesModule,
     StandardsModule,
     MaturityModule,
-    NavigationModule, // Navigation menu (static + dynamic)
-    // ImportModule, // Template & Standards import (obsoleto - funcionalidad movida a TemplatesModule)
+    AuditsModule,
+    NavigationModule,
   ],
   controllers: [AppController],
   providers: [

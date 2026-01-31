@@ -137,6 +137,8 @@ export class TemplateExampleService {
       { header: 'Orden', key: 'order', width: 10 },
       { header: 'Nivel', key: 'level', width: 10 },
       { header: 'Auditable', key: 'isAuditable', width: 15 },
+      { header: 'Peso (%)', key: 'weight', width: 12 },
+      { header: 'Guía Auditor', key: 'auditorGuidance', width: 60 },
     ]
 
     // Estilo del header
@@ -160,6 +162,8 @@ export class TemplateExampleService {
         order: 1,
         level: 1,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
       {
         code: 'A.6',
@@ -170,6 +174,8 @@ export class TemplateExampleService {
         order: 2,
         level: 1,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
       {
         code: 'A.7',
@@ -180,6 +186,8 @@ export class TemplateExampleService {
         order: 3,
         level: 1,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
 
       // Nivel 2: Objetivos de control (hijos de A.5)
@@ -191,6 +199,8 @@ export class TemplateExampleService {
         order: 1,
         level: 2,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
 
       // Nivel 3: Controles específicos (hijos de A.5.1)
@@ -204,6 +214,9 @@ export class TemplateExampleService {
         order: 1,
         level: 3,
         isAuditable: 'Sí',
+        weight: 15,
+        auditorGuidance:
+          'Verificar existencia de políticas documentadas y aprobadas por gerencia. Revisar fecha de última actualización (debe ser < 1 año). Confirmar que están comunicadas a todo el personal.',
       },
       {
         code: 'A.5.1.2',
@@ -214,6 +227,9 @@ export class TemplateExampleService {
         order: 2,
         level: 3,
         isAuditable: 'Sí',
+        weight: 10,
+        auditorGuidance:
+          'Revisar calendario de revisiones. Verificar actas de revisión de políticas en los últimos 12 meses. Validar aprobación de cambios.',
       },
 
       // Más controles de nivel 2 y 3 (hijos de A.6)
@@ -226,6 +242,8 @@ export class TemplateExampleService {
         order: 1,
         level: 2,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
       {
         code: 'A.6.1.1',
@@ -236,6 +254,9 @@ export class TemplateExampleService {
         order: 1,
         level: 3,
         isAuditable: 'Sí',
+        weight: 20,
+        auditorGuidance:
+          'Revisar documentos de roles y responsabilidades. Entrevistar a responsables de seguridad. Verificar que están claramente documentados y comunicados.',
       },
       {
         code: 'A.6.1.2',
@@ -246,6 +267,9 @@ export class TemplateExampleService {
         order: 2,
         level: 3,
         isAuditable: 'Sí',
+        weight: 15,
+        auditorGuidance:
+          'Identificar funciones críticas. Verificar que no existen conflictos de interés. Revisar matriz de segregación de funciones.',
       },
 
       // Controles de A.7
@@ -258,6 +282,8 @@ export class TemplateExampleService {
         order: 1,
         level: 2,
         isAuditable: 'No',
+        weight: 0,
+        auditorGuidance: '',
       },
       {
         code: 'A.7.1.1',
@@ -268,6 +294,9 @@ export class TemplateExampleService {
         order: 1,
         level: 3,
         isAuditable: 'Sí',
+        weight: 25,
+        auditorGuidance:
+          'Revisar proceso de verificación de antecedentes. Seleccionar muestra de 5 contrataciones recientes. Verificar documentación de background checks conforme a normativa vigente.',
       },
       {
         code: 'A.7.1.2',
@@ -278,6 +307,9 @@ export class TemplateExampleService {
         order: 2,
         level: 3,
         isAuditable: 'Sí',
+        weight: 15,
+        auditorGuidance:
+          'Revisar contratos laborales. Verificar que incluyan cláusulas de confidencialidad, acuerdos de uso aceptable, y responsabilidades de seguridad.',
       },
     ]
 
@@ -350,13 +382,23 @@ export class TemplateExampleService {
       'G1',
       'Indica si el control puede ser auditado. Valores: Sí, No, Yes, No, True, False.',
     )
+    this.addCellComment(
+      sheet,
+      'H1',
+      'Peso/ponderación del control (0-100). Solo aplica a controles auditables. La suma total debe ser 100. Opcional.',
+    )
+    this.addCellComment(
+      sheet,
+      'I1',
+      'Guía o recomendaciones para el auditor. Describe qué debe revisar, verificar o evaluar. Puede estar en cualquier nivel. Opcional.',
+    )
 
     // Nota informativa al final
     const lastRow = sheet.lastRow!.number + 2
     sheet.getCell(`A${lastRow}`).value =
-      '💡 IMPORTANTE: Puede agregar más filas siguiendo esta estructura. El sistema acepta nombres de columnas en español e inglés.'
+      '💡 IMPORTANTE: Puede agregar más filas siguiendo esta estructura. El sistema acepta nombres de columnas en español e inglés. La suma de pesos de controles auditables debe ser 100.'
     sheet.getCell(`A${lastRow}`).font = { italic: true, size: 10, bold: true }
-    sheet.mergeCells(`A${lastRow}:G${lastRow}`)
+    sheet.mergeCells(`A${lastRow}:I${lastRow}`)
   }
 
   /**
@@ -403,7 +445,7 @@ export class TemplateExampleService {
       {
         step: '5',
         instruction:
-          'Columnas opcionales en "Standards": Descripción, Código Padre, Orden, Auditable',
+          'Columnas opcionales en "Standards": Descripción, Código Padre, Orden, Auditable, Peso (%), Guía Auditor',
       },
       {
         step: '6',
@@ -423,10 +465,20 @@ export class TemplateExampleService {
       {
         step: '9',
         instruction:
-          'Una vez completado, guarde el archivo y súbalo usando el endpoint POST /templates/import',
+          'El campo "Peso (%)" es un número entre 0 y 100. Solo aplica a controles auditables. La suma total de pesos de todos los controles auditables debe ser 100.',
       },
       {
         step: '10',
+        instruction:
+          'El campo "Guía Auditor" puede contener recomendaciones sobre qué verificar o revisar durante la auditoría. Puede estar en cualquier nivel (auditable o no).',
+      },
+      {
+        step: '11',
+        instruction:
+          'Una vez completado, guarde el archivo y súbalo usando el endpoint POST /templates/import',
+      },
+      {
+        step: '12',
         instruction:
           'Al importar, puede proporcionar: name (obligatorio), version (obligatorio), code (opcional), description (opcional)',
       },
@@ -463,9 +515,11 @@ export class TemplateExampleService {
     })
 
     // Título adicional
-    sheet.getCell('A13').value = '📚 COLUMNAS ACEPTADAS (español e inglés):'
-    sheet.getCell('A13').font = { bold: true, size: 11 }
-    sheet.mergeCells('A13:B13')
+    const columnsRow = sheet.lastRow!.number + 2
+    sheet.getCell(`A${columnsRow}`).value =
+      '📚 COLUMNAS ACEPTADAS (español e inglés):'
+    sheet.getCell(`A${columnsRow}`).font = { bold: true, size: 11 }
+    sheet.mergeCells(`A${columnsRow}:B${columnsRow}`)
 
     const columnNames = [
       {
@@ -482,12 +536,19 @@ export class TemplateExampleService {
         step: '',
         instruction: '• Auditable, Es Auditable, Is Auditable',
       },
+      {
+        step: '',
+        instruction:
+          '• Peso, Peso (%), Weight | Guía Auditor, Guia Auditor, Auditor Guidance, Guidance',
+      },
     ]
 
     sheet.addRows(columnNames)
 
     // Formato para las columnas aceptadas
-    for (let i = 14; i <= 16; i++) {
+    const startRow = columnsRow + 1
+    const endRow = startRow + columnNames.length - 1
+    for (let i = startRow; i <= endRow; i++) {
       sheet.getRow(i).getCell(2).font = { italic: true, size: 10 }
       sheet.mergeCells(`A${i}:B${i}`)
     }

@@ -14,6 +14,8 @@ interface RawExcelRow {
   order: number
   level: number
   isAuditable: boolean
+  weight?: number
+  auditorGuidance?: string
 }
 
 @Injectable()
@@ -48,6 +50,13 @@ export class TemplateImportService {
     order: ['orden', 'order'],
     level: ['nivel', 'level'],
     isAuditable: ['auditable', 'es auditable', 'is auditable'],
+    weight: ['peso', 'peso (%)', 'weight'],
+    auditorGuidance: [
+      'guía auditor',
+      'guia auditor',
+      'auditor guidance',
+      'guidance',
+    ],
   }
 
   private async parseExcel(
@@ -121,6 +130,8 @@ export class TemplateImportService {
         order: this.parseNumber(getVal('order'), 0),
         level: this.parseNumber(getVal('level'), 1),
         isAuditable: this.parseBoolean(getVal('isAuditable')),
+        weight: this.parseNumber(getVal('weight'), 0),
+        auditorGuidance: getVal('auditorGuidance'),
       })
     })
 

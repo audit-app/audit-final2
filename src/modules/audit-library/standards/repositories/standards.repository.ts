@@ -165,6 +165,32 @@ export class StandardsRepository
 
     return lastStandard ? lastStandard.order : 0
   }
+
+  /**
+   * Calcula la suma total de pesos de todos los standards auditables
+   * de un template (excluyendo opcionalmente uno por su ID).
+   *
+   * @param templateId - ID del template
+   * @param excludeId - ID del standard a excluir (útil para validar updates)
+   * @returns Suma total de pesos (0-100)
+   */
+  async getTotalWeightByTemplate(
+    templateId: string,
+    excludeId?: string,
+  ): Promise<number> {
+    const query = this.getRepo()
+      .createQueryBuilder('standard')
+      .select('SUM(standard.weight)', 'totalWeight')
+      .where('standard.templateId = :templateId', { templateId })
+      .andWhere('standard.isAuditable = :isAuditable', { isAuditable: true })
+
+    if (excludeId) {
+      query.andWhere('standard.id != :excludeId', { excludeId })
+    }
+
+    const result = await query.getRawOne()
+    return parseFloat(result?.totalWeight || '0')
+  }
 }
 
 function filterTreeNodes(

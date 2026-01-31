@@ -8,6 +8,10 @@ import { TemplateEntity } from '../../../modules/audit-library/templates/entitie
 import { StandardEntity } from '../../../modules/audit-library/standards/entities/standard.entity'
 import { MaturityFrameworkEntity } from '../../../modules/maturity/frameworks/entities/maturity-framework.entity'
 import { MaturityLevelEntity } from '../../../modules/maturity/levels/entities/maturity-level.entity'
+import { AuditEntity } from '../../../modules/audits/entities/audit.entity'
+import { AuditAssignmentEntity } from '../../../modules/audits/entities/audit-assignment.entity'
+import { AuditResponseEntity } from '../../../modules/audits/entities/audit-response.entity'
+import { AuditWorkPaperEntity } from '../../../modules/audits/entities/audit-work-paper.entity'
 
 // ========== REPOSITORIES ==========
 import { UsersRepository } from '../../../modules/users/repositories/users.repository'
@@ -16,6 +20,10 @@ import { TemplatesRepository } from '../../../modules/audit-library/templates/re
 import { StandardsRepository } from '../../../modules/audit-library/standards/repositories/standards.repository'
 import { MaturityFrameworksRepository } from '../../../modules/maturity/frameworks/repositories/frameworks.repository'
 import { MaturityLevelsRepository } from '../../../modules/maturity/levels/repositories/maturity-levels.repository'
+import { AuditsRepository } from '../../../modules/audits/repositories/audits.repository'
+import { AuditAssignmentsRepository } from '../../../modules/audits/repositories/audit-assignments.repository'
+import { AuditResponsesRepository } from '../../../modules/audits/repositories/audit-responses.repository'
+import { AuditWorkPapersRepository } from '../../../modules/audits/repositories/audit-work-papers.repository'
 
 // ========== TOKENS ==========
 import { USERS_REPOSITORY } from '../../../modules/users/tokens'
@@ -24,6 +32,12 @@ import { FRAMEWORKS_REPOSITORY } from '../../../modules/maturity/frameworks/toke
 import { LEVELS_REPOSITORY } from '../../../modules/maturity/levels/tokens'
 import { TEMPLATES_REPOSITORY } from 'src/modules/audit-library/templates/tokens'
 import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens'
+import {
+  AUDITS_REPOSITORY,
+  AUDIT_ASSIGNMENTS_REPOSITORY,
+  AUDIT_RESPONSES_REPOSITORY,
+  AUDIT_WORK_PAPERS_REPOSITORY,
+} from '../../../modules/audits/tokens'
 
 @Global()
 @Module({
@@ -35,6 +49,10 @@ import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens
       StandardEntity,
       MaturityFrameworkEntity,
       MaturityLevelEntity,
+      AuditEntity,
+      AuditAssignmentEntity,
+      AuditResponseEntity,
+      AuditWorkPaperEntity,
     ]),
   ],
   providers: [
@@ -73,6 +91,30 @@ import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens
       provide: LEVELS_REPOSITORY,
       useClass: MaturityLevelsRepository,
     },
+
+    // ========== Audits Repository ==========
+    {
+      provide: AUDITS_REPOSITORY,
+      useClass: AuditsRepository,
+    },
+
+    // ========== Audit Assignments Repository ==========
+    {
+      provide: AUDIT_ASSIGNMENTS_REPOSITORY,
+      useClass: AuditAssignmentsRepository,
+    },
+
+    // ========== Audit Responses Repository ==========
+    {
+      provide: AUDIT_RESPONSES_REPOSITORY,
+      useClass: AuditResponsesRepository,
+    },
+
+    // ========== Audit Work Papers Repository ==========
+    {
+      provide: AUDIT_WORK_PAPERS_REPOSITORY,
+      useClass: AuditWorkPapersRepository,
+    },
   ],
   exports: [
     USERS_REPOSITORY,
@@ -81,6 +123,10 @@ import { STANDARDS_REPOSITORY } from 'src/modules/audit-library/standards/tokens
     STANDARDS_REPOSITORY,
     FRAMEWORKS_REPOSITORY,
     LEVELS_REPOSITORY,
+    AUDITS_REPOSITORY,
+    AUDIT_ASSIGNMENTS_REPOSITORY,
+    AUDIT_RESPONSES_REPOSITORY,
+    AUDIT_WORK_PAPERS_REPOSITORY,
   ],
 })
 export class PersistenceModule {}
