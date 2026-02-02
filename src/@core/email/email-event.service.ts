@@ -3,14 +3,12 @@ import { EventEmitter2 } from '@nestjs/event-emitter'
 import {
   Send2FAEmailEvent,
   SendResetPasswordEmailEvent,
-  SendVerificationEmailEvent,
   SendWelcomeEmailEvent,
 } from './events/email.events'
 import {
   TwoFactorEmailData,
   ResetPasswordEmailData,
   WelcomeEmailData,
-  VerifyEmailData,
 } from './interfaces'
 
 /**
@@ -58,16 +56,7 @@ export class EmailEventService {
   }
 
   /**
-   * Emite evento: Enviar email de verificación
-   * El email se envía de forma asíncrona sin bloquear la respuesta
-   */
-  emitSendVerification(data: VerifyEmailData): void {
-    const event = new SendVerificationEmailEvent(data)
-    this.eventEmitter.emit(event.eventName, event)
-  }
-
-  /**
-   * Emite evento: Enviar email de bienvenida
+   * Emite evento: Enviar email de bienvenida con credenciales
    * El email se envía de forma asíncrona sin bloquear la respuesta
    */
   emitSendWelcome(data: WelcomeEmailData): void {

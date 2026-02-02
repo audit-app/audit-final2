@@ -64,8 +64,7 @@ export class UpdateResponseDto {
   complianceLevel?: ComplianceLevel
 
   @ApiProperty({
-    description:
-      'Hallazgos/Observaciones encontradas durante la evaluación',
+    description: 'Hallazgos/Observaciones encontradas durante la evaluación',
     required: false,
     example:
       'No existe política documentada de respaldos. Los respaldos se realizan manualmente sin calendario establecido.',

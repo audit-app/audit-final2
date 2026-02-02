@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common'
-import { Role } from '../../users/entities/user.entity'
+import { Role } from '@core'
 import { MenuResponseDto } from '../dtos'
 import { GetStaticNavigationUseCase } from './get-static-navigation.use-case'
 import { GetDynamicTemplatesUseCase } from './get-dynamic-templates.use-case'

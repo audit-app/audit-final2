@@ -73,9 +73,6 @@ export class AuditWorkPapersRepository
    */
   async getTotalFileSize(responseId: string): Promise<number> {
     const workPapers = await this.findByResponse(responseId)
-    return workPapers.reduce(
-      (total, wp) => total + Number(wp.fileSize),
-      0,
-    )
+    return workPapers.reduce((total, wp) => total + Number(wp.fileSize), 0)
   }
 }

@@ -13,7 +13,8 @@ import {
   TokenStorageRepository,
   StoredSession, // Importamos la interfaz desde el nuevo repo
 } from './token-storage.repository'
-import { UserEntity, Role } from '../../../users/entities/user.entity'
+import { Role } from '@core'
+import { UserEntity } from '../../../users/entities/user.entity'
 import { JwtPayload, JwtRefreshPayload } from '../interfaces'
 import { InvalidTokenException } from '../exceptions'
 import { envs } from '@core/config'
@@ -85,11 +86,11 @@ export class TokensService {
     const parsedMetadata = this.connectionMetadataService.parse(connection)
 
     // 5. Construir el objeto de sesión COMPLETO
-    // El repositorio espera el objeto listo para guardar (T)
+
     const sessionData: StoredSession = {
       tokenId,
       userId: user.id,
-      currentRole: roleToUse, // ← Guardar el rol activo en Redis
+      currentRole: roleToUse,
       ip: parsedMetadata.ip,
       userAgent: parsedMetadata.userAgent,
       browser: parsedMetadata.browser,
@@ -101,7 +102,6 @@ export class TokensService {
     }
 
     // 6. Guardar en Redis
-    // NOTA: Ya no pasamos TTL aquí, el repositorio usa su configuración interna
     await this.tokenStorage.save(user.id, sessionData)
 
     return { accessToken, refreshToken }
@@ -111,7 +111,6 @@ export class TokensService {
     userId: string,
     tokenId: string,
   ): Promise<StoredSession | null> {
-    // CAMBIO: Usamos 'findOne' que viene de la clase abstracta
     return this.tokenStorage.findOne(userId, tokenId)
   }
 
@@ -153,57 +152,26 @@ export class TokensService {
    * Genera un nuevo access token con un rol específico (para switch-role)
    * NO genera un nuevo refresh token, solo access token
    */
-  async generateAccessTokenWithRole(
+
+  async rotateSession(
     user: UserEntity,
-    newRole: Role,
-  ): Promise<string> {
-    // Validar que el usuario tenga el rol solicitado
-    if (!user.roles.includes(newRole)) {
-      throw new InvalidTokenException('No tienes permiso para usar este rol')
+    oldTokenId: string,
+    connection: ConnectionMetadata,
+    rememberMe: boolean,
+    currentRole: Role,
+    oldAccessToken?: string,
+  ): Promise<{ accessToken: string; refreshToken: string }> {
+    // 1. Invalidación
+    await this.revokeRefreshToken(user.id, oldTokenId)
+
+    if (oldAccessToken) {
+      await this.blacklistAccessToken(oldAccessToken, user.id)
     }
 
-    const accessPayload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-      roles: user.roles,
-      currentRole: newRole, // Usar el rol solicitado
-      organizationId: user.organizationId,
-    }
-
-    return this.jwtService.signAsync(accessPayload, {
-      expiresIn: this.accessTokenExpires as ms.StringValue,
-    })
+    // 2. Creación de la nueva identidad
+    // Reutilizamos el motor principal
+    return this.generateTokenPair(user, connection, rememberMe, currentRole)
   }
-
-  /**
-   * Actualiza el rol activo en TODAS las sesiones activas del usuario
-   *
-   * Usado cuando el usuario hace switch-role para actualizar el currentRole
-   * en Redis y que persista en futuros refreshes
-   */
-  async updateCurrentRoleInAllSessions(
-    userId: string,
-    newRole: Role,
-  ): Promise<void> {
-    // Obtener todas las sesiones activas del usuario
-    const sessions = await this.tokenStorage.findAllByUser(userId)
-
-    // Actualizar el currentRole en cada sesión
-    for (const session of sessions) {
-      const updatedSession: StoredSession = {
-        ...session,
-        currentRole: newRole,
-      }
-      await this.tokenStorage.save(userId, updatedSession)
-    }
-
-    this.logger.log(
-      `Actualizado currentRole a ${newRole} en ${sessions.length} sesión(es) del usuario ${userId}`,
-      'TokensService.updateCurrentRoleInAllSessions',
-    )
-  }
-
   // --- METODOS DE UTILERÍA JWT ---
 
   decodeRefreshToken(refreshToken: string): JwtRefreshPayload {

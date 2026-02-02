@@ -43,8 +43,7 @@ export class CreateRevisionDto {
   description?: string
 
   @ApiProperty({
-    description:
-      'Fecha de inicio planificada para la revisión (opcional)',
+    description: 'Fecha de inicio planificada para la revisión (opcional)',
     example: '2024-05-01',
     required: false,
   })

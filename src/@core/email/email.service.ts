@@ -9,7 +9,6 @@ import {
   TwoFactorEmailData,
   ResetPasswordEmailData,
   WelcomeEmailData,
-  VerifyEmailData,
 } from './interfaces'
 import { ImageHelper } from './utils'
 
@@ -19,8 +18,7 @@ import { ImageHelper } from './utils'
  * Métodos disponibles:
  * - sendTwoFactorCode: Envía código de autenticación de dos factores
  * - sendResetPasswordEmail: Envía link de recuperación de contraseña
- * - sendWelcomeEmail: Envía email de bienvenida a nuevos usuarios
- * - sendVerificationEmail: Envía email de verificación de cuenta
+ * - sendWelcomeEmail: Envía email de bienvenida con credenciales a nuevos usuarios
  */
 @Injectable()
 export class EmailService {
@@ -140,7 +138,7 @@ export class EmailService {
   }
 
   /**
-   * Envía email de bienvenida a nuevos usuarios
+   * Envía email de bienvenida a nuevos usuarios con credenciales
    */
   async sendWelcomeEmail(data: WelcomeEmailData): Promise<void> {
     await this.sendEmail({
@@ -149,22 +147,9 @@ export class EmailService {
       template: 'welcome',
       context: {
         userName: data.userName,
+        userEmail: data.userEmail,
+        temporaryPassword: data.temporaryPassword,
         loginLink: data.loginLink,
-      },
-    })
-  }
-
-  /**
-   * Envía email de verificación de cuenta
-   */
-  async sendVerificationEmail(data: VerifyEmailData): Promise<void> {
-    await this.sendEmail({
-      to: data.to,
-      subject: `Verificar cuenta - ${this.appName}`,
-      template: 'verify-email',
-      context: {
-        userName: data.userName,
-        verificationLink: data.verificationLink,
       },
     })
   }

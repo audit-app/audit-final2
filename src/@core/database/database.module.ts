@@ -35,7 +35,7 @@ import { ContextModule } from '@core/context'
         }
       },
     }),
-    ContextModule, // ← Importa ContextModule para acceder a ClsModule
+    ContextModule,
     DiscoveryModule,
   ],
   providers: [TransactionService, TransactionDiscoveryService],

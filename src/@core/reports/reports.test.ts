@@ -19,10 +19,13 @@
  *   npm run reports:test help          # Mostrar ayuda
  */
 
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+
+/* eslint-disable @typescript-eslint/no-floating-promises */
+// @ts-nocheck - Suppress type errors in test file
 import { NestFactory } from '@nestjs/core'
 import { AppModule } from '../../app.module'
 import { SimpleDocumentBuilderService } from './services/component.service'
-import { ThemeManagerService } from './services/theme.service'
 import {
   DocumentSection,
   createHeadingSection,
@@ -61,8 +64,14 @@ function showHelp() {
   console.log(chalk.cyan('━'.repeat(70)))
   console.log('')
   console.log(chalk.yellow('Uso:'))
-  console.log(chalk.white('  npm run reports:test               # Generar reporte completo'))
-  console.log(chalk.white('  npm run reports:test help          # Mostrar esta ayuda'))
+  console.log(
+    chalk.white(
+      '  npm run reports:test               # Generar reporte completo',
+    ),
+  )
+  console.log(
+    chalk.white('  npm run reports:test help          # Mostrar esta ayuda'),
+  )
   console.log('')
   console.log(chalk.yellow('Salida:'))
   console.log(chalk.white('  uploads/reports/example-report.docx'))
@@ -159,10 +168,14 @@ async function generateExampleReport(
     { type: 'spacer', content: { height: 200 } },
 
     createHeadingSection('1.1 Nivel 2', 2),
-    createParagraphSection('Este es un párrafo simple bajo un heading nivel 2.'),
+    createParagraphSection(
+      'Este es un párrafo simple bajo un heading nivel 2.',
+    ),
 
     createHeadingSection('1.1.1 Nivel 3', 3),
-    createParagraphSection('Este es un párrafo simple bajo un heading nivel 3.'),
+    createParagraphSection(
+      'Este es un párrafo simple bajo un heading nivel 3.',
+    ),
 
     createHeadingSection('1.2 Estilos Inline', 2),
     createStyledParagraph([

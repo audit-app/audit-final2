@@ -7,7 +7,7 @@ import { BaseRepository } from '@core/repositories/base.repository'
 import { UserEntity } from '../entities/user.entity'
 import { IUsersRepository } from './users-repository.interface'
 import { PaginatedData } from '@core/dtos'
-import { FindUsersDto, USER_SEARCH_FIELDS } from '../use-cases/find-all-users'
+import { FindUsersDto, USER_SEARCH_FIELDS } from '../dtos'
 import { ArrayContains } from 'typeorm'
 @Injectable()
 export class UsersRepository

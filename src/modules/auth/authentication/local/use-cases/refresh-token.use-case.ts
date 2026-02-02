@@ -34,7 +34,7 @@ export class RefreshTokenUseCase {
     refreshToken: string
     rememberMe: boolean
   }> {
-    // 1. ✅ Verificar y decodificar (CENTRALIZADO en TokensService)
+    // 1. Verificar y decodificar (CENTRALIZADO en TokensService)
     // El manejo de errores JWT y logs está dentro del servicio
     const payload = this.tokensService.verifyRefreshToken(oldRefreshToken)
 
@@ -45,11 +45,11 @@ export class RefreshTokenUseCase {
     )
 
     if (!storedSession) {
-      // ⚠️ Alerta de Seguridad: Token válido pero revocado
+      // Alerta de Seguridad: Token válido pero revocado
       // El token tiene firma válida pero ya no existe (ya fue usado).
       // Alguien está intentando reusar un token viejo (Replay Attack).
       this.logger.warn(
-        `⚠️ Intento de reuso de token. User: ${payload.sub} | Posible robo de sesión`,
+        `Intento de reuso de token. User: ${payload.sub} | Posible robo de sesión`,
         'RefreshTokenUseCase.SecurityAlert',
       )
 
@@ -64,19 +64,15 @@ export class RefreshTokenUseCase {
       throw new InvalidTokenException('Usuario no encontrado o suspendido')
     }
 
-    // 4. ROTATION: Revocar el refresh token viejo
-    await this.tokensService.revokeRefreshToken(payload.sub, payload.tokenId)
-    const rememberMe = storedSession.rememberMe ?? false
+    // 4. ROTATION: Revocar el refresh token viejo y crear uno nuevo
+    const tokens = await this.tokensService.rotateSession(
+      user,
+      payload.tokenId,
+      connection,
+      storedSession.rememberMe,
+      storedSession.currentRole,
+    )
 
-    // 5. Generar nuevo par de tokens preservando el rol activo de la sesión
-    const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(
-        user,
-        connection,
-        rememberMe,
-        storedSession.currentRole, // ← Preservar el rol activo
-      )
-
-    return { accessToken, refreshToken, rememberMe }
+    return { ...tokens, rememberMe: storedSession.rememberMe }
   }
 }

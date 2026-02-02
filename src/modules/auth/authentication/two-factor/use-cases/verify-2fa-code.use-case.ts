@@ -1,15 +1,13 @@
 import { Injectable, Inject, BadRequestException } from '@nestjs/common'
 import { RateLimitService } from '@core/security'
 import { TwoFactorTokenService } from '../services/two-factor-token.service'
-import {
-  TrustedDeviceRepository,
-  DeviceFingerprintService,
-} from '../../../session/devices'
+import { TrustedDeviceRepository } from '../../../session/devices'
 import { TokensService } from '../../../core/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { Verify2FACodeDto } from '../dtos/verify-2fa-code.dto'
 import type { ConnectionMetadata } from '@core/http'
+import { ConnectionMetadataService } from '@core/http'
 import { envs } from '@core/config'
 
 /**
@@ -51,7 +49,7 @@ export class Verify2FACodeUseCase {
   constructor(
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
-    private readonly deviceFingerprintService: DeviceFingerprintService,
+    private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly tokensService: TokensService,
     private readonly rateLimitService: RateLimitService,
     @Inject(USERS_REPOSITORY)
@@ -159,15 +157,12 @@ export class Verify2FACodeUseCase {
     let deviceId: string | undefined
 
     if (dto.trustDevice) {
-      // El backend genera el fingerprint automáticamente
-      const fingerprint = this.deviceFingerprintService.generateFingerprint(
+      const fingerprint = this.connectionMetadataService.generateFingerprint(
         connection.rawUserAgent,
         connection.ip,
       )
 
-      const deviceInfo = this.deviceFingerprintService.parseUserAgent(
-        connection.rawUserAgent,
-      )
+      const deviceInfo = this.connectionMetadataService.parse(connection)
 
       // Guardar dispositivo confiable y obtener deviceId (UUID)
       deviceId = await this.trustedDeviceRepository.saveDevice(userId, {

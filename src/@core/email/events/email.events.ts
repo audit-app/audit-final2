@@ -1,7 +1,6 @@
 import {
   ResetPasswordEmailData,
   TwoFactorEmailData,
-  VerifyEmailData,
   WelcomeEmailData,
 } from '../interfaces'
 
@@ -34,16 +33,7 @@ export class SendResetPasswordEmailEvent extends EmailEvent {
 }
 
 /**
- * Evento: Enviar email de verificación
- */
-export class SendVerificationEmailEvent extends EmailEvent {
-  constructor(public readonly payload: VerifyEmailData) {
-    super('email.send.verification', payload)
-  }
-}
-
-/**
- * Evento: Enviar email de bienvenida
+ * Evento: Enviar email de bienvenida con credenciales
  */
 export class SendWelcomeEmailEvent extends EmailEvent {
   constructor(public readonly payload: WelcomeEmailData) {

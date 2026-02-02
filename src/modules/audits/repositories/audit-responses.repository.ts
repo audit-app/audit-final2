@@ -115,8 +115,7 @@ export class AuditResponsesRepository
 
     for (const response of responses) {
       if (response.achievedMaturityLevel !== null) {
-        totalWeightedLevel +=
-          response.achievedMaturityLevel * response.weight
+        totalWeightedLevel += response.achievedMaturityLevel * response.weight
         totalWeight += response.weight
       }
     }

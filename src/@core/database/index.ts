@@ -6,7 +6,8 @@ export { ENTITY_MANAGER_KEY } from './transaction.service'
 export { TRANSACTIONAL_METADATA_KEY } from './transactional.decorator'
 
 // Persistence layer (repositories and entities registration)
-export * from './persistence'
+// ⚠️ DO NOT export './persistence' here to avoid circular dependencies
+// Import PersistenceModule directly: import { PersistenceModule } from '@core/database/persistence'
 
 /**
  * NOTA: AuditService ahora vive en @core/context

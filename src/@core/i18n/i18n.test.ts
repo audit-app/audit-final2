@@ -12,6 +12,8 @@
  *   npm run i18n:test custom-field     # Probar nombres de campo personalizados
  */
 
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck - Suppress decorator type errors in test file (legacy decorators)
 import 'reflect-metadata'
 import { validate, ValidationError } from 'class-validator'
 import { plainToInstance } from 'class-transformer'

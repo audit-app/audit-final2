@@ -1,9 +1,8 @@
 import { Injectable, Inject } from '@nestjs/common'
 import { USERS_REPOSITORY } from '../../tokens'
 import type { IUsersRepository } from '../../repositories'
-import { FindUsersDto } from './find-all-users.dto'
+import { FindUsersDto, UserResponseDto } from '../../dtos'
 import { PaginatedResponse, PaginatedResponseBuilder } from '@core/dtos'
-import { UserResponseDto } from '../../dtos'
 import { UserEntity } from '../../entities'
 
 @Injectable()
@@ -48,8 +47,8 @@ export class FindAllUsersUseCase {
       address: user.address,
       image: user.image,
       isActive: user.isActive,
-      emailVerified: user.emailVerified,
-      emailVerifiedAt: user.emailVerifiedAt,
+      isTemporaryPassword: user.isTemporaryPassword,
+      firstLoginAt: user.firstLoginAt,
       isTwoFactorEnabled: user.isTwoFactorEnabled,
       roles: user.roles,
       organizationId: user.organizationId,

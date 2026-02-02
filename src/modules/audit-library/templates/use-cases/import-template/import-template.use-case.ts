@@ -56,9 +56,7 @@ export class ImportTemplateUseCase {
     const finalTemplate = await this.templateRespository.save(savedTemplate)
 
     // 5. Validar que la suma de pesos de standards auditables sea exactamente 100
-    await this.standardValidator.validateTotalWeightEquals100(
-      finalTemplate.id,
-    )
+    await this.standardValidator.validateTotalWeightEquals100(finalTemplate.id)
 
     return finalTemplate
   }

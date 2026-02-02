@@ -1,7 +1,7 @@
 import { IBaseRepository } from '@core/repositories/base-repository.interface'
 import { UserEntity } from '../entities/user.entity'
 import { PaginatedData } from '@core/dtos'
-import { FindUsersDto } from '../use-cases/find-all-users'
+import { FindUsersDto } from '../dtos'
 
 export interface IUsersRepository extends IBaseRepository<UserEntity> {
   // Búsquedas básicas

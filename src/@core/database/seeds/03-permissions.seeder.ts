@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm'
 import { Seeder } from 'typeorm-extension'
+import { Role } from '@core'
 import { CasbinRule } from '../../../modules/authorization/entities/casbin-rule.entity'
-import { Role } from '../../../modules/users/entities/user.entity'
 import { AppType, PolicyAction } from '../../../modules/authorization/constants'
 
 /**

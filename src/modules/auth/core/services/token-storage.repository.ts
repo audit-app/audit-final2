@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { AbstractUserSetRepository, CacheService } from '@core/cache'
 import { v4 as uuidv4 } from 'uuid'
-import { Role } from '../../../users/entities/user.entity'
+import { Role } from '@core'
+import { envs } from '@core/config'
 
-// Definimos la interfaz aquí o la importas de donde la tengas
 export interface StoredSession {
   tokenId: string
   userId: string
@@ -23,8 +23,8 @@ export class TokenStorageRepository extends AbstractUserSetRepository<StoredSess
   constructor(cacheService: CacheService) {
     super(cacheService, {
       basePrefix: 'auth:refresh',
-      maxItemsPerUser: 5, // Límite específico de sesiones
-      ttlSeconds: 60 * 60 * 24 * 7, // 7 días
+      maxItemsPerUser: envs.session.maxConcurrentSessions,
+      ttlSeconds: envs.jwt.refreshExpirationSeconds,
     })
   }
 

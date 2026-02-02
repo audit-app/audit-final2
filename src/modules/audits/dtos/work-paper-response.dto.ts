@@ -15,8 +15,7 @@ export class WorkPaperResponseDto {
   title: string
 
   @ApiProperty({
-    example:
-      'Documento de política de respaldos aprobado por gerencia general',
+    example: 'Documento de política de respaldos aprobado por gerencia general',
     nullable: true,
   })
   description: string | null

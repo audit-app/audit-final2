@@ -18,8 +18,7 @@ export class AddWorkPaperDto {
   @ApiProperty({
     description: 'Descripción del contenido/propósito del archivo',
     required: false,
-    example:
-      'Documento de política de respaldos aprobado por gerencia general',
+    example: 'Documento de política de respaldos aprobado por gerencia general',
   })
   @IsOptional()
   @IsString()

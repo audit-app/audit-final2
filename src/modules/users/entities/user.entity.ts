@@ -2,24 +2,8 @@ import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm'
 import { BaseEntity } from '@core/entities/base.entity'
 import { OrganizationEntity } from '../../organizations/entities/organization.entity'
 import { USER_CONSTRAINTS } from '../constants/user-schema.constants'
-import { Role } from '@core/context' // ← Importamos para usar en la entidad
+import { Role } from '@core'
 
-/**
- * ⚠️ NOTA: Role enum movido a @core/context
- *
- * El enum Role ahora vive en @core/context/enums/role.enum.ts
- * porque es un concepto transversal usado en autenticación, autorización,
- * auditoría, navegación, etc.
- *
- * Se re-exporta aquí para mantener compatibilidad con imports existentes.
- *
- * ✅ NUEVO (preferido):
- * import { Role } from '@core/context'
- *
- * ⚠️ LEGACY (funciona pero deprecado):
- * import { Role } from 'src/modules/users/entities/user.entity'
- */
-export { Role } // ← Re-exportamos para compatibilidad
 @Index(['email'], { unique: true, where: '"deletedAt" IS NULL' })
 @Index(['username'], { unique: true, where: '"deletedAt" IS NULL' })
 @Index(['ci'], { unique: true, where: '"deletedAt" IS NULL' })
@@ -46,21 +30,15 @@ export class UserEntity extends BaseEntity {
   @Column({ type: 'varchar', length: 255, select: false, nullable: true })
   password: string | null
 
-  // OAuth Fields (solo para identificación, no para tokens)
-  @Column({ type: 'varchar', length: 50, nullable: true, default: 'local' })
-  provider: 'local' | 'google' | null // Proveedor de autenticación
-
   @Column({ type: 'varchar', length: 255, nullable: true })
-  providerId: string | null // ID del usuario en el proveedor (ej: Google sub)
+  providerId: string | null
 
-  // Campos no gestionables directamente por el usuario
-  @Column({ type: 'boolean', default: false })
-  emailVerified: boolean
+  @Column({ type: 'boolean', default: true })
+  isTemporaryPassword: boolean
 
   @Column({ type: 'timestamp', nullable: true })
-  emailVerifiedAt: Date | null
+  firstLoginAt: Date | null
 
-  // Habilitación de 2FA
   @Column({ type: 'boolean', default: false })
   isTwoFactorEnabled: boolean
 
@@ -114,8 +92,13 @@ export class UserEntity extends BaseEntity {
     return `${this.names} ${this.lastNames}`
   }
 
+  get provider(): 'local' | 'google' {
+    return this.providerId ? 'google' : 'local'
+  }
+
   changePassword(newPassword: string) {
     this.password = newPassword
+    this.isTemporaryPassword = false
   }
 
   disable() {
@@ -126,9 +109,14 @@ export class UserEntity extends BaseEntity {
     this.isActive = true
   }
 
-  verifyEmail() {
-    this.emailVerified = true
-    this.emailVerifiedAt = new Date()
+  markFirstLogin() {
+    if (!this.firstLoginAt) {
+      this.firstLoginAt = new Date()
+    }
+  }
+
+  markPasswordAsChanged() {
+    this.isTemporaryPassword = false
   }
 
   twoFactorEnable() {
@@ -145,5 +133,32 @@ export class UserEntity extends BaseEntity {
 
   removeAvatar(): void {
     this.image = null
+  }
+
+  changeEmail(email: string): void {
+    this.email = email
+    this.isTemporaryPassword = false
+  }
+
+  /**
+   * Vincula cuenta de Google al usuario
+   *
+   * CASO 1: Nunca hizo login (firstLoginAt = null)
+   *   → password = null, isTemporaryPassword = false
+   *
+   * CASO 2: Ya hizo login local antes (firstLoginAt existe)
+   *   → Mantener password existente, mantener isTemporaryPassword
+   *
+   * @param googleProviderId - ID del proveedor de Google
+   */
+  linkGoogleAccount(googleProviderId: string): void {
+    this.providerId = googleProviderId
+
+    // CASO 1: Nunca hizo login → eliminar password temporal
+    if (!this.firstLoginAt) {
+      this.password = null
+      this.isTemporaryPassword = false
+    }
+    // CASO 2: Ya hizo login local → mantener password y flag
   }
 }

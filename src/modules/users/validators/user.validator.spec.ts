@@ -10,7 +10,8 @@ import {
 import type { IUsersRepository } from '../repositories'
 import { USERS_REPOSITORY } from '../tokens'
 import { createMock } from '@core/testing'
-import { Role, UserEntity } from '../entities'
+import { Role } from '@core'
+import { UserEntity } from '../entities'
 
 /**
  * ✅ UNIT TESTS - UserValidator

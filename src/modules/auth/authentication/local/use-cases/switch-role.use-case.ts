@@ -1,22 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common'
-import { LoggerService } from '@core'
+import { ConnectionMetadata, LoggerService } from '@core'
 import { TokensService } from '../../../core/services'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
-import { SwitchRoleDto, SwitchRoleResponseDto } from '../dtos'
-import { UserNotFoundException } from '../../../../users/exceptions'
+import { SwitchRoleDto } from '../dtos'
+import { InvalidTokenException } from 'src/modules/auth/core'
 
-/**
- * Use Case: Cambiar rol activo del usuario
- *
- * Responsabilidades:
- * - Validar que el usuario existe
- * - Validar que el usuario tiene el rol solicitado
- * - Generar un nuevo access token con el nuevo rol activo
- * - Devolver el token y la información del rol
- *
- * El refresh token NO cambia, solo se genera un nuevo access token
- */
 @Injectable()
 export class SwitchRoleUseCase {
   constructor(
@@ -26,46 +15,64 @@ export class SwitchRoleUseCase {
     private readonly logger: LoggerService,
   ) {}
 
-  /**
-   * Ejecuta el cambio de rol
-   *
-   * @param userId - ID del usuario autenticado
-   * @param dto - Datos del cambio de rol (newRole)
-   * @returns Nuevo access token con el rol cambiado
-   */
   async execute(
-    userId: string,
+    currentAccessToken: string,
     dto: SwitchRoleDto,
-  ): Promise<SwitchRoleResponseDto> {
+    refreshToken: string,
+    connection: ConnectionMetadata,
+  ): Promise<{
+    accessToken: string
+    refreshToken: string
+    rememberMe: boolean
+  }> {
     const { newRole } = dto
 
-    // 1. Buscar usuario y validar existencia
-    const user = await this.usersRepository.findById(userId)
-    if (!user) {
-      throw new UserNotFoundException(userId, 'ID')
-    }
-
-    // 2. Actualizar currentRole en TODAS las sesiones activas del usuario en Redis
-    // Esto asegura que el cambio de rol persista en futuros refreshes
-    await this.tokensService.updateCurrentRoleInAllSessions(userId, newRole)
-
-    // 3. Generar nuevo access token con el rol solicitado
-    // Este método internamente valida que el usuario tenga el rol
-    const accessToken = await this.tokensService.generateAccessTokenWithRole(
-      user,
-      newRole,
+    // 1. Validar el Refresh Token y obtener la sesión de Redis
+    const payload = this.tokensService.verifyRefreshToken(refreshToken)
+    const storedSession = await this.tokensService.getStoredSession(
+      payload.sub,
+      payload.tokenId,
     )
 
+    // Detección de Replay Attack / Revocación
+    if (!storedSession) {
+      this.logger.warn(
+        `Intento de switch-role con sesión inexistente. User: ${payload.sub}`,
+        'SwitchRoleUseCase.SecurityAlert',
+      )
+      throw new InvalidTokenException('Sesión inválida o expirada')
+    }
+
+    // 2. Buscar usuario y validar permisos para el nuevo rol
+    const user = await this.usersRepository.findById(payload.sub)
+    if (!user || !user.isActive) {
+      throw new InvalidTokenException('Usuario no válido o inactivo')
+    }
+
+    if (!user.roles.includes(newRole)) {
+      throw new InvalidTokenException('No tienes permiso para asumir este rol')
+    }
+
+    // 3. EJECUTAR ROTACIÓN ATÓMICA
+    const { accessToken, refreshToken: newRefreshToken } =
+      await this.tokensService.rotateSession(
+        user,
+        payload.tokenId,
+        connection,
+        storedSession.rememberMe,
+        newRole,
+        currentAccessToken,
+      )
+
     this.logger.log(
-      `Usuario ${user.username} (${userId}) cambió de rol a: ${newRole}`,
+      `Cambio de rol exitoso: ${user.username} -> ${newRole}`,
       'SwitchRoleUseCase',
     )
 
-    // 4. Devolver respuesta
     return {
       accessToken,
-      currentRole: newRole,
-      availableRoles: user.roles,
+      refreshToken: newRefreshToken,
+      rememberMe: storedSession.rememberMe,
     }
   }
 }

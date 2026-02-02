@@ -1,4 +1,4 @@
-import { Role } from '../../users/entities/user.entity'
+import { Role } from '@core'
 import { NavigationItemDto } from '../dtos'
 
 /**

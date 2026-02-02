@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { AbstractUserSetRepository, CacheService } from '@core/cache'
-import { TimeUtil } from '@core/utils'
-import { v4 as uuidv4 } from 'uuid' // Necesitarás esto
+import { v4 as uuidv4 } from 'uuid'
 import { envs } from '@core/config'
 
 /**
@@ -40,9 +39,6 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
   // 1. IMPLEMENTACIÓN ABSTRACTA
   // ==========================================
 
-  /**
-   * CAMBIO CLAVE: El ID ya no es el fingerprint, es el UUID seguro.
-   */
   protected getItemId(item: StoredTrustedDevice): string {
     return item.id
   }
@@ -57,7 +53,7 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
 
   /**
    * Genera y guarda un nuevo dispositivo confiable.
-   * Retorna el UUID que debes enviar al frontend (en una cookie).
+   * Retorna el UUID que se envia al frontend (en una cookie).
    */
   async saveDevice(
     userId: string,
@@ -80,7 +76,6 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
 
   /**
    * Valida usando el ID aleatorio (que viene de la cookie).
-   * Opcional: Podrías comparar el fingerprint actual vs el guardado para doble seguridad.
    */
   async validateDevice(
     userId: string,
@@ -97,7 +92,7 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
     // 3. (Opcional) Validación estricta de fingerprint
     // Si el fingerprint cambió drásticamente, podríamos desconfiar,
     if (currentFingerprint && device.fingerprint !== currentFingerprint) {
-      // Podrías retornar false o loguear una advertencia de seguridad
+      // en caso de seguridad extrema
     }
 
     return true

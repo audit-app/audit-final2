@@ -1,7 +1,8 @@
 import { Seeder } from 'typeorm-extension'
 import { DataSource } from 'typeorm'
 import * as bcrypt from 'bcrypt'
-import { UserEntity, Role } from '../../../modules/users/entities/user.entity'
+import { Role } from '@core'
+import { UserEntity } from '../../../modules/users/entities/user.entity'
 import { OrganizationEntity } from '../../../modules/organizations/entities/organization.entity'
 
 /**
@@ -56,7 +57,7 @@ export default class UsersSeeder implements Seeder {
         password: hashedPassword,
         phone: '+591 70000001',
         address: 'La Paz, Bolivia',
-        roles: [Role.ADMIN],
+        roles: [Role.ADMIN, Role.GERENTE, Role.AUDITOR],
         status: true,
         organizationId: org1.id,
         isTwoFactorEnabled: false,
@@ -185,22 +186,8 @@ export default class UsersSeeder implements Seeder {
       },
 
       // ========================================
-      // USUARIOS SIN VERIFICAR - Para testing
+      // USUARIOS SUSPENDIDO - Para testing
       // ========================================
-      {
-        names: 'Usuario',
-        lastNames: 'Sin Verificar Test',
-        email: 'sinverificar@auditcorp.bo',
-        username: 'sinverificar',
-        ci: '0123456',
-        password: hashedPassword,
-        phone: '+591 70000010',
-        address: 'La Paz, Bolivia',
-        roles: [Role.CLIENTE],
-        status: true,
-        organizationId: org1.id,
-        // emailVerified = false por defecto, no puede hacer login
-      },
       {
         names: 'Usuario',
         lastNames: 'Suspendido Test',
@@ -217,7 +204,11 @@ export default class UsersSeeder implements Seeder {
     ]
 
     for (const userData of users) {
-      const user = userRepository.create({ ...userData, emailVerified: true })
+      const user = userRepository.create({
+        ...userData,
+        isTemporaryPassword: false, // Contraseñas ya son definitivas (no temporales)
+        firstLoginAt: new Date(), // Marcar como que ya hicieron login
+      })
       await userRepository.save(user)
       console.log(
         `  ✓ Created user: ${userData.email} (${userData.roles.join(', ')}) - Status: ${userData.status}`,

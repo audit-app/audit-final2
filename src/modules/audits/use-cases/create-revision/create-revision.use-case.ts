@@ -24,25 +24,20 @@ export class CreateRevisionUseCase {
     dto: CreateRevisionDto,
   ): Promise<AuditEntity> {
     // 1. Validar que la auditoría padre exista
-    const parentAudit = await this.auditsRepository.findByIdWithRelations(
-      parentAuditId,
-    )
+    const parentAudit =
+      await this.auditsRepository.findByIdWithRelations(parentAuditId)
     if (!parentAudit) {
       throw new AuditNotFoundException(parentAuditId)
     }
 
     // 2. Validar que la auditoría padre esté CLOSED
     if (parentAudit.status !== AuditStatus.CLOSED) {
-      throw new AuditCannotBeRevisedException(
-        parentAuditId,
-        parentAudit.status,
-      )
+      throw new AuditCannotBeRevisedException(parentAuditId, parentAudit.status)
     }
 
     // 3. Obtener el siguiente número de revisión
-    const nextRevisionNumber = await this.auditsRepository.getNextRevisionNumber(
-      parentAuditId,
-    )
+    const nextRevisionNumber =
+      await this.auditsRepository.getNextRevisionNumber(parentAuditId)
 
     // 4. Generar código único
     const code = await this.auditsRepository.generateNextCode()
@@ -53,8 +48,7 @@ export class CreateRevisionUseCase {
 
     // 5. Generar nombre automático si no se proporciona
     const revisionName =
-      dto.name ||
-      `${parentAudit.name} (Revisión ${nextRevisionNumber})`
+      dto.name || `${parentAudit.name} (Revisión ${nextRevisionNumber})`
 
     // 6. Crear la auditoría de revisión heredando del padre
     const revision = new AuditEntity()

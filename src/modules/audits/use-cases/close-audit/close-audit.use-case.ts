@@ -1,7 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { AuditEntity } from '../../entities/audit.entity'
-import { AuditNotFoundException, InvalidAuditStateException } from '../../exceptions'
+import {
+  AuditNotFoundException,
+  InvalidAuditStateException,
+} from '../../exceptions'
 import { AuditStatus } from '../../enums/audit-status.enum'
 import { AUDITS_REPOSITORY } from '../../tokens'
 import type { IAuditsRepository } from '../../repositories'

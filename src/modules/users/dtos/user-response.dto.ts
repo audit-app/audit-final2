@@ -1,5 +1,5 @@
+import { Role } from '@core'
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Role } from '../entities/user.entity'
 
 export class UserResponseDto {
   @ApiProperty({
@@ -66,17 +66,17 @@ export class UserResponseDto {
   isActive: boolean
 
   @ApiProperty({
-    description: 'Indica si el email fue verificado',
+    description: 'Indica si el usuario debe cambiar su contraseña temporal',
     example: true,
   })
-  emailVerified: boolean
+  isTemporaryPassword: boolean
 
   @ApiPropertyOptional({
-    description: 'Fecha y hora de verificación del email',
+    description: 'Fecha y hora del primer login del usuario',
     example: '2024-01-15T10:30:00.000Z',
     nullable: true,
   })
-  emailVerifiedAt: Date | null
+  firstLoginAt: Date | null
 
   @ApiProperty({
     description: 'Indica si el usuario tiene 2FA habilitado',

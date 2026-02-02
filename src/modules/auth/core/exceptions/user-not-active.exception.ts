@@ -6,8 +6,7 @@ import {} from '../../../users/entities/user.entity'
  * pero su cuenta no está activa
  *
  * Se lanza cuando:
- * - El status del usuario es SUSPENDED
- * - El email no ha sido verificado (emailVerified=false)
+ * - El isActive del usuario es false (cuenta suspendida/desactivada)
  */
 export class UserNotActiveException extends UnauthorizedException {
   constructor() {

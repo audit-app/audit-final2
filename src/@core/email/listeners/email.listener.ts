@@ -5,7 +5,6 @@ import { EmailService } from '../email.service'
 import {
   Send2FAEmailEvent,
   SendResetPasswordEmailEvent,
-  SendVerificationEmailEvent,
   SendWelcomeEmailEvent,
 } from '../events/email.events'
 
@@ -69,27 +68,7 @@ export class EmailListener {
   }
 
   /**
-   * Escucha evento: Enviar email de verificación
-   */
-  @OnEvent('email.send.verification', { async: true })
-  async handleSendVerificationEmail(
-    event: SendVerificationEmailEvent,
-  ): Promise<void> {
-    try {
-      await this.emailService.sendVerificationEmail(event.payload)
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error)
-      const stack = error instanceof Error ? error.stack : undefined
-      this.logger.error(
-        `Error al enviar email de verificación: ${errorMessage}`,
-        stack,
-      )
-    }
-  }
-
-  /**
-   * Escucha evento: Enviar email de bienvenida
+   * Escucha evento: Enviar email de bienvenida con credenciales
    */
   @OnEvent('email.send.welcome', { async: true })
   async handleSendWelcomeEmail(event: SendWelcomeEmailEvent): Promise<void> {

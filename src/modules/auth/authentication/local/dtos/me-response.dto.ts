@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
-import { Role } from 'src/modules/users/entities'
+import { Role } from '@core'
 
 /**
  * DTO de respuesta para el endpoint GET /auth/me

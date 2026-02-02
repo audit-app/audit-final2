@@ -1,10 +1,16 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common'
 import { Transactional } from '@core/database'
 import { AuditEntity } from '../../entities/audit.entity'
-import { AuditNotFoundException, InvalidAuditStateException } from '../../exceptions'
+import {
+  AuditNotFoundException,
+  InvalidAuditStateException,
+} from '../../exceptions'
 import { AuditStatus } from '../../enums/audit-status.enum'
 import { AUDITS_REPOSITORY, AUDIT_ASSIGNMENTS_REPOSITORY } from '../../tokens'
-import type { IAuditsRepository, IAuditAssignmentsRepository } from '../../repositories'
+import type {
+  IAuditsRepository,
+  IAuditAssignmentsRepository,
+} from '../../repositories'
 
 @Injectable()
 export class StartAuditUseCase {
@@ -29,7 +35,8 @@ export class StartAuditUseCase {
     }
 
     // 3. Validar que tenga al menos un miembro asignado
-    const membersCount = await this.assignmentsRepository.countActiveMembers(auditId)
+    const membersCount =
+      await this.assignmentsRepository.countActiveMembers(auditId)
     if (membersCount === 0) {
       throw new BadRequestException(
         'No se puede iniciar la auditoría sin miembros asignados',

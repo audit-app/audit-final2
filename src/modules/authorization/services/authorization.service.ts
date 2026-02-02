@@ -4,7 +4,7 @@ import { DataSource } from 'typeorm'
 import { newEnforcer, Enforcer } from 'casbin'
 import TypeORMAdapter from 'typeorm-adapter'
 import * as path from 'path'
-import type { Role } from '../../users/entities/user.entity'
+import type { Role } from '@core'
 
 /**
  * Authorization Service

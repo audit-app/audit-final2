@@ -12,7 +12,12 @@ import {
   UploadedFile,
   BadRequestException,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import {
   ApiCreate,
   ApiList,
@@ -32,25 +37,25 @@ import {
   UpdateUserUseCase,
   UpdateUserDto,
   FindAllUsersUseCase,
-  FindUsersDto,
-  USER_SORTABLE_FIELDS,
-  USER_SEARCH_FIELDS,
   FindUserByIdUseCase,
   UploadProfileImageUseCase,
   DeleteProfileImageUseCase,
   DeactivateUserUseCase,
   RemoveUserUseCase,
   ActivateUserUseCase,
-  VerifyEmailUseCase,
-  UserVerifyEmailDto,
-  ResendInvitationUseCase,
   TwoFactorActivateUserUseCase,
   TwoFactorDeactivateUserUseCase,
 } from '../use-cases'
+import {
+  FindUsersDto,
+  USER_SORTABLE_FIELDS,
+  USER_SEARCH_FIELDS,
+  UserResponseDto,
+} from '../dtos'
 import { UploadAvatar } from '@core/files'
-import { UserResponseDto } from '../dtos/user-response.dto'
-import { Role } from '../entities'
+import { Role } from '@core'
 
+@ApiBearerAuth()
 @ApiTags('users')
 @Controller('users')
 export class UsersController {
@@ -64,8 +69,6 @@ export class UsersController {
     private readonly removeUserUseCase: RemoveUserUseCase,
     private readonly activateUserUseCase: ActivateUserUseCase,
     private readonly deactivateUserUseCase: DeactivateUserUseCase,
-    private readonly verifyEmailUseCase: VerifyEmailUseCase,
-    private readonly resendInvitationUseCase: ResendInvitationUseCase,
     private readonly twoFactorActivateUserUseCase: TwoFactorActivateUserUseCase,
     private readonly twoFactorDeactivateUserUseCase: TwoFactorDeactivateUserUseCase,
   ) {}
@@ -231,51 +234,6 @@ export class UsersController {
   })
   async deactivate2fa(@Param() { id }: UuidParamDto) {
     await this.twoFactorDeactivateUserUseCase.execute(id)
-  }
-
-  @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Verificar email y establecer contraseña inicial',
-    description:
-      'Verifica el email del usuario usando el token enviado por correo y establece su contraseña inicial. Marca el email como verificado y activa la cuenta.',
-  })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Email verificado exitosamente, contraseña establecida y cuenta activada',
-    type: UserResponseDto,
-  })
-  @ApiResponse({
-    status: 400,
-    description:
-      'Token inválido/expirado o contraseña no cumple requisitos de seguridad',
-  })
-  async verifyEmail(@Body() dto: UserVerifyEmailDto) {
-    return await this.verifyEmailUseCase.execute(dto)
-  }
-
-  @Post(':id/resend-invitation')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Re-enviar invitación de verificación',
-    description:
-      'Re-envía el email de invitación con un nuevo token de verificación. Solo disponible para usuarios con email no verificado.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Invitación enviada exitosamente',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'El email ya fue verificado',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Usuario no encontrado',
-  })
-  async resendInvitation(@Param() { id }: UuidParamDto) {
-    return await this.resendInvitationUseCase.execute(id)
   }
 
   // OPCIÓN 1: Devolver entidad eliminada (útil para confirmación visual)

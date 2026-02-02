@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 import { envs } from '@core/config'
+import { UsersModule } from '../users/users.module'
 
 import type * as ms from 'ms'
 
@@ -49,14 +50,6 @@ import {
 } from './authentication/two-factor'
 
 // ========================================
-// AUTHENTICATION - Setup (First-time credentials)
-// ========================================
-import {
-  SetupCredentialsController,
-  SetupPasswordUseCase,
-} from './authentication/setup'
-
-// ========================================
 // RECOVERY - Password Reset
 // ========================================
 import {
@@ -64,16 +57,6 @@ import {
   RequestResetPasswordUseCase,
   ResetPasswordUseCase,
 } from './recovery/password'
-
-// ========================================
-// RECOVERY - Email Verification
-// ========================================
-import {
-  EmailVerificationController,
-  EmailVerificationTokenService,
-  RequestEmailVerificationUseCase,
-  VerifyEmailUseCase,
-} from './recovery/email'
 
 // ========================================
 // SESSION - Management (Sessions CRUD)
@@ -91,14 +74,36 @@ import {
 import {
   TrustedDevicesController,
   TrustedDeviceRepository,
-  DeviceFingerprintService,
   ListTrustedDevicesUseCase,
   RevokeTrustedDeviceUseCase,
   RevokeAllTrustedDevicesUseCase,
 } from './session/devices'
 
+// ========================================
+// ADMINISTRATION - Identity Management
+// ========================================
+import {
+  UserIdentityController,
+  ChangeUserEmailUseCase,
+} from './administration'
+
+// ========================================
+// PROFILE - Self-Service Management
+// ========================================
+import {
+  ProfileController,
+  UploadProfileAvatarUseCase,
+  DeleteProfileAvatarUseCase,
+  ChangePasswordUseCase,
+  ActivateTwoFactorUseCase,
+  DeactivateTwoFactorUseCase,
+} from './profile'
+
 @Module({
   imports: [
+    // Importar UsersModule para acceder a UserValidator y repositorio
+    UsersModule,
+
     // Configuración de Passport
     PassportModule.register({
       defaultStrategy: 'jwt',
@@ -129,11 +134,11 @@ import {
     AuthController,
     PasswordResetController,
     TwoFactorController,
-    EmailVerificationController,
-    SetupCredentialsController,
     SessionsController,
     TrustedDevicesController,
     GoogleAuthController,
+    UserIdentityController,
+    ProfileController,
   ],
 
   providers: [
@@ -151,8 +156,6 @@ import {
     // ========================================
     TokensService,
     TwoFactorTokenService,
-    EmailVerificationTokenService,
-    DeviceFingerprintService,
 
     // ========================================
     // Policies
@@ -179,13 +182,6 @@ import {
     Verify2FACodeUseCase,
     Resend2FACodeUseCase,
 
-    // Email Verification
-    RequestEmailVerificationUseCase,
-    VerifyEmailUseCase,
-
-    // Setup Credentials
-    SetupPasswordUseCase,
-
     // Sessions Management
     ListSessionsUseCase,
     RevokeSessionUseCase,
@@ -195,6 +191,16 @@ import {
     ListTrustedDevicesUseCase,
     RevokeTrustedDeviceUseCase,
     RevokeAllTrustedDevicesUseCase,
+
+    // Administration - Identity Management
+    ChangeUserEmailUseCase,
+
+    // Profile - Self-Service Management
+    UploadProfileAvatarUseCase,
+    DeleteProfileAvatarUseCase,
+    ChangePasswordUseCase,
+    ActivateTwoFactorUseCase,
+    DeactivateTwoFactorUseCase,
 
     // ========================================
     // Passport Strategies
@@ -212,8 +218,6 @@ import {
     // Exportar services si otros módulos los necesitan
     TokensService,
     TwoFactorTokenService,
-    EmailVerificationTokenService,
-    DeviceFingerprintService,
 
     JwtAuthGuard,
   ],

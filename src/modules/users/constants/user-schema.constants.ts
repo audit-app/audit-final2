@@ -1,17 +1,3 @@
-/**
- * User Schema Constraints
- *
- * Single Source of Truth para los límites de longitud de campos de usuario.
- * Estos valores se usan en:
- * - Entity (TypeORM column length)
- * - DTOs (class-validator decorators con @core/i18n)
- * - Swagger documentation (ApiProperty)
- *
- * Ejemplo:
- *   @MinLength(USER_CONSTRAINTS.NAMES.MIN)
- *   names: string
- *   // Auto-genera: "El campo nombres debe tener al menos 2 caracteres"
- */
 export const USER_CONSTRAINTS = {
   NAMES: {
     MIN: 2,

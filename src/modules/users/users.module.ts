@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common'
 import { UsersController } from './controllers/users.controller'
 import { UserValidator } from './validators/user.validator'
 import { UserFactory } from './factories/user.factory'
-import { EmailVerificationService } from './services'
 import {
   CreateUserUseCase,
   UpdateUserUseCase,
@@ -13,8 +12,6 @@ import {
   DeactivateUserUseCase,
   RemoveUserUseCase,
   ActivateUserUseCase,
-  VerifyEmailUseCase,
-  ResendInvitationUseCase,
   TwoFactorActivateUserUseCase,
   TwoFactorDeactivateUserUseCase,
 } from './use-cases'
@@ -33,16 +30,15 @@ import {
     DeactivateUserUseCase,
     RemoveUserUseCase,
     ActivateUserUseCase,
-    VerifyEmailUseCase,
-    ResendInvitationUseCase,
-    // Services
-    EmailVerificationService,
     TwoFactorActivateUserUseCase,
     TwoFactorDeactivateUserUseCase,
     // Infrastructure
     UserValidator,
     UserFactory,
   ],
-  exports: [],
+  exports: [
+    // Exportar para uso en otros módulos (ej: AuthModule)
+    UserValidator,
+  ],
 })
 export class UsersModule {}

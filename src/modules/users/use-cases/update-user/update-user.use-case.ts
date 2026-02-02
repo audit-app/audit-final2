@@ -32,9 +32,7 @@ export class UpdateUserUseCase {
 
     const validations: Promise<void>[] = []
 
-    if (dto.email && dto.email.toLowerCase() !== user.email) {
-      validations.push(this.userValidator.validateUniqueEmail(dto.email, id))
-    }
+    // NOTE: Email is NOT updated here (use POST /users/:id/change-email endpoint)
 
     if (dto.username && dto.username.toLowerCase() !== user.username) {
       validations.push(

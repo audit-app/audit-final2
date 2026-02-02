@@ -1,6 +1,8 @@
 import { UserFactory } from './user.factory'
-import { CreateUserDto, UpdateUserDto } from '../dtos'
-import { UserEntity, Role } from '../entities/user.entity'
+import { Role } from '@core'
+import { UserEntity } from '../entities/user.entity'
+import { CreateUserDto } from '../use-cases/create-user'
+import { UpdateUserDto } from '../use-cases/update-user'
 
 describe('UserFactory', () => {
   let factory: UserFactory
@@ -124,7 +126,6 @@ describe('UserFactory', () => {
     let existingUser: UserEntity
 
     beforeEach(() => {
-      // Usuario existente
       existingUser = {
         id: '1',
         names: 'Original Names',
@@ -132,16 +133,24 @@ describe('UserFactory', () => {
         email: 'original@test.com',
         username: 'originaluser',
         ci: '12345678',
-        password: 'hashed_password', // El password se maneja en el use case
+        password: 'hashed_password',
         phone: '71234567',
         address: 'Original Address',
         organizationId: 'org-1',
         roles: [Role.CLIENTE],
         isActive: true,
         isTwoFactorEnabled: false,
-        emailVerified: true,
+        isTemporaryPassword: true,
         image: null,
-      } as UserEntity
+        providerId: null,
+        firstLoginAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: undefined,
+        createdBy: undefined,
+        updatedBy: undefined,
+        organization: null,
+      } as unknown as UserEntity
     })
 
     it('should update only provided fields', () => {
@@ -166,19 +175,6 @@ describe('UserFactory', () => {
       expect(result.ci).toBe('12345678')
       expect(result.address).toBe('Original Address')
       expect(result.isActive).toBe(true)
-    })
-
-    it('should normalize email to lowercase when updating', () => {
-      // Arrange
-      const dto: UpdateUserDto = {
-        email: 'UPDATED@TEST.COM',
-      }
-
-      // Act
-      const result = factory.updateFromDto(existingUser, dto)
-
-      // Assert
-      expect(result.email).toBe('updated@test.com')
     })
 
     it('should normalize username to lowercase when updating', () => {
@@ -213,7 +209,7 @@ describe('UserFactory', () => {
       const dto: UpdateUserDto = {
         names: 'New Names',
         lastNames: 'New LastNames',
-        email: 'NEW@TEST.COM',
+        username: 'NEWUSERNAME',
         phone: '77777777',
       }
 
@@ -223,8 +219,10 @@ describe('UserFactory', () => {
       // Assert
       expect(result.names).toBe('New Names')
       expect(result.lastNames).toBe('New LastNames')
-      expect(result.email).toBe('new@test.com')
+      expect(result.username).toBe('newusername') // Normalizado a lowercase
       expect(result.phone).toBe('77777777')
+      // Email NO debe cambiar (no está en UpdateUserDto)
+      expect(result.email).toBe('original@test.com')
     })
 
     it('should update roles array', () => {
@@ -255,6 +253,27 @@ describe('UserFactory', () => {
       expect(existingUser.username).toBe('originaluser')
       expect(existingUser.ci).toBe('12345678')
       expect(existingUser.phone).toBe('79999999')
+    })
+
+    it('should NOT update email and organizationId (excluded from UpdateUserDto)', () => {
+      // Arrange
+      const originalEmail = existingUser.email
+      const originalOrgId = existingUser.organizationId
+
+      const dto: UpdateUserDto = {
+        names: 'New Names',
+        username: 'newusername',
+      }
+
+      // Act
+      const result = factory.updateFromDto(existingUser, dto)
+
+      // Assert - Email y organizationId NO deben cambiar NUNCA
+      expect(result.email).toBe(originalEmail)
+      expect(result.organizationId).toBe(originalOrgId)
+      // Pero otros campos sí deben actualizarse
+      expect(result.names).toBe('New Names')
+      expect(result.username).toBe('newusername')
     })
   })
 

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEnum } from 'class-validator'
-import { Role } from '../../../../users/entities/user.entity'
+import { Role } from '@core'
 
 /**
  * DTO para cambiar el rol activo del usuario autenticado

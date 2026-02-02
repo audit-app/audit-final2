@@ -43,11 +43,7 @@
     "files:verify": "ts-node --files -r tsconfig-paths/register src/@core/files/verify-setup.ts",
     "i18n:test": "ts-node --files -r tsconfig-paths/register src/@core/i18n/i18n.test.ts",
     "reports:test": "ts-node --files -r tsconfig-paths/register src/@core/reports/reports.test.ts",
-    "docker:up": "docker compose up -d",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f",
-    "docker:ps": "docker compose ps",
-    "docker:verify": "./scripts/verify-docker.sh"
+    "swagger:test": "ts-node --files -r tsconfig-paths/register src/@core/swagger/swagger.test.ts"
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
@@ -72,6 +68,7 @@
     "cookie-parser": "^1.4.7",
     "docx": "^9.5.1",
     "exceljs": "^4.4.0",
+    "generate-password": "^1.7.1",
     "googleapis": "^169.0.0",
     "handlebars": "^4.7.8",
     "ioredis": "^5.9.1",
@@ -112,6 +109,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
+    "@types/generate-password": "^1.5.0",
     "@types/ioredis": "^4.28.10",
     "@types/jest": "^30.0.0",
     "@types/jsdom": "^27.0.0",

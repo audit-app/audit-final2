@@ -14,7 +14,12 @@ import {
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
 import { ResponseMessage } from '@core/http'
-import { ApiWrappedResponse } from '@core/swagger'
+import {
+  ApiWrappedResponse,
+  ApiOkResponse as ApiOkSwaggerResponse,
+  ApiNotFoundResponse as ApiNotFoundSwaggerResponse,
+  ApiStandardResponses,
+} from '@core/swagger'
 import type { Request, Response } from 'express'
 import { CookieService } from '@core/http'
 import { ConnectionInfo, type ConnectionMetadata } from '@core/http'
@@ -24,7 +29,6 @@ import {
   RefreshResponseDto,
   UserResponseDto,
   SwitchRoleDto,
-  SwitchRoleResponseDto,
 } from '../dtos'
 import { Public, GetUser, GetToken } from '../../../core/decorators'
 import type { JwtPayload } from '../../../core/interfaces'
@@ -52,38 +56,16 @@ export class AuthController {
     private readonly usersRepository: IUsersRepository,
   ) {}
 
-  /**
-   * POST /auth/login
-   * Autentica un usuario con username/email y password
-   *
-   * @param loginDto - Credenciales de login
-   * @param connection - Metadata de conexión (IP, User-Agent)
-   * @param res - Express response para setear cookies
-   * @returns Access token y datos del usuario
-   *
-   * @example
-   * ```json
-   * POST /auth/login
-   * {
-   *   "usernameOrEmail": "admin@example.com",
-   *   "password": "SecurePass123!"
-   * }
-   * ```
-   */
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Login exitoso')
   @ApiOperation({ summary: 'Login de usuario' })
-  @ApiWrappedResponse({
-    status: HttpStatus.OK,
-    description: 'Login exitoso. Puede requerir 2FA si está habilitado.',
-    type: LoginResponseDto,
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Credenciales inválidas o usuario inactivo',
-  })
+  @ApiOkSwaggerResponse(
+    LoginResponseDto,
+    'Login exitoso. Puede requerir 2FA si está habilitado.',
+  )
+  @ApiStandardResponses({ exclude: [403] })
   @ApiWrappedResponse({
     status: HttpStatus.TOO_MANY_REQUESTS,
     description: 'Demasiados intentos fallidos',
@@ -135,16 +117,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ResponseMessage('Token renovado exitosamente')
   @ApiOperation({ summary: 'Renovar access token (con rotation)' })
-  @ApiWrappedResponse({
-    status: HttpStatus.OK,
-    description:
-      'Token renovado exitosamente. El refresh token se rota automáticamente en cookie.',
-    type: RefreshResponseDto,
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Refresh token inválido, revocado o expirado',
-  })
+  @ApiOkSwaggerResponse(
+    RefreshResponseDto,
+    'Token renovado exitosamente. El refresh token se rota automáticamente en cookie.',
+  )
+  @ApiStandardResponses({ exclude: [403, 400] })
   async refresh(
     @Req() req: Request,
     @ConnectionInfo() connection: ConnectionMetadata,
@@ -202,10 +179,7 @@ export class AuthController {
     status: HttpStatus.NO_CONTENT,
     description: 'Logout exitoso. Tokens revocados y cookie limpiada.',
   })
-  @ApiWrappedResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
+  @ApiStandardResponses({ exclude: [400, 403] })
   async logout(
     @GetUser() user: JwtPayload,
     @GetToken() accessToken: string,
@@ -249,19 +223,9 @@ export class AuthController {
     description:
       'Retorna la información completa del usuario actual incluyendo datos de su organización y rutas de navegación basadas en sus roles',
   })
-  @ApiWrappedResponse({
-    status: HttpStatus.OK,
-    description: 'Perfil del usuario con navegación',
-    type: UserResponseDto,
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Usuario no encontrado',
-  })
+  @ApiOkSwaggerResponse(UserResponseDto, 'Perfil del usuario con navegación')
+  @ApiNotFoundSwaggerResponse('Usuario no encontrado')
+  @ApiStandardResponses({ exclude: [400, 403] })
   async getProfile(@GetUser() user: JwtPayload): Promise<UserResponseDto> {
     const profile = await this.usersRepository.getProfile(user.sub)
 
@@ -315,23 +279,37 @@ export class AuthController {
     description:
       'Permite al usuario cambiar entre sus roles asignados. El cambio persiste en todas las sesiones activas y futuros refreshes.',
   })
-  @ApiWrappedResponse({
-    status: HttpStatus.OK,
-    description: 'Rol cambiado exitosamente. Nuevo access token generado.',
-    type: SwitchRoleResponseDto,
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'No autenticado',
-  })
-  @ApiWrappedResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'El usuario no tiene asignado el rol solicitado',
-  })
+  @ApiOkSwaggerResponse(
+    RefreshResponseDto,
+    'Rol cambiado exitosamente. Nuevo access token generado.',
+  )
+  @ApiStandardResponses({ exclude: [400] })
   async switchRole(
-    @GetUser() user: JwtPayload,
+    @Req() req: Request,
+    @GetToken() currentAccessToken: string,
     @Body() dto: SwitchRoleDto,
-  ): Promise<SwitchRoleResponseDto> {
-    return await this.switchRoleUseCase.execute(user.sub, dto)
+    @ConnectionInfo() connection: ConnectionMetadata,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<RefreshResponseDto> {
+    const oldRefreshToken = this.cookieService.getRefreshToken(req)
+
+    if (!oldRefreshToken) {
+      throw new UnauthorizedException('Refresh token no encontrado')
+    }
+    const result = await this.switchRoleUseCase.execute(
+      currentAccessToken,
+      dto,
+      oldRefreshToken,
+      connection,
+    )
+
+    this.cookieService.setRefreshToken(
+      res,
+      result.refreshToken,
+      result.rememberMe,
+    )
+    return {
+      accessToken: result.accessToken,
+    }
   }
 }

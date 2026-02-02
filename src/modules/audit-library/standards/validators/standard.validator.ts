@@ -199,17 +199,20 @@ export class StandardValidator {
     }
 
     // Calcular suma actual (excluyendo este standard si es update)
-    const currentSum =
-      await this.standardsRepository.getTotalWeightByTemplate(
-        templateId,
-        excludeId,
-      )
+    const currentSum = await this.standardsRepository.getTotalWeightByTemplate(
+      templateId,
+      excludeId,
+    )
 
     // Verificar si excede 100
     const totalSum = currentSum + weight
 
     if (totalSum > 100) {
-      throw new StandardWeightSumExceededException(templateId, currentSum, weight)
+      throw new StandardWeightSumExceededException(
+        templateId,
+        currentSum,
+        weight,
+      )
     }
   }
 

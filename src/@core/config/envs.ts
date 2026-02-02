@@ -1,38 +1,91 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import 'dotenv/config' // Carga el .env automáticamente
 import * as Joi from 'joi'
 
 /**
  * Helper: Convierte cadenas de tiempo (1h, 5m, 7d) a segundos
+ *
+ * Formatos soportados:
+ * - 30s  → 30 segundos
+ * - 5m   → 300 segundos (5 minutos)
+ * - 1h   → 3600 segundos (1 hora)
+ * - 7d   → 604800 segundos (7 días)
+ *
+ * Usado para:
+ * - JWT: se pasa el string original (ej: "7d") a jsonwebtoken
+ * - Redis: se usa el resultado en segundos (ej: 604800)
+ *
+ * @param timeStr - String en formato: número + unidad (ej: "5m", "1h", "7d")
+ * @returns Número de segundos
+ * @throws Error si el formato es inválido
+ *
+ * @example
+ * parseTimeToSeconds("5m")  // 300
+ * parseTimeToSeconds("1h")  // 3600
+ * parseTimeToSeconds("7d")  // 604800
  */
 function parseTimeToSeconds(timeStr: string): number {
   const units: Record<string, number> = {
-    s: 1,
-    m: 60,
-    h: 3600,
-    d: 86400,
+    s: 1, // segundos
+    m: 60, // minutos
+    h: 3600, // horas
+    d: 86400, // días
   }
 
   const match = timeStr.match(/^(\d+)([smhd])$/)
   if (!match) {
-    throw new Error(`Invalid time format: ${timeStr}`)
+    throw new Error(
+      `Invalid time format: "${timeStr}". Expected format: <number><unit> (e.g., "5m", "1h", "7d"). ` +
+        `Supported units: s (seconds), m (minutes), h (hours), d (days)`,
+    )
   }
 
   const [, value, unit] = match
-  return parseInt(value, 10) * units[unit]
+  const seconds = parseInt(value, 10) * units[unit]
+
+  // Validación adicional: evitar valores extremos
+  if (seconds < 1) {
+    throw new Error(
+      `Time value too small: "${timeStr}" (must be at least 1 second)`,
+    )
+  }
+
+  if (seconds > 31536000) {
+    // 1 año
+    throw new Error(
+      `Time value too large: "${timeStr}" (maximum: 365d or 1 year)`,
+    )
+  }
+
+  return seconds
 }
 
 /**
  * Custom Joi validator para formato de tiempo (1h, 5m, 7d)
+ *
+ * Este validador asegura que:
+ * - JWT reciba un formato válido para jsonwebtoken (ej: "15m", "7d")
+ * - Redis pueda convertir a segundos sin errores
+ *
+ * Formatos válidos: 30s, 5m, 1h, 7d
  */
 const timeFormatValidator = Joi.string()
   .pattern(/^\d+[smhd]$/)
   .messages({
     'string.pattern.base':
-      'Time format must be like: 1h, 5m, 30s, 7d (number + unit)',
+      'Time format must be: <number><unit>. Examples: 30s, 5m, 1h, 7d. ' +
+      'Supported units: s=seconds, m=minutes, h=hours, d=days',
   })
 
 /**
  * Custom Joi validator flexible: acepta tanto formato de tiempo (5m) como segundos (300)
+ *
+ * Útil para configuraciones donde se puede especificar:
+ * - Formato legible: "5m" (5 minutos)
+ * - Número directo: "300" (300 segundos)
+ *
+ * Ambos son convertidos a segundos internamente para Redis.
  */
 const flexibleTimeValidator = Joi.alternatives()
   .try(
@@ -41,7 +94,8 @@ const flexibleTimeValidator = Joi.alternatives()
   )
   .messages({
     'alternatives.match':
-      'Must be either a time format (5m, 1h, 30s) or a number in seconds (300)',
+      'Must be either a time format (30s, 5m, 1h, 7d) or a number in seconds (300). ' +
+      'Examples: "5m" or "300"',
   })
 
 // ========================================
@@ -110,6 +164,7 @@ const envVarsSchema = Joi.object({
     'any.required': 'SESSION_SECRET is required',
   }),
   SESSION_MAX_AGE: Joi.number().default(86400000), // 24h in ms
+  MAX_CONCURRENT_SESSIONS_PER_USER: Joi.number().min(1).max(50).default(5), // Max refresh tokens por usuario
 
   // ============ DEVICE FINGERPRINT ============
   DEVICE_FINGERPRINT_SALT: Joi.string().required().min(16).messages({
@@ -238,10 +293,10 @@ export const envs = {
   // ============ JWT ============
   jwt: {
     accessSecret: validatedEnv.JWT_SECRET as string,
-    accessExpiresIn: validatedEnv.JWT_EXPIRES_IN as string,
+    accessExpiresIn: validatedEnv.JWT_EXPIRES_IN as string, // String "15m" → usado por jsonwebtoken
     refreshSecret: validatedEnv.JWT_REFRESH_SECRET as string,
-    refreshExpiresIn: jwtRefreshExpiresIn,
-    refreshExpirationSeconds: parseTimeToSeconds(jwtRefreshExpiresIn),
+    refreshExpiresIn: jwtRefreshExpiresIn, // String "7d" → usado por jsonwebtoken
+    refreshExpirationSeconds: parseTimeToSeconds(jwtRefreshExpiresIn), // 604800 → usado por Redis TTL
   },
 
   // ============ TWO FACTOR AUTH ============
@@ -286,6 +341,8 @@ export const envs = {
   session: {
     secret: validatedEnv.SESSION_SECRET as string,
     maxAge: validatedEnv.SESSION_MAX_AGE as number,
+    maxConcurrentSessions:
+      validatedEnv.MAX_CONCURRENT_SESSIONS_PER_USER as number,
   },
 
   // ============ DEVICE FINGERPRINT ============

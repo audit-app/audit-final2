@@ -45,8 +45,7 @@ export class AssignMemberDto {
   assignedStandardIds?: string[]
 
   @ApiProperty({
-    description:
-      'Notas sobre la asignación (ej: "Responsable de sección A.5")',
+    description: 'Notas sobre la asignación (ej: "Responsable de sección A.5")',
     example: 'Experto en controles de acceso',
     required: false,
   })

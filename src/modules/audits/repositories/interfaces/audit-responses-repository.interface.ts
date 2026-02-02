@@ -7,8 +7,7 @@ import type { ResponseStatus } from '../../enums/response-status.enum'
  *
  * Define los métodos personalizados para el repositorio de respuestas de auditoría
  */
-export interface IAuditResponsesRepository
-  extends IBaseRepository<AuditResponseEntity> {
+export interface IAuditResponsesRepository extends IBaseRepository<AuditResponseEntity> {
   findByAudit(auditId: string): Promise<AuditResponseEntity[]>
   findByAuditAndStandard(
     auditId: string,

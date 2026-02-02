@@ -10,7 +10,8 @@ import {
 } from '../exceptions'
 import { InvalidRoleException } from '../exceptions/invalid-role.exception'
 import { RoleTransitionException } from '../exceptions/role-transition.exception'
-import { Role, UserEntity } from '../entities'
+import { Role } from '@core'
+import { UserEntity } from '../entities'
 
 /**
  * Servicio de validación de reglas de negocio para usuarios

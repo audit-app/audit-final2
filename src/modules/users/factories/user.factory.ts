@@ -40,7 +40,6 @@ export class UserFactory {
   updateFromDto(user: UserEntity, dto: UpdateUserDto): UserEntity {
     if (dto.names !== undefined) user.names = dto.names
     if (dto.lastNames !== undefined) user.lastNames = dto.lastNames
-    if (dto.email !== undefined) user.email = dto.email.toLowerCase()
     if (dto.username !== undefined) user.username = dto.username.toLowerCase()
     if (dto.ci !== undefined) user.ci = dto.ci
     if (dto.phone !== undefined) user.phone = dto.phone

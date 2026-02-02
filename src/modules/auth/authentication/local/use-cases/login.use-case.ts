@@ -4,19 +4,15 @@ import { EmailEventService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { TwoFactorTokenService } from '../../two-factor'
-import {
-  TrustedDeviceRepository,
-  DeviceFingerprintService,
-} from '../../../session/devices'
+import { TrustedDeviceRepository } from '../../../session/devices'
 import { LoginRateLimitPolicy } from '../../../core/policies'
 import type { LoginDto, LoginResponseDto } from '../dtos'
 import {
   InvalidCredentialsException,
   UserNotActiveException,
-  EmailNotVerifiedException,
 } from '../../../core/exceptions'
 
-import { ConnectionMetadata } from '@core/http'
+import { ConnectionMetadata, ConnectionMetadataService } from '@core/http'
 import { TokensService } from '../../../core/services'
 
 @Injectable()
@@ -29,29 +25,25 @@ export class LoginUseCase {
     private readonly loginRateLimitPolicy: LoginRateLimitPolicy,
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
-    private readonly deviceFingerprintService: DeviceFingerprintService,
+    private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly emailEventService: EmailEventService,
   ) {}
 
   async execute(
     dto: LoginDto,
     connection: ConnectionMetadata,
-    deviceId?: string, // UUID del dispositivo confiable (de la cookie)
+    deviceId?: string,
   ): Promise<{
     response: LoginResponseDto
     refreshToken?: string
   }> {
     // 1. BUSCAR USUARIO EN BASE DE DATOS
-    // No verificamos rate limit todavía para no ensuciar Redis con emails falsos.
     const user = await this.usersRepository.findByUsernameOrEmailWithPassword(
       dto.usernameOrEmail,
     )
 
     // 2. ESCENARIO: USUARIO NO EXISTE (Protección Anti-Enumeración)
     if (!user) {
-      // NO tocamos Redis.
-      // Opcional: Podrías poner un 'await TimeUtil.sleep(random)' aquí para mitigar Timing Attacks
-
       throw new InvalidCredentialsException()
     }
 
@@ -63,7 +55,7 @@ export class LoginUseCase {
 
     // b) Verificar integridad del usuario (sin password)
     if (!user.password) {
-      // ✅ SEGURIDAD: NO revelar que el usuario existe pero no tiene password
+      // SEGURIDAD: NO revelar que el usuario existe pero no tiene password
       // Esto puede ocurrir si:
       // 1. El usuario no completó el setup después de verificar email
       // 2. El usuario solo usa Google OAuth (password = null)
@@ -85,13 +77,15 @@ export class LoginUseCase {
       throw new InvalidCredentialsException()
     }
 
-    // 5. VALIDACIONES DE ESTADO (Ya pasó la seguridad, validamos negocio)
+    // 5. VALIDACIONES DE ESTADO
     if (!user.isActive) {
       throw new UserNotActiveException()
     }
 
-    if (!user.emailVerified) {
-      throw new EmailNotVerifiedException()
+    // Marcar primer login si es la primera vez
+    if (!user.firstLoginAt) {
+      user.markFirstLogin()
+      await this.usersRepository.save(user)
     }
 
     // 6. LOGIN EXITOSO -> LIMPIEZA
@@ -107,7 +101,7 @@ export class LoginUseCase {
 
       // Generar fingerprint actual del dispositivo
       const currentFingerprint =
-        this.deviceFingerprintService.generateFingerprint(userAgent, ip)
+        this.connectionMetadataService.generateFingerprint(userAgent, ip)
 
       // Verificar si el dispositivo es confiable usando el deviceId (UUID) de la cookie
       let isTrusted = false
@@ -125,7 +119,7 @@ export class LoginUseCase {
         // Generar código OTP y token temporal (propagando rememberMe)
         const { code, token } = await this.twoFactorTokenService.generateCode(
           user.id,
-          dto.rememberMe, // Propagar rememberMe al payload de Redis
+          dto.rememberMe,
         )
 
         // Enviar código por email (asíncrono vía eventos, no bloqueante)
@@ -137,14 +131,12 @@ export class LoginUseCase {
         })
 
         // Retornar respuesta indicando que requiere 2FA
-        // NO incluye datos del usuario (usar /auth/me después de verificar 2FA)
         return {
           response: {
-            accessToken: '', // Vacío hasta que verifique el código 2FA
+            accessToken: '',
             require2FA: true,
-            twoFactorToken: token, // Token de 64 caracteres para validación
+            twoFactorToken: token,
           },
-          // NO se genera refreshToken hasta verificar 2FA
         }
       }
 

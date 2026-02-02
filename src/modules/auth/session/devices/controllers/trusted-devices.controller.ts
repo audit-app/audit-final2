@@ -8,7 +8,7 @@ import {
   Req,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/http'
+import { GetUser, ResponseMessage } from '@core/http'
 import { MessageResponseDto, MessageWithCountResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request } from 'express'
@@ -18,6 +18,7 @@ import {
   RevokeAllTrustedDevicesUseCase,
 } from '../use-cases'
 import { TrustedDeviceResponseDto, RevokeDeviceDto } from '../dtos'
+import type { JwtPayload } from '@core'
 
 /**
  * TrustedDevicesController
@@ -67,10 +68,8 @@ export class TrustedDevicesController {
     type: TrustedDeviceResponseDto,
     isArray: true,
   })
-  async listDevices(@Req() req: Request): Promise<TrustedDeviceResponseDto[]> {
-    const userId = req.user!.sub
-
-    return await this.listTrustedDevicesUseCase.execute(userId)
+  async listDevices(@GetUser() user: JwtPayload) {
+    return await this.listTrustedDevicesUseCase.execute(user.sub)
   }
 
   /**

@@ -10,7 +10,10 @@ import {
 import { ApiTags } from '@nestjs/swagger'
 import { UuidParamDto } from '@core/dtos'
 import { ResponseMessage } from '@core/http'
-import { ApiCreate, ApiCustom } from '@core/swagger/decorators/api-crud.decorator'
+import {
+  ApiCreate,
+  ApiCustom,
+} from '@core/swagger/decorators/api-crud.decorator'
 import { AssignMemberDto, AuditAssignmentResponseDto } from '../dtos'
 import { AssignMemberUseCase } from '../use-cases'
 import type { IAuditAssignmentsRepository } from '../repositories'

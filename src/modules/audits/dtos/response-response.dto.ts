@@ -18,7 +18,7 @@ export class StandardInfoDto {
 
   @ApiProperty({
     example: 'Se debe definir un conjunto de políticas...',
-    nullable: true
+    nullable: true,
   })
   description: string | null
 
@@ -34,7 +34,7 @@ export class StandardInfoDto {
   @ApiProperty({
     example: 'Verificar política documentada y firmada',
     nullable: true,
-    description: 'Guía para el auditor'
+    description: 'Guía para el auditor',
   })
   auditorGuidance: string | null
 }
@@ -54,7 +54,7 @@ export class ResponseResponseDto {
 
   @ApiProperty({
     type: StandardInfoDto,
-    description: 'Información del estándar evaluado'
+    description: 'Información del estándar evaluado',
   })
   standard?: StandardInfoDto
 

@@ -7,8 +7,7 @@ import type { WorkPaperType } from '../../enums/work-paper-type.enum'
  *
  * Define los métodos personalizados para el repositorio de papeles de trabajo
  */
-export interface IAuditWorkPapersRepository
-  extends IBaseRepository<AuditWorkPaperEntity> {
+export interface IAuditWorkPapersRepository extends IBaseRepository<AuditWorkPaperEntity> {
   findByResponse(responseId: string): Promise<AuditWorkPaperEntity[]>
   findByType(
     responseId: string,

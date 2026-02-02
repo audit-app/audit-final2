@@ -7,8 +7,7 @@ import type { AuditRole } from '../../enums/audit-role.enum'
  *
  * Define los métodos personalizados para el repositorio de asignaciones
  */
-export interface IAuditAssignmentsRepository
-  extends IBaseRepository<AuditAssignmentEntity> {
+export interface IAuditAssignmentsRepository extends IBaseRepository<AuditAssignmentEntity> {
   findByAudit(auditId: string): Promise<AuditAssignmentEntity[]>
   findByUser(userId: string): Promise<AuditAssignmentEntity[]>
   findByAuditUserAndRole(

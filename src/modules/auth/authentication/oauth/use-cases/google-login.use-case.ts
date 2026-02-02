@@ -3,16 +3,14 @@ import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { TokensService } from '../../../core/services'
 import type { ConnectionMetadata } from '@core/http'
+import { ConnectionMetadataService } from '@core/http'
 import type { LoginResponseDto } from '../../local/dtos'
 import {
   UserNotActiveException,
   InvalidCredentialsException,
 } from '../../../core/exceptions'
 import { TwoFactorTokenService } from '../../two-factor'
-import {
-  TrustedDeviceRepository,
-  DeviceFingerprintService,
-} from '../../../session/devices'
+import { TrustedDeviceRepository } from '../../../session/devices'
 import { EmailEventService } from '@core/email'
 import type { GoogleUser } from '../../../core/interfaces'
 import { Transactional } from '@core/database'
@@ -27,7 +25,7 @@ import { Transactional } from '@core/database'
  * 1. Google autentica al usuario y proporciona su email
  * 2. Buscar usuario en BD por email
  * 3. Si NO existe → RECHAZAR (no permitir login)
- * 4. Si existe → Validar (isActive, emailVerified)
+ * 4. Si existe → Validar (isActive)
  * 5. Vincular cuenta de Google (si no está vinculada)
  * 6. Aplicar lógica de 2FA si está habilitado (igual que login normal)
  * 7. Generar tokens JWT (igual que login normal)
@@ -48,7 +46,7 @@ export class GoogleLoginUseCase {
     private readonly tokensService: TokensService,
     private readonly twoFactorTokenService: TwoFactorTokenService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
-    private readonly deviceFingerprintService: DeviceFingerprintService,
+    private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly emailEventService: EmailEventService,
   ) {}
 
@@ -81,10 +79,10 @@ export class GoogleLoginUseCase {
     // 4. VINCULAR CUENTA DE GOOGLE (si no está vinculada)
     if (!user.providerId) {
       // Primera vez que usa Google → vincular cuenta
-      await this.usersRepository.update(user.id, {
-        provider: 'google',
-        providerId: googleUser.providerId,
-      })
+      // CASO 1: Nunca hizo login → password = null, isTemporaryPassword = false
+      // CASO 2: Ya hizo login local → mantener password y flags
+      user.linkGoogleAccount(googleUser.providerId)
+      await this.usersRepository.save(user)
     } else if (user.providerId !== googleUser.providerId) {
       // Cuenta ya vinculada a OTRA cuenta de Google → rechazar
       throw new BadRequestException(
@@ -98,11 +96,10 @@ export class GoogleLoginUseCase {
       throw new UserNotActiveException()
     }
 
-    if (!user.emailVerified) {
-      await this.usersRepository.update(user.id, {
-        emailVerified: true,
-        emailVerifiedAt: new Date(),
-      })
+    // Marcar primer login si es la primera vez
+    if (!user.firstLoginAt) {
+      user.markFirstLogin()
+      await this.usersRepository.save(user)
     }
 
     // 6. LÓGICA DE 2FA (igual que login normal)
@@ -112,7 +109,7 @@ export class GoogleLoginUseCase {
 
       // Generar fingerprint actual del dispositivo
       const currentFingerprint =
-        this.deviceFingerprintService.generateFingerprint(userAgent, ip)
+        this.connectionMetadataService.generateFingerprint(userAgent, ip)
 
       // Verificar si el dispositivo es confiable usando el deviceId (UUID) de la cookie
       let isTrusted = false
