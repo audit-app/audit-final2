@@ -11,9 +11,8 @@ import {
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import { ApiStandardResponses, ApiOkResponse } from '@core/swagger'
-import { ResponseMessage } from '@core/http'
+import { GetUser, ResponseMessage } from '@core/http'
 import { UploadAvatar } from '@core/files'
-import { GetUser } from '../../core/decorators/get-user.decorator'
 import { UserResponseDto } from '../../../users/dtos/user-response.dto'
 import {
   UploadProfileAvatarUseCase,

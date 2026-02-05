@@ -7,27 +7,18 @@ import {
   HttpStatus,
 } from '@nestjs/common'
 import { AuthGuard } from '@nestjs/passport'
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiExcludeEndpoint,
-} from '@nestjs/swagger'
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger'
 import type { Response, Request } from 'express'
 import { GoogleLoginUseCase } from '../use-cases'
 import { envs } from '@core/config'
-import { CookieService } from '@core/http'
-import { Public } from '../../../core'
+import { CookieService, Public } from '@core/http'
 import { GoogleUser } from '../../../core/interfaces'
 import { ConnectionInfo } from '@core/http'
 import type { ConnectionMetadata } from '@core/http'
 
-// TRUCO DE TYPESCRIPT:
-// 1. Tomamos el Request de Express.
-// 2. Le quitamos (Omit) la propiedad 'user' que da problemas.
-// 3. Le agregamos (&) nuestra propia propiedad 'user' tipo GoogleUser.
 type GoogleAuthRequest = Omit<Request, 'user'> & { user: GoogleUser }
 
+@Public()
 @ApiTags('Google OAuth')
 @Controller('auth/google')
 export class GoogleAuthController {
@@ -36,7 +27,6 @@ export class GoogleAuthController {
     private readonly cookieService: CookieService,
   ) {}
 
-  @Public()
   @Get()
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
@@ -49,11 +39,8 @@ export class GoogleAuthController {
     status: HttpStatus.FOUND,
     description: 'Redirige a Google OAuth',
   })
-  async googleAuth() {
-    // Este método está vacío porque Passport maneja la redirección automáticamente
-  }
+  async googleAuth() {}
 
-  @Public()
   @Get('callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({
@@ -120,9 +107,9 @@ export class GoogleAuthController {
     let redirectUrl = ''
 
     if (response.require2FA) {
-      redirectUrl = `${frontendUrl}/api/auth/verify-2fa?tempToken=${response.twoFactorToken}`
+      redirectUrl = `${frontendUrl}/es/two-factor?temporalToken=${response.twoFactorToken}`
     } else {
-      redirectUrl = `${frontendUrl}/auth/callback?token=${response.accessToken}`
+      redirectUrl = `${frontendUrl}/es/callback?token=${response.accessToken}`
     }
 
     // Redirigir al navegador hacia el frontend

@@ -31,7 +31,6 @@ export class LogoutUseCase {
     refreshToken?: string,
   ): Promise<void> {
     // 1. Blacklist del access token
-    // Esto lo invalida inmediatamente, no hay que esperar a que expire
     await this.tokensService.blacklistAccessToken(accessToken, userId)
 
     // 2. Revocar refresh token si se proporcionó

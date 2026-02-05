@@ -6,6 +6,7 @@ import { TransactionService } from '@core/database'
 import { AuditService } from '@core/context'
 import { AuditResponseEntity } from '../entities/audit-response.entity'
 import { ResponseStatus } from '../enums/response-status.enum'
+import { ComplianceLevel } from '../enums/compliance-level.enum'
 import type { IAuditResponsesRepository } from './interfaces'
 
 /**
@@ -78,53 +79,77 @@ export class AuditResponsesRepository
   /**
    * Calcula el score total de la auditoría
    * Suma ponderada: (score * weight) para cada respuesta
+   *
+   * IMPORTANTE: Excluye estándares marcados como NOT_APPLICABLE
+   * y normaliza al 100% redistribuyendo los pesos automáticamente
    */
   async calculateAuditScore(auditId: string): Promise<number> {
     const responses = await this.getRepo().find({
       where: { auditId },
     })
 
-    let totalWeightedScore = 0
-    let totalWeight = 0
+    // Filtrar respuestas aplicables (excluir NOT_APPLICABLE)
+    const applicableResponses = responses.filter(
+      (r) => r.complianceLevel !== ComplianceLevel.NOT_APPLICABLE,
+    )
 
-    for (const response of responses) {
+    let totalWeightedScore = 0
+    let totalApplicableWeight = 0
+
+    for (const response of applicableResponses) {
+      // Solo considerar respuestas con score asignado
       if (response.score !== null) {
         totalWeightedScore += response.weightedScore
-        totalWeight += response.weight
+        totalApplicableWeight += response.weight
       }
     }
 
     // Si no hay respuestas evaluadas, retorna 0
-    if (totalWeight === 0) return 0
+    if (totalApplicableWeight === 0) return 0
 
-    // Retorna score ponderado total
-    return totalWeightedScore
+    // Normalizar al 100% (redistribuir pesos automáticamente)
+    // Ejemplo: Si solo aplican 80 puntos de peso, se normaliza a 100
+    const normalizedScore = (totalWeightedScore * 100) / totalApplicableWeight
+
+    // Retornar score ponderado normalizado
+    return Math.round(normalizedScore * 100) / 100 // Redondear a 2 decimales
   }
 
   /**
    * Calcula el nivel de madurez promedio de la auditoría
    * Promedio ponderado de achievedMaturityLevel
+   *
+   * IMPORTANTE: Excluye estándares marcados como NOT_APPLICABLE
+   * y normaliza redistribuyendo los pesos automáticamente
    */
   async calculateAverageMaturityLevel(auditId: string): Promise<number | null> {
     const responses = await this.getRepo().find({
       where: { auditId },
     })
 
-    let totalWeightedLevel = 0
-    let totalWeight = 0
+    // Filtrar respuestas aplicables (excluir NOT_APPLICABLE)
+    const applicableResponses = responses.filter(
+      (r) => r.complianceLevel !== ComplianceLevel.NOT_APPLICABLE,
+    )
 
-    for (const response of responses) {
+    let totalWeightedLevel = 0
+    let totalApplicableWeight = 0
+
+    for (const response of applicableResponses) {
       if (response.achievedMaturityLevel !== null) {
         totalWeightedLevel += response.achievedMaturityLevel * response.weight
-        totalWeight += response.weight
+        totalApplicableWeight += response.weight
       }
     }
 
     // Si no hay respuestas evaluadas, retorna null
-    if (totalWeight === 0) return null
+    if (totalApplicableWeight === 0) return null
 
-    // Retorna nivel promedio ponderado
-    return totalWeightedLevel / totalWeight
+    // Retorna nivel promedio ponderado (sin normalizar, el rango ya es 0-5)
+    const averageLevel = totalWeightedLevel / totalApplicableWeight
+
+    // Redondear a 2 decimales
+    return Math.round(averageLevel * 100) / 100
   }
 
   /**

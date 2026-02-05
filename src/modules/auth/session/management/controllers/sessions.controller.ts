@@ -6,10 +6,9 @@ import {
   HttpCode,
   HttpStatus,
   Req,
-  UseGuards,
 } from '@nestjs/common'
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/http'
+import { GetUser, ResponseMessage } from '@core/http'
 import { MessageResponseDto, MessageWithCountResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Request } from 'express'
@@ -19,12 +18,10 @@ import {
   RevokeAllSessionsUseCase,
 } from '../use-cases'
 import { SessionResponseDto, RevokeSessionDto } from '../dtos'
-import { GetUser, JwtAuthGuard } from '../../../core'
-import type { JwtPayload } from '../../../core'
 import { TokensService } from '../../../core/services'
 import { CookieService } from '@core/http'
+import type { JwtPayload } from '@core'
 
-@UseGuards(JwtAuthGuard)
 @ApiTags('Sessions')
 @Controller('auth/sessions')
 @ApiBearerAuth()

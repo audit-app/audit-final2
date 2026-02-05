@@ -10,6 +10,7 @@ import { AUDITS_REPOSITORY } from '../../tokens'
 import { TEMPLATES_REPOSITORY } from '../../../audit-library/templates/tokens'
 import type { IAuditsRepository } from '../../repositories'
 import type { ITemplatesRepository } from 'src/modules/audit-library/templates/repositories'
+import { InitializeResponsesUseCase } from '../initialize-responses'
 
 @Injectable()
 export class CreateAuditUseCase {
@@ -18,6 +19,7 @@ export class CreateAuditUseCase {
     private readonly auditsRepository: IAuditsRepository,
     @Inject(TEMPLATES_REPOSITORY)
     private readonly templatesRepository: ITemplatesRepository,
+    private readonly initializeResponsesUseCase: InitializeResponsesUseCase,
   ) {}
 
   @Transactional()
@@ -56,6 +58,12 @@ export class CreateAuditUseCase {
     audit.revisionNumber = 0
     audit.parentAuditId = null
 
-    return await this.auditsRepository.save(audit)
+    const savedAudit = await this.auditsRepository.save(audit)
+
+    // 4. Inicializar respuestas de auditoría
+    // Crea AuditResponseEntity por cada standard auditable del template
+    await this.initializeResponsesUseCase.execute(savedAudit.id)
+
+    return savedAudit
   }
 }

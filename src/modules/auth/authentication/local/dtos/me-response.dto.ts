@@ -1,14 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger'
 import { Role } from '@core'
 
-/**
- * DTO de respuesta para el endpoint GET /auth/me
- *
- * Extiende UserResponseDto agregando rutas de navegación
- * basadas en el rol del usuario
- */
-
-export class UserResponseDto {
+export class MeResponseDto {
   @ApiProperty({
     description: 'ID único del usuario',
     example: '550e8400-e29b-41d4-a716-446655440000',

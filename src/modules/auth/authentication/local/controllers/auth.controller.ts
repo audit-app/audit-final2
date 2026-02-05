@@ -13,7 +13,13 @@ import {
   UseGuards,
 } from '@nestjs/common'
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/http'
+import {
+  GetToken,
+  GetUser,
+  JwtAuthGuard,
+  Public,
+  ResponseMessage,
+} from '@core/http'
 import {
   ApiWrappedResponse,
   ApiOkResponse as ApiOkSwaggerResponse,
@@ -27,21 +33,19 @@ import {
   LoginDto,
   LoginResponseDto,
   RefreshResponseDto,
-  UserResponseDto,
+  MeResponseDto,
   SwitchRoleDto,
 } from '../dtos'
-import { Public, GetUser, GetToken } from '../../../core/decorators'
-import type { JwtPayload } from '../../../core/interfaces'
 import {
   LoginUseCase,
   LogoutUseCase,
   RefreshTokenUseCase,
   SwitchRoleUseCase,
 } from '../use-cases'
-import { JwtAuthGuard } from '../../../core'
 
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
+import type { JwtPayload } from '@core'
 @UseGuards(JwtAuthGuard)
 @ApiTags('Auth')
 @Controller('auth')
@@ -76,7 +80,6 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<LoginResponseDto> {
-    // Leer cookie de trusted device (si existe)
     const deviceId = this.cookieService.getTrustedDeviceToken(req)
 
     const { response, refreshToken } = await this.loginUseCase.execute(
@@ -85,13 +88,10 @@ export class AuthController {
       deviceId,
     )
 
-    // Configurar refresh token en HTTP-only cookie (solo si existe)
-    // Si requiere 2FA, no hay refreshToken todavía
     if (refreshToken) {
       this.cookieService.setRefreshToken(res, refreshToken, loginDto.rememberMe)
     }
 
-    // Retornar solo access token y datos del usuario
     return response
   }
 
@@ -138,14 +138,12 @@ export class AuthController {
       connection,
     )
 
-    // Setear nuevo refresh token (rotation)
     this.cookieService.setRefreshToken(
       res,
       result.refreshToken,
       result.rememberMe,
     )
 
-    // Retornar nuevo access token
     return {
       accessToken: result.accessToken,
     }
@@ -186,17 +184,13 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ): Promise<void> {
-    // Extraer refresh token de la cookie
     const refreshToken = this.cookieService.getRefreshToken(req)
 
     if (!accessToken) {
       throw new UnauthorizedException('Access token no encontrado')
     }
-
-    // Revocar ambos tokens
     await this.logoutUseCase.execute(user.sub, accessToken, refreshToken)
 
-    // Limpiar cookie
     this.cookieService.clearRefreshToken(res)
   }
 
@@ -223,10 +217,10 @@ export class AuthController {
     description:
       'Retorna la información completa del usuario actual incluyendo datos de su organización y rutas de navegación basadas en sus roles',
   })
-  @ApiOkSwaggerResponse(UserResponseDto, 'Perfil del usuario con navegación')
+  @ApiOkSwaggerResponse(MeResponseDto, 'Perfil del usuario con navegación')
   @ApiNotFoundSwaggerResponse('Usuario no encontrado')
   @ApiStandardResponses({ exclude: [400, 403] })
-  async getProfile(@GetUser() user: JwtPayload): Promise<UserResponseDto> {
+  async getProfile(@GetUser() user: JwtPayload): Promise<MeResponseDto> {
     const profile = await this.usersRepository.getProfile(user.sub)
 
     if (!profile) {

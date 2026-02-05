@@ -140,8 +140,8 @@ export class OtpCoreService {
   }
 
   private generateNumericOtp(length: number): string {
-    const max = Math.pow(10, length) - 1
     const min = Math.pow(10, length - 1)
-    return (Math.floor(Math.random() * (max - min + 1)) + min).toString()
+    const max = Math.pow(10, length)
+    return crypto.randomInt(min, max).toString()
   }
 }

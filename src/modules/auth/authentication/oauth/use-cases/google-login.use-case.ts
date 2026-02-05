@@ -14,6 +14,7 @@ import { TrustedDeviceRepository } from '../../../session/devices'
 import { EmailEventService } from '@core/email'
 import type { GoogleUser } from '../../../core/interfaces'
 import { Transactional } from '@core/database'
+import { envs } from '@core'
 
 /**
  * Google Login Use Case
@@ -133,7 +134,7 @@ export class GoogleLoginUseCase {
           to: user.email,
           userName: user.username,
           code,
-          expiresInMinutes: 5,
+          expiresInMinutes: envs.twoFactor.codeExpires.minutes,
         })
 
         // Retornar respuesta indicando que requiere 2FA
@@ -151,13 +152,8 @@ export class GoogleLoginUseCase {
 
     // 7. GENERAR TOKENS (Flujo normal o Trusted Device)
     const { accessToken, refreshToken } =
-      await this.tokensService.generateTokenPair(
-        user,
-        connection,
-        true, // rememberMe = true por defecto
-      )
+      await this.tokensService.generateTokenPair(user, connection, true)
 
-    // 8. RETORNAR RESPUESTA (igual que login normal)
     return {
       response: {
         accessToken,

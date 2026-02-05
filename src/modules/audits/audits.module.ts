@@ -6,25 +6,44 @@ import {
   CloseAuditUseCase,
   CreateRevisionUseCase,
   FindAuditsUseCase,
+  InitializeResponsesUseCase,
+  UpdateResponseUseCase,
+  ListResponsesUseCase,
+  GetResponseUseCase,
+  GetAuditStatsUseCase,
 } from './use-cases'
-import { AuditsController } from './controllers/audits.controller'
-import { AuditAssignmentsController } from './controllers/audit-assignments.controller'
+import {
+  AuditsController,
+  AuditAssignmentsController,
+  AuditResponsesController,
+} from './controllers'
 
 @Module({
   imports: [],
-  controllers: [AuditsController, AuditAssignmentsController],
+  controllers: [
+    AuditsController,
+    AuditAssignmentsController,
+    AuditResponsesController,
+  ],
   providers: [
-    // Use Cases
+    // Audits Use Cases
     CreateAuditUseCase,
     AssignMemberUseCase,
     StartAuditUseCase,
     CloseAuditUseCase,
     CreateRevisionUseCase,
     FindAuditsUseCase,
+    // Responses Use Cases
+    InitializeResponsesUseCase,
+    UpdateResponseUseCase,
+    ListResponsesUseCase,
+    GetResponseUseCase,
+    GetAuditStatsUseCase,
   ],
   exports: [
     // Export use cases if needed by other modules (future)
     FindAuditsUseCase,
+    GetAuditStatsUseCase,
   ],
 })
 export class AuditsModule {}

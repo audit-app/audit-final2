@@ -1,11 +1,10 @@
-import { Controller, Get, UseGuards, Request } from '@nestjs/common'
+import { Controller, Get, Request } from '@nestjs/common'
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger'
-import { JwtAuthGuard } from '../../auth/core/guards/jwt-auth.guard'
 import { MenuResponseDto } from '../dtos'
 import { GetMenuUseCase } from '../use-cases'
 
@@ -16,7 +15,6 @@ import { GetMenuUseCase } from '../use-cases'
  */
 @ApiTags('navigation')
 @Controller('navigation')
-@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class NavigationController {
   constructor(private readonly getMenuUseCase: GetMenuUseCase) {}

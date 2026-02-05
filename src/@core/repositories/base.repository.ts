@@ -173,11 +173,8 @@ export abstract class BaseRepository<
 
     // 1. Aplicar Ordenamiento Dinámico
     if (sortBy) {
-      // Protegemos contra inyección SQL simple verificando que sea una columna válida
-      // Ojo: Para relaciones complejas necesitarás lógica extra, pero esto cubre el 90%
       qb.addOrderBy(`${qb.alias}.${sortBy}`, sortOrder || 'DESC')
     } else {
-      // Default sort (opcional, ajusta según tu entidad, ej: createdAt)
       qb.addOrderBy(`${qb.alias}.createdAt`, 'DESC')
     }
 
@@ -188,7 +185,7 @@ export abstract class BaseRepository<
     }
 
     // 3. Paginación Real
-    const total = await qb.getCount() // Contamos antes de limitar
+    const total = await qb.getCount()
     const data = await qb
       .skip((page - 1) * limit)
       .take(limit)
@@ -215,10 +212,7 @@ export abstract class BaseRepository<
 
   async patch(entity: T, partialEntity: DeepPartial<T>): Promise<T> {
     const updatedEntity = this.getRepo().merge(entity, partialEntity)
-
-    // Aplicar auditoría (updatedBy) - no es nueva entidad
     this.auditService.applyAudit(updatedEntity, false)
-
     return this.getRepo().save(updatedEntity)
   }
 

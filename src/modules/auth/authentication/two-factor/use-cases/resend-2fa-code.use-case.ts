@@ -9,6 +9,7 @@ import { TwoFactorTokenService } from '../services/two-factor-token.service'
 import { Resend2FARateLimitPolicy } from '../../../core/policies'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
+import { envs } from '@core'
 
 /**
  * Use Case: Reenviar código 2FA existente
@@ -90,7 +91,7 @@ export class Resend2FACodeUseCase {
       to: user.email,
       userName: user.username,
       code,
-      expiresInMinutes: 5,
+      expiresInMinutes: envs.twoFactor.codeExpires.minutes,
     })
 
     // 5. Marcar intento de resend (iniciar cooldown de 60 segundos)

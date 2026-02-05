@@ -33,7 +33,7 @@ export class RateLimitService {
    */
   async incrementAttempts(key: string, windowMinutes: number): Promise<number> {
     const prefixedKey = this.getPrefixedKey(key)
-    const ttlSeconds = windowMinutes * 60
+    const ttlSeconds = windowMinutes
 
     // 1. Incremento ATÓMICO (CacheService.incr)
     // Redis maneja la suma internamente. No hay "race conditions".

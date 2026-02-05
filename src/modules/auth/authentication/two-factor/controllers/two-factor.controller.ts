@@ -7,18 +7,22 @@ import {
   Res,
 } from '@nestjs/common'
 import { ApiOperation, ApiTags } from '@nestjs/swagger'
-import { ResponseMessage } from '@core/http'
+import {
+  ResponseMessage,
+  CookieService,
+  ConnectionInfo,
+  type ConnectionMetadata,
+} from '@core/http'
 import { MessageResponseDto } from '@core/dtos'
 import { ApiWrappedResponse } from '@core/swagger'
 import type { Response } from 'express'
-import { ConnectionInfo, type ConnectionMetadata } from '@core/http'
-import { CookieService } from '@core/http'
+import { Public } from '@core/http'
+
 import {
   Verify2FACodeDto,
   Verify2FAResponseDto,
   Resend2FACodeDto,
 } from '../dtos'
-import { Public } from '../../../core/decorators'
 import { Verify2FACodeUseCase, Resend2FACodeUseCase } from '../use-cases'
 
 /**

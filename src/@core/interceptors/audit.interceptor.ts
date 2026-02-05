@@ -6,8 +6,7 @@ import {
 } from '@nestjs/common'
 import { Observable } from 'rxjs'
 import { Request } from 'express'
-import { AuditService } from '@core/context'
-import { JwtPayload } from 'src/modules/auth/core'
+import { AuditService, JwtPayload } from '@core/context'
 
 /**
  * Interceptor que captura el usuario autenticado de la petición HTTP

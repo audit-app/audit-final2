@@ -7,7 +7,7 @@ import { envs } from '@core/config'
 export class LoginRateLimitPolicy {
   private readonly contextPrefix = 'login'
   private readonly maxAttempts = envs.login.maxAttemptsByUser
-  private readonly windowMinutes = envs.login.windowMinutes
+  private readonly windowMinutes = envs.login.window.minutes
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

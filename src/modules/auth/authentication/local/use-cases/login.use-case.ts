@@ -14,6 +14,7 @@ import {
 
 import { ConnectionMetadata, ConnectionMetadataService } from '@core/http'
 import { TokensService } from '../../../core/services'
+import { envs } from '@core'
 
 @Injectable()
 export class LoginUseCase {
@@ -116,7 +117,6 @@ export class LoginUseCase {
 
       if (!isTrusted) {
         // Dispositivo no confiable -> Requiere 2FA
-        // Generar código OTP y token temporal (propagando rememberMe)
         const { code, token } = await this.twoFactorTokenService.generateCode(
           user.id,
           dto.rememberMe,
@@ -127,7 +127,7 @@ export class LoginUseCase {
           to: user.email,
           userName: user.username,
           code,
-          expiresInMinutes: 5,
+          expiresInMinutes: envs.twoFactor.codeExpires.minutes,
         })
 
         // Retornar respuesta indicando que requiere 2FA

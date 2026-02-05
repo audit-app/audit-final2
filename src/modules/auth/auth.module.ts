@@ -14,10 +14,10 @@ import {
   TokenStorageRepository,
   JwtStrategy,
   GoogleStrategy,
-  JwtAuthGuard,
   LoginRateLimitPolicy,
   RequestResetPasswordRateLimitPolicy,
   Resend2FARateLimitPolicy,
+  ResendResetPasswordRateLimitPolicy,
 } from './core'
 
 // ========================================
@@ -55,6 +55,7 @@ import {
 import {
   PasswordResetController,
   RequestResetPasswordUseCase,
+  ResendResetPasswordUseCase,
   ResetPasswordUseCase,
 } from './recovery/password'
 
@@ -114,7 +115,7 @@ import {
     JwtModule.registerAsync({
       useFactory: () => {
         const secret = envs.jwt.accessSecret
-        const expiresIn = envs.jwt.accessExpiresIn as ms.StringValue
+        const expiresIn = envs.jwt.accessExpires.raw as ms.StringValue
 
         if (!secret) {
           throw new Error('JWT_SECRET is required')
@@ -162,8 +163,8 @@ import {
     // ========================================
     LoginRateLimitPolicy,
     RequestResetPasswordRateLimitPolicy,
-    // Generate2FARateLimitPolicy, // TODO: Implementar si se necesita
     Resend2FARateLimitPolicy,
+    ResendResetPasswordRateLimitPolicy,
     // ========================================
     // Use Cases
     // ========================================
@@ -176,6 +177,7 @@ import {
 
     // Password Reset
     RequestResetPasswordUseCase,
+    ResendResetPasswordUseCase,
     ResetPasswordUseCase,
 
     // Two-Factor Authentication
@@ -207,7 +209,6 @@ import {
     // ========================================
     JwtStrategy,
     GoogleStrategy,
-    JwtAuthGuard,
     TokenStorageRepository,
   ],
 
@@ -218,8 +219,6 @@ import {
     // Exportar services si otros módulos los necesitan
     TokensService,
     TwoFactorTokenService,
-
-    JwtAuthGuard,
   ],
 })
 export class AuthModule {}

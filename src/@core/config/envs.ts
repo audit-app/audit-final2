@@ -2,64 +2,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import 'dotenv/config' // Carga el .env automáticamente
 import * as Joi from 'joi'
-
-/**
- * Helper: Convierte cadenas de tiempo (1h, 5m, 7d) a segundos
- *
- * Formatos soportados:
- * - 30s  → 30 segundos
- * - 5m   → 300 segundos (5 minutos)
- * - 1h   → 3600 segundos (1 hora)
- * - 7d   → 604800 segundos (7 días)
- *
- * Usado para:
- * - JWT: se pasa el string original (ej: "7d") a jsonwebtoken
- * - Redis: se usa el resultado en segundos (ej: 604800)
- *
- * @param timeStr - String en formato: número + unidad (ej: "5m", "1h", "7d")
- * @returns Número de segundos
- * @throws Error si el formato es inválido
- *
- * @example
- * parseTimeToSeconds("5m")  // 300
- * parseTimeToSeconds("1h")  // 3600
- * parseTimeToSeconds("7d")  // 604800
- */
-function parseTimeToSeconds(timeStr: string): number {
-  const units: Record<string, number> = {
-    s: 1, // segundos
-    m: 60, // minutos
-    h: 3600, // horas
-    d: 86400, // días
-  }
-
-  const match = timeStr.match(/^(\d+)([smhd])$/)
-  if (!match) {
-    throw new Error(
-      `Invalid time format: "${timeStr}". Expected format: <number><unit> (e.g., "5m", "1h", "7d"). ` +
-        `Supported units: s (seconds), m (minutes), h (hours), d (days)`,
-    )
-  }
-
-  const [, value, unit] = match
-  const seconds = parseInt(value, 10) * units[unit]
-
-  // Validación adicional: evitar valores extremos
-  if (seconds < 1) {
-    throw new Error(
-      `Time value too small: "${timeStr}" (must be at least 1 second)`,
-    )
-  }
-
-  if (seconds > 31536000) {
-    // 1 año
-    throw new Error(
-      `Time value too large: "${timeStr}" (maximum: 365d or 1 year)`,
-    )
-  }
-
-  return seconds
-}
+import {
+  normalizeTime,
+  normalizeTimeFromSeconds,
+  normalizeTimeFromMinutes,
+  normalizeTimeFromDays,
+} from './time-normalizer'
 
 /**
  * Custom Joi validator para formato de tiempo (1h, 5m, 7d)
@@ -129,29 +77,15 @@ const envVarsSchema = Joi.object({
   // ============ TWO FACTOR AUTH ============
   TWO_FACTOR_CODE_LENGTH: Joi.number().min(4).max(8).default(6),
   TWO_FACTOR_CODE_EXPIRES_IN: flexibleTimeValidator.default('5m'),
-  TWO_FACTOR_JWT_SECRET: Joi.string().required().min(32).messages({
-    'string.min':
-      'TWO_FACTOR_JWT_SECRET must be at least 32 characters for security',
-    'any.required': 'TWO_FACTOR_JWT_SECRET is required',
-  }),
   TRUSTED_DEVICE_TTL_DAYS: Joi.number().min(1).max(365).default(90),
   TWO_FACTOR_RESEND_COOLDOWN_SECONDS: Joi.number().min(30).default(60),
   TWO_FACTOR_VERIFY_MAX_ATTEMPTS: Joi.number().min(1).default(3),
   TWO_FACTOR_VERIFY_WINDOW_MINUTES: Joi.number().min(1).default(10),
 
   // ============ PASSWORD RESET ============
-
   RESET_PASSWORD_TOKEN_EXPIRES_IN: timeFormatValidator.default('1h'),
   MAX_RESET_PASSWORD_ATTEMPTS_EMAIL: Joi.number().min(1).default(10),
   RESET_PASSWORD_ATTEMPTS_WINDOW_MINUTES: Joi.number().min(1).default(60),
-
-  // ============ EMAIL VERIFICATION ============
-  EMAIL_VERIFICATION_JWT_SECRET: Joi.string().required().min(32).messages({
-    'string.min':
-      'EMAIL_VERIFICATION_JWT_SECRET must be at least 32 characters for security',
-    'any.required': 'EMAIL_VERIFICATION_JWT_SECRET is required',
-  }),
-  EMAIL_VERIFICATION_EXPIRES_IN: timeFormatValidator.default('7d'),
 
   // ============ LOGIN RATE LIMITS ============
   MAX_LOGIN_ATTEMPTS_IP: Joi.number().min(1).default(10),
@@ -293,48 +227,49 @@ export const envs = {
   // ============ JWT ============
   jwt: {
     accessSecret: validatedEnv.JWT_SECRET as string,
-    accessExpiresIn: validatedEnv.JWT_EXPIRES_IN as string, // String "15m" → usado por jsonwebtoken
+    accessExpires: normalizeTime(validatedEnv.JWT_EXPIRES_IN as string),
     refreshSecret: validatedEnv.JWT_REFRESH_SECRET as string,
-    refreshExpiresIn: jwtRefreshExpiresIn, // String "7d" → usado por jsonwebtoken
-    refreshExpirationSeconds: parseTimeToSeconds(jwtRefreshExpiresIn), // 604800 → usado por Redis TTL
+    refreshExpires: normalizeTime(jwtRefreshExpiresIn),
   },
 
   // ============ TWO FACTOR AUTH ============
   twoFactor: {
     codeLength: validatedEnv.TWO_FACTOR_CODE_LENGTH as number,
-    codeExpiresIn: validatedEnv.TWO_FACTOR_CODE_EXPIRES_IN as string,
-    jwtSecret: validatedEnv.TWO_FACTOR_JWT_SECRET as string,
-    trustedDeviceExpirationDays: trustedDeviceDays,
-    trustedDeviceExpirationSeconds: trustedDeviceDays * 24 * 60 * 60,
-    resendCooldownSeconds:
+    codeExpires: normalizeTime(
+      validatedEnv.TWO_FACTOR_CODE_EXPIRES_IN as string,
+    ),
+    trustedDeviceExpires: normalizeTimeFromDays(trustedDeviceDays),
+    resendCooldown: normalizeTimeFromSeconds(
       validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
+    ),
     verifyMaxAttempts: validatedEnv.TWO_FACTOR_VERIFY_MAX_ATTEMPTS as number,
-    verifyWindowMinutes:
+    verifyWindow: normalizeTimeFromMinutes(
       validatedEnv.TWO_FACTOR_VERIFY_WINDOW_MINUTES as number,
+    ),
   },
 
   // ============ PASSWORD RESET ============
   passwordReset: {
-    tokenExpiresIn: validatedEnv.RESET_PASSWORD_TOKEN_EXPIRES_IN as string,
+    tokenExpires: normalizeTime(
+      validatedEnv.RESET_PASSWORD_TOKEN_EXPIRES_IN as string,
+    ),
     maxAttemptsByEmail:
       validatedEnv.MAX_RESET_PASSWORD_ATTEMPTS_EMAIL as number,
-    windowMinutes:
+    window: normalizeTimeFromMinutes(
       validatedEnv.RESET_PASSWORD_ATTEMPTS_WINDOW_MINUTES as number,
-    resendCooldownSeconds:
+    ),
+    resendCooldown: normalizeTimeFromSeconds(
       validatedEnv.TWO_FACTOR_RESEND_COOLDOWN_SECONDS as number,
-  },
-
-  // ============ EMAIL VERIFICATION ============
-  emailVerification: {
-    jwtSecret: validatedEnv.EMAIL_VERIFICATION_JWT_SECRET as string,
-    expiresIn: validatedEnv.EMAIL_VERIFICATION_EXPIRES_IN as string,
+    ),
   },
 
   // ============ LOGIN RATE LIMITS ============
   login: {
     maxAttemptsByIp: validatedEnv.MAX_LOGIN_ATTEMPTS_IP as number,
     maxAttemptsByUser: validatedEnv.MAX_LOGIN_ATTEMPTS_USER as number,
-    windowMinutes: validatedEnv.LOGIN_ATTEMPTS_WINDOW_MINUTES as number,
+    window: normalizeTimeFromMinutes(
+      validatedEnv.LOGIN_ATTEMPTS_WINDOW_MINUTES as number,
+    ),
   },
 
   // ============ SESSION ============

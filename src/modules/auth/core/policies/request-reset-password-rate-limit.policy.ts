@@ -6,7 +6,7 @@ import { envs } from '@core/config'
 export class RequestResetPasswordRateLimitPolicy {
   private readonly contextPrefix = 'reset-password'
   private readonly maxAttempts = envs.passwordReset.maxAttemptsByEmail
-  private readonly windowMinutes = envs.passwordReset.windowMinutes
+  private readonly windowMinutes = envs.passwordReset.window.minutes
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

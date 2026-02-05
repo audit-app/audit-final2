@@ -6,14 +6,19 @@ import {
   InvalidAuditStateException,
 } from '../../exceptions'
 import { AuditStatus } from '../../enums/audit-status.enum'
-import { AUDITS_REPOSITORY } from '../../tokens'
-import type { IAuditsRepository } from '../../repositories'
+import { AUDITS_REPOSITORY, AUDIT_RESPONSES_REPOSITORY } from '../../tokens'
+import type {
+  IAuditsRepository,
+  IAuditResponsesRepository,
+} from '../../repositories'
 
 @Injectable()
 export class CloseAuditUseCase {
   constructor(
     @Inject(AUDITS_REPOSITORY)
     private readonly auditsRepository: IAuditsRepository,
+    @Inject(AUDIT_RESPONSES_REPOSITORY)
+    private readonly responsesRepository: IAuditResponsesRepository,
   ) {}
 
   @Transactional()
@@ -29,12 +34,21 @@ export class CloseAuditUseCase {
       throw new InvalidAuditStateException(audit.status, 'cerrar')
     }
 
-    // 3. Cambiar estado a CLOSED
+    // 3. Calcular score ponderado total de la auditoría
+    // Fórmula: Σ(score_i * weight_i / 100) para todas las respuestas evaluadas
+    const overallScore =
+      await this.responsesRepository.calculateAuditScore(auditId)
+
+    // 4. Calcular nivel de madurez promedio ponderado (solo si auditoría tiene framework)
+    // Fórmula: Σ(maturityLevel_i * weight_i) / totalWeight
+    const averageMaturityLevel =
+      await this.responsesRepository.calculateAverageMaturityLevel(auditId)
+
+    // 5. Actualizar auditoría con los resultados calculados
     audit.status = AuditStatus.CLOSED
     audit.closedAt = new Date()
-
-    // Nota: El cálculo de score se hará en una fase futura cuando se implementen respuestas
-    // Por ahora, la auditoría se cierra sin score
+    audit.overallScore = overallScore
+    audit.maturityLevel = averageMaturityLevel
 
     return await this.auditsRepository.save(audit)
   }

@@ -32,6 +32,7 @@ import {
   CloseAuditUseCase,
   CreateRevisionUseCase,
   FindAuditsUseCase,
+  GetAuditStatsUseCase,
 } from '../use-cases'
 import type { IAuditsRepository } from '../repositories'
 import { AUDITS_REPOSITORY } from '../tokens'
@@ -46,6 +47,7 @@ export class AuditsController {
     private readonly closeAuditUseCase: CloseAuditUseCase,
     private readonly createRevisionUseCase: CreateRevisionUseCase,
     private readonly findAuditsUseCase: FindAuditsUseCase,
+    private readonly getAuditStatsUseCase: GetAuditStatsUseCase,
     @Inject(AUDITS_REPOSITORY)
     private readonly auditsRepository: IAuditsRepository,
   ) {}
@@ -152,6 +154,17 @@ export class AuditsController {
   @ResponseMessage('Auditoría cerrada exitosamente')
   async close(@Param() { id }: UuidParamDto) {
     return await this.closeAuditUseCase.execute(id)
+  }
+
+  @Get(':id/stats')
+  @ApiOperation({
+    summary: 'Obtener estadísticas y scores de auditoría',
+    description:
+      'Calcula y retorna score ponderado total, nivel de madurez promedio y estadísticas de progreso de evaluaciones',
+  })
+  @ResponseMessage('Estadísticas obtenidas exitosamente')
+  async getStats(@Param() { id }: UuidParamDto) {
+    return await this.getAuditStatsUseCase.execute(id)
   }
 
   @Post(':id/revisions')

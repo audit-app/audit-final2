@@ -24,7 +24,7 @@ export class CookieService {
     if (rememberMe) {
       // Leemos de la configuración centralizada
       // Redis usa SEGUNDOS, cookies usan MILISEGUNDOS
-      const expiresInSeconds = envs.jwt.refreshExpirationSeconds
+      const expiresInSeconds = envs.jwt.refreshExpires.seconds
       options.maxAge = expiresInSeconds * 1000
     }
 
@@ -48,7 +48,7 @@ export class CookieService {
     const options = this.getSafeCookieOptions()
 
     // Leemos de la configuración centralizada
-    const expiresInSeconds = envs.twoFactor.trustedDeviceExpirationSeconds
+    const expiresInSeconds = envs.twoFactor.trustedDeviceExpires.seconds
 
     options.maxAge = expiresInSeconds * 1000
 

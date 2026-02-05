@@ -24,7 +24,7 @@ export class TokenStorageRepository extends AbstractUserSetRepository<StoredSess
     super(cacheService, {
       basePrefix: 'auth:refresh',
       maxItemsPerUser: envs.session.maxConcurrentSessions,
-      ttlSeconds: envs.jwt.refreshExpirationSeconds,
+      ttlSeconds: envs.jwt.refreshExpires.seconds,
     })
   }
 

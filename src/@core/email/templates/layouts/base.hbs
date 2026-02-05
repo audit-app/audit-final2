@@ -16,23 +16,28 @@
   </noscript>
   <![endif]-->
   <style>
+    /* Reset */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
+
     body {
       margin: 0 !important;
       padding: 0 !important;
       -webkit-text-size-adjust: 100%;
       -ms-text-size-adjust: 100%;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background-color: #f8fafc;
     }
+
     table {
       border-collapse: collapse !important;
       mso-table-lspace: 0pt;
       mso-table-rspace: 0pt;
     }
+
     img {
       border: 0;
       height: auto;
@@ -41,16 +46,26 @@
       text-decoration: none;
       -ms-interpolation-mode: bicubic;
     }
+
     a {
-      color: #4F46E5;
+      color: #3b82f6;
       text-decoration: none;
     }
+
+    a:hover {
+      color: #2563eb;
+    }
+
+    /* Responsive */
     @media screen and (max-width: 600px) {
+      .container {
+        width: 100% !important;
+      }
       .mobile-padding {
         padding: 24px !important;
       }
       .mobile-text {
-        font-size: 14px !important;
+        font-size: 15px !important;
       }
       .mobile-heading {
         font-size: 22px !important;
@@ -58,60 +73,64 @@
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="min-height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<body style="margin: 0; padding: 0; background-color: #f8fafc;">
+  <!-- Wrapper Table -->
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color: #f8fafc;">
     <tr>
       <td style="padding: 50px 20px;">
-        <!-- Main Container -->
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);">
 
-          <!-- Header -->
+        <!-- Main Container -->
+        <table role="presentation" class="container" cellspacing="0" cellpadding="0" border="0" width="600" align="center" style="margin: 0 auto; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);">
+
+          <!-- Header Accent -->
           <tr>
-            <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 50px 40px; text-align: center;">
-              {{#if logoBase64}}
-                <img src="{{logoBase64}}" alt="{{appName}}" style="height: 50px; margin-bottom: 20px; display: block; margin: 0 auto;">
-              {{else if logoUrl}}
-                <img src="{{logoUrl}}" alt="{{appName}}" style="height: 50px; margin-bottom: 20px; display: block; margin: 0 auto;">
-              {{/if}}
-              <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: -0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                {{appName}}
-              </h1>
-              <p style="margin: 10px 0 0 0; color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 500;">
-                Sistema de Gestión de Auditorías
-              </p>
+            <td style="height: 3px; background: linear-gradient(90deg, #3b82f6 0%, #60a5fa 100%);"></td>
+          </tr>
+
+          <!-- Logo & Title -->
+          <tr>
+            <td style="padding: 40px 48px 32px 48px; background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);" class="mobile-padding">
+              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
+                <tr>
+                  <td>
+                    {{#if logoBase64}}
+                      <img src="{{logoBase64}}" alt="{{appName}}" style="height: 32px; margin-bottom: 12px; display: block;">
+                    {{else if logoUrl}}
+                      <img src="{{logoUrl}}" alt="{{appName}}" style="height: 32px; margin-bottom: 12px; display: block;">
+                    {{/if}}
+                    <p style="margin: 0; color: #1e293b; font-size: 18px; font-weight: 600; letter-spacing: -0.01em;">
+                      {{appName}}
+                    </p>
+                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 13px;">
+                      Sistema de Gestión de Auditorías
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
-            <td style="padding: 50px 40px;" class="mobile-padding">
+            <td style="padding: 40px 48px 48px 48px;" class="mobile-padding">
               {{{body}}}
             </td>
           </tr>
 
           <!-- Footer -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 40px; text-align: center; border-top: 1px solid #e2e8f0;">
-              <!-- Social Links (optional) -->
-              <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="margin-bottom: 20px;">
-                <tr>
-                  <td align="center">
-                    <p style="margin: 0 0 12px 0; font-size: 14px; color: #64748b; line-height: 1.6; font-weight: 500;">
-                      ¿Necesitas ayuda? Contáctanos
-                    </p>
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Copyright -->
+            <td style="padding: 32px 48px; background-color: #fafbfc; border-top: 1px solid #f1f5f9;" class="mobile-padding">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%">
                 <tr>
-                  <td align="center">
-                    <p style="margin: 0 0 8px 0; font-size: 13px; color: #94a3b8; line-height: 1.6;">
+                  <td>
+                    <p style="margin: 0 0 16px 0; font-size: 14px; color: #64748b; line-height: 1.6;">
+                      Si necesitas ayuda, nuestro equipo está disponible para asistirte.
+                    </p>
+                    <p style="margin: 0 0 4px 0; font-size: 13px; color: #94a3b8; line-height: 1.5;">
                       &copy; {{currentYear}} {{appName}}. Todos los derechos reservados.
                     </p>
-                    <p style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
-                      Este es un correo automático, por favor no responder directamente.
+                    <p style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                      Este es un mensaje automático, por favor no responder.
                     </p>
                   </td>
                 </tr>
@@ -120,8 +139,11 @@
           </tr>
 
         </table>
+        <!-- End Main Container -->
+
       </td>
     </tr>
   </table>
+  <!-- End Wrapper Table -->
 </body>
 </html>

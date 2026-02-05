@@ -6,7 +6,7 @@ import { TooManyAttemptsException } from '../exceptions'
 @Injectable()
 export class ResendResetPasswordRateLimitPolicy {
   private readonly contextPrefix = 'reset-password-resend'
-  private readonly cooldownSeconds = envs.passwordReset.resendCooldownSeconds
+  private readonly cooldownSeconds = envs.passwordReset.resendCooldown.seconds
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 

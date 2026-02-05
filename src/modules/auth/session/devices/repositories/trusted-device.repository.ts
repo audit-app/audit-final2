@@ -31,7 +31,7 @@ export class TrustedDeviceRepository extends AbstractUserSetRepository<StoredTru
     super(cacheService, {
       basePrefix: 'auth:trusted-device',
       maxItemsPerUser: 10,
-      ttlSeconds: envs.twoFactor.trustedDeviceExpirationSeconds,
+      ttlSeconds: envs.twoFactor.trustedDeviceExpires.seconds,
     })
   }
 

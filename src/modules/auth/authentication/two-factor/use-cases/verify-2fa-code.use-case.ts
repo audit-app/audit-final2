@@ -78,12 +78,12 @@ export class Verify2FACodeUseCase {
     accessToken: string
     refreshToken: string
     rememberMe: boolean // Necesario para setear cookie de refreshToken con TTL correcto
-    deviceId?: string // UUID del dispositivo confiable (para setear cookie)
+    deviceId?: string
   }> {
     const CONTEXT = '2fa-verify'
     const ATTEMPTS_KEY = `attempts:${CONTEXT}:${dto.token}`
     const MAX_ATTEMPTS = envs.twoFactor.verifyMaxAttempts
-    const WINDOW_MINUTES = envs.twoFactor.verifyWindowMinutes
+    const WINDOW_MINUTES = envs.twoFactor.verifyWindow.minutes
 
     // ---------------------------------------------------------
     // 1. VERIFICAR QUE EL TOKEN EXISTE (antes de incrementar contador)

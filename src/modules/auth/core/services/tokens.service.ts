@@ -11,11 +11,10 @@ import type { ConnectionMetadata } from '@core/http'
 import { LoggerService } from '@core/logger'
 import {
   TokenStorageRepository,
-  StoredSession, // Importamos la interfaz desde el nuevo repo
+  StoredSession,
 } from './token-storage.repository'
-import { Role } from '@core'
+import { JwtPayload, JwtRefreshPayload, Role } from '@core'
 import { UserEntity } from '../../../users/entities/user.entity'
-import { JwtPayload, JwtRefreshPayload } from '../interfaces'
 import { InvalidTokenException } from '../exceptions'
 import { envs } from '@core/config'
 
@@ -38,8 +37,8 @@ export class TokensService {
     private readonly connectionMetadataService: ConnectionMetadataService,
     private readonly logger: LoggerService,
   ) {
-    this.accessTokenExpires = envs.jwt.accessExpiresIn
-    this.refreshTokenExpires = envs.jwt.refreshExpiresIn
+    this.accessTokenExpires = envs.jwt.accessExpires.raw
+    this.refreshTokenExpires = envs.jwt.refreshExpires.raw
     this.refreshTokenSecret = envs.jwt.refreshSecret
     this.jwtSecret = envs.jwt.accessSecret
   }

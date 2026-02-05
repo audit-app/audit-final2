@@ -5,8 +5,10 @@ import { envs } from '@core/config'
 import { TokensService } from '../services/tokens.service'
 import { USERS_REPOSITORY } from '../../../users/tokens'
 import type { IUsersRepository } from '../../../users/repositories'
-import type { JwtPayload } from '../interfaces'
+
 import type { Request } from 'express'
+import type { JwtPayload } from '@core'
+import { UserNotActiveException } from '../exceptions'
 
 /**
  * JWT Strategy (Passport)
@@ -45,26 +47,24 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
    * @returns Payload validado (se adjunta a req.user)
    */
   async validate(req: Request, payload: JwtPayload): Promise<JwtPayload> {
-    // 1. Extraer token del header
     const token = ExtractJwt.fromAuthHeaderAsBearerToken()(req)
 
     if (!token) {
       throw new UnauthorizedException('Token no proporcionado')
     }
 
-    // 2. Verificar blacklist
     const isBlacklisted = await this.tokensService.isTokenBlacklisted(token)
     if (isBlacklisted) {
       throw new UnauthorizedException('Token revocado')
     }
 
-    // 3. Verificar que el usuario existe (opcional, para extra seguridad)
     const user = await this.usersRepository.findById(payload.sub)
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado')
     }
-
-    // 4. Retornar payload (se adjunta a req.user)
+    if (!user.isActive) {
+      throw new UserNotActiveException()
+    }
     return payload
   }
 }

@@ -6,7 +6,7 @@ import { TooManyAttemptsException } from '../exceptions/too-many-attempts.except
 @Injectable()
 export class Resend2FARateLimitPolicy {
   private readonly contextPrefix = '2fa-resend'
-  private readonly cooldownSeconds = envs.twoFactor.resendCooldownSeconds
+  private readonly cooldownSeconds = envs.twoFactor.resendCooldown.seconds
 
   constructor(private readonly rateLimitService: RateLimitService) {}
 
@@ -42,6 +42,7 @@ export class Resend2FARateLimitPolicy {
    */
   async markResendAttempt(userId: string): Promise<void> {
     const key = this.getKey(userId)
+    // Convertir segundos a minutos (el método incrementAttempts espera minutos)
     await this.rateLimitService.incrementAttempts(key, this.cooldownSeconds)
   }
 
