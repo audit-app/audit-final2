@@ -16,8 +16,6 @@ import { ContextModule } from '@core/context'
  * Depende de:
  * - ContextModule: Proporciona ClsModule para almacenar EntityManager en CLS
  *
- * NOTA: AuditService ahora vive en @core/context porque la auditoría
- * es un cross-cutting concern (no específico de database)
  */
 @Global()
 @Module({

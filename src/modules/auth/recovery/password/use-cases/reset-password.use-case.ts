@@ -7,12 +7,12 @@ import {
 import {
   PasswordHashService,
   RateLimitService,
-  OtpCoreService,
 } from '@core/security'
 import { TrustedDeviceRepository } from '../../../session/devices'
 import { TokensService } from '../../../core/services/tokens.service'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
+import { PasswordResetTokenService } from '../services'
 
 @Injectable()
 export class ResetPasswordUseCase {
@@ -22,8 +22,7 @@ export class ResetPasswordUseCase {
     private readonly passwordHashService: PasswordHashService,
     private readonly trustedDeviceRepository: TrustedDeviceRepository,
     private readonly tokensService: TokensService,
-    // Inyectamos los servicios genéricos
-    private readonly otpCoreService: OtpCoreService,
+    private readonly passwordResetTokenService: PasswordResetTokenService,
     private readonly rateLimitService: RateLimitService,
   ) {}
 
@@ -32,13 +31,12 @@ export class ResetPasswordUseCase {
     otpCode: string,
     newPassword: string,
   ): Promise<{ message: string }> {
-    const CONTEXT = 'reset-pw' // Prefijo para Redis
-    const ATTEMPTS_KEY = `attempts:${CONTEXT}:${tokenId}`
+    const ATTEMPTS_KEY = `attempts:reset-pw:${tokenId}`
 
     // ---------------------------------------------------------
     // 1. SEGURIDAD OTP: Control de Intentos (Token Burning)
     // ---------------------------------------------------------
-    const sessionExists = await this.otpCoreService.getPayload(CONTEXT, tokenId)
+    const sessionExists = await this.passwordResetTokenService.getPayload(tokenId)
 
     if (!sessionExists) {
       // Token no existe o ya fue revocado/expiró
@@ -56,7 +54,7 @@ export class ResetPasswordUseCase {
 
     // Si supera 3 intentos, QUEMAMOS el token inmediatamente.
     if (attempts > 3) {
-      await this.otpCoreService.deleteSession(CONTEXT, tokenId) // Borra el token real
+      await this.passwordResetTokenService.deleteSession(tokenId) // Borra el token real
       await this.rateLimitService.resetAttempts(ATTEMPTS_KEY) // Limpia el contador
 
       throw new BadRequestException(
@@ -69,10 +67,10 @@ export class ResetPasswordUseCase {
     // ---------------------------------------------------------
 
     // Recuperamos el payload (userId) validando el OTP
-    // Usamos la interfaz <{ userId: string }> para tipado seguro
-    const { isValid, payload } = await this.otpCoreService.validateSession<{
-      userId: string
-    }>(CONTEXT, tokenId, otpCode)
+    const { isValid, payload } = await this.passwordResetTokenService.validateToken(
+      tokenId,
+      otpCode,
+    )
 
     if (!isValid || !payload) {
       // Feedback explícito al usuario
@@ -105,7 +103,7 @@ export class ResetPasswordUseCase {
     // ---------------------------------------------------------
 
     // A. Quemar el token usado (Para que no se pueda reusar en un Replay Attack)
-    await this.otpCoreService.deleteSession(CONTEXT, tokenId)
+    await this.passwordResetTokenService.deleteSession(tokenId)
     await this.rateLimitService.resetAttempts(ATTEMPTS_KEY)
 
     // B. Revocar TODOS los dispositivos confiables

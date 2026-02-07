@@ -29,14 +29,13 @@ export class RateLimitService {
 
   /**
    * Incrementa el contador de intentos
-   * CAMBIO CLAVE: Usamos .incr() para atomicidad
    */
   async incrementAttempts(key: string, windowMinutes: number): Promise<number> {
     const prefixedKey = this.getPrefixedKey(key)
     const ttlSeconds = windowMinutes
 
     // 1. Incremento ATÓMICO (CacheService.incr)
-    // Redis maneja la suma internamente. No hay "race conditions".
+
     const newAttempts = await this.cacheService.incr(prefixedKey)
 
     // 2. Si es el primer intento (1), establecemos cuándo debe expirar.

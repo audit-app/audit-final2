@@ -9,15 +9,6 @@ import {
   normalizeTimeFromDays,
 } from './time-normalizer'
 
-/**
- * Custom Joi validator para formato de tiempo (1h, 5m, 7d)
- *
- * Este validador asegura que:
- * - JWT reciba un formato válido para jsonwebtoken (ej: "15m", "7d")
- * - Redis pueda convertir a segundos sin errores
- *
- * Formatos válidos: 30s, 5m, 1h, 7d
- */
 const timeFormatValidator = Joi.string()
   .pattern(/^\d+[smhd]$/)
   .messages({
@@ -26,15 +17,6 @@ const timeFormatValidator = Joi.string()
       'Supported units: s=seconds, m=minutes, h=hours, d=days',
   })
 
-/**
- * Custom Joi validator flexible: acepta tanto formato de tiempo (5m) como segundos (300)
- *
- * Útil para configuraciones donde se puede especificar:
- * - Formato legible: "5m" (5 minutos)
- * - Número directo: "300" (300 segundos)
- *
- * Ambos son convertidos a segundos internamente para Redis.
- */
 const flexibleTimeValidator = Joi.alternatives()
   .try(
     Joi.string().pattern(/^\d+[smhd]$/), // Formato de tiempo: 5m, 1h, 30s
@@ -180,7 +162,7 @@ if (error) {
     .map((detail) => detail.message)
     .join('\n  - ')
   throw new Error(
-    `⚠️  Environment variables validation failed:\n  - ${errorMessages}`,
+    `Environment variables validation failed:\n  - ${errorMessages}`,
   )
 }
 

@@ -9,7 +9,6 @@
  * - Controllers (tipos de retorno)
  *
  * IMPORTANTE: NO duplicar estas estructuras en otros lugares.
- * Si necesitas cambiar el formato de respuesta, cámbialo AQUÍ.
  */
 
 export * from './success-response.dto'

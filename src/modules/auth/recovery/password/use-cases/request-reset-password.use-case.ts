@@ -3,19 +3,14 @@ import { EmailEventService } from '@core/email'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { RequestResetPasswordRateLimitPolicy } from '../../../core/policies'
-import { OtpCoreService } from '@core/security'
-
-// Definimos el Payload que guardaremos en el OTP para este caso
-interface ResetPasswordPayload {
-  userId: string
-}
+import { PasswordResetTokenService } from '../services'
 
 @Injectable()
 export class RequestResetPasswordUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    private readonly otpCoreService: OtpCoreService, // Inyectamos el genérico
+    private readonly passwordResetTokenService: PasswordResetTokenService,
     private readonly emailEventService: EmailEventService,
     private readonly requestResetPasswordRateLimitPolicy: RequestResetPasswordRateLimitPolicy,
   ) {}
@@ -55,14 +50,9 @@ export class RequestResetPasswordUseCase {
     // Lo hacemos antes de enviar para prevenir abuso si el email falla.
     await this.requestResetPasswordRateLimitPolicy.registerAttempt(email)
 
-    // 4. Generar sesión OTP (Usando el servicio genérico)
-    // Contexto: 'reset-pw' (debe coincidir con el que uses al validar)
+    // 4. Generar token de reset password (usando servicio especializado)
     const { tokenId, otpCode } =
-      await this.otpCoreService.createSession<ResetPasswordPayload>(
-        'reset-pw',
-        { userId: user.id }, // Payload seguro (ID en lugar de email)
-        3600, // 1 hora de expiración
-      )
+      await this.passwordResetTokenService.generateToken(user.id)
 
     // 5. Enviar email con el código OTP (asíncrono, no bloqueante)
     this.emailEventService.emitSendResetPassword({

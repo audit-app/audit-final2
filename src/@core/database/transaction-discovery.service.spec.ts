@@ -6,7 +6,6 @@ import {
 } from '@nestjs/core'
 import { Injectable } from '@nestjs/common'
 
-// Mock del LoggerService ANTES de importar TransactionDiscoveryService
 jest.mock('@core/logger', () => ({
   LoggerService: jest.fn().mockImplementation(() => ({
     log: jest.fn(),

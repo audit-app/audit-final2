@@ -54,6 +54,7 @@ import {
 // ========================================
 import {
   PasswordResetController,
+  PasswordResetTokenService,
   RequestResetPasswordUseCase,
   ResendResetPasswordUseCase,
   ResetPasswordUseCase,
@@ -157,6 +158,7 @@ import {
     // ========================================
     TokensService,
     TwoFactorTokenService,
+    PasswordResetTokenService,
 
     // ========================================
     // Policies

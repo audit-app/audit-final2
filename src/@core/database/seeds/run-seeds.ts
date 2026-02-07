@@ -5,6 +5,7 @@ import UsersSeeder from './02-users.seeder'
 import PermissionsSeeder from './03-permissions.seeder'
 import TemplatesSeeder from './04-templates.seeder'
 import MaturityFrameworksSeeder from './05-maturity-frameworks.seeder'
+import ExampleAuditsSeeder from './06-example-audits.seeder'
 
 async function runAllSeeds() {
   try {
@@ -20,6 +21,7 @@ async function runAllSeeds() {
     // 3. Permisos (sistema de autorización)
     // 4. Templates (plantillas de auditoría)
     // 5. Maturity Frameworks (frameworks de madurez - COBIT 5, CMMI, etc.)
+    // 6. Example Audits (auditorías de ejemplo para probar reportes)
     await runSeeders(dataSource, {
       seeds: [
         OrganizationsSeeder, // 1. Crear organizaciones primero
@@ -27,6 +29,7 @@ async function runAllSeeds() {
         PermissionsSeeder, // 3. Cargar permisos de Casbin
         TemplatesSeeder, // 4. Cargar plantillas (ISO 27001, ASFI, etc.)
         MaturityFrameworksSeeder, // 5. Cargar frameworks de madurez (COBIT 5, etc.)
+        ExampleAuditsSeeder, // 6. Cargar auditorías de ejemplo
       ],
     })
 

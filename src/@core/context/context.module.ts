@@ -34,8 +34,8 @@ import { AuditService } from './audit.service'
     ClsModule.forRoot({
       global: true,
       middleware: {
-        mount: true, // Monta el middleware automáticamente en todas las rutas
-        generateId: true, // Genera un ID único por request
+        mount: true,
+        generateId: true,
       },
     }),
   ],

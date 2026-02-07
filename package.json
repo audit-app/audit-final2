@@ -43,7 +43,8 @@
     "files:verify": "ts-node --files -r tsconfig-paths/register src/@core/files/verify-setup.ts",
     "i18n:test": "ts-node --files -r tsconfig-paths/register src/@core/i18n/i18n.test.ts",
     "reports:test": "ts-node --files -r tsconfig-paths/register src/@core/reports/reports.test.ts",
-    "swagger:test": "ts-node --files -r tsconfig-paths/register src/@core/swagger/swagger.test.ts"
+    "swagger:test": "ts-node --files -r tsconfig-paths/register src/@core/swagger/swagger.test.ts",
+    "audit:report:test": "bash scripts/test-report.sh"
   },
   "dependencies": {
     "@google-cloud/local-auth": "^3.0.1",
@@ -60,6 +61,7 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.10",
+    "axios": "^1.13.4",
     "bcrypt": "^6.0.0",
     "casbin": "^5.48.0",
     "chalk": "^5.6.2",

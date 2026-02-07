@@ -6,7 +6,6 @@ import { envs } from '@core/config'
 function getTypeORMConfigForCLI(): DataSourceOptions & SeederOptions {
   const projectRoot = process.cwd()
 
-  // Configuración base
   const baseConfig: DataSourceOptions & SeederOptions = {
     type: 'postgres',
     synchronize: false,
@@ -18,7 +17,6 @@ function getTypeORMConfigForCLI(): DataSourceOptions & SeederOptions {
     seeds: [`${projectRoot}/src/@core/database/seeds/*{.ts,.js}`],
   }
 
-  // Usar DATABASE_URL desde envs
   return {
     ...baseConfig,
     url: envs.database.url,

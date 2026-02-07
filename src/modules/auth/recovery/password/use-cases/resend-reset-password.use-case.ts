@@ -5,17 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common'
 import { EmailEventService } from '@core/email'
-import { OtpCoreService } from '@core/security'
 import { USERS_REPOSITORY } from '../../../../users/tokens'
 import type { IUsersRepository } from '../../../../users/repositories'
 import { ResendResetPasswordRateLimitPolicy } from '../../../core/policies/resend-reset-password-rate-limit.policy'
+import { PasswordResetTokenService } from '../services'
 
 @Injectable()
 export class ResendResetPasswordUseCase {
   constructor(
     @Inject(USERS_REPOSITORY)
     private readonly usersRepository: IUsersRepository,
-    private readonly otpCoreService: OtpCoreService,
+    private readonly passwordResetTokenService: PasswordResetTokenService,
     private readonly emailEventService: EmailEventService,
     private readonly resendRateLimitPolicy: ResendResetPasswordRateLimitPolicy,
   ) {}
@@ -31,10 +31,7 @@ export class ResendResetPasswordUseCase {
    */
   async execute(tokenId: string): Promise<{ message: string }> {
     // 1. Obtener sesión OTP existente de Redis
-    const session = await this.otpCoreService.getSession<{ userId: string }>(
-      'reset-pw',
-      tokenId,
-    )
+    const session = await this.passwordResetTokenService.getSession(tokenId)
 
     if (!session) {
       throw new BadRequestException(

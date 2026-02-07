@@ -3,6 +3,7 @@ import {
   NestInterceptor,
   ExecutionContext,
   CallHandler,
+  StreamableFile,
 } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { Observable } from 'rxjs'
@@ -53,6 +54,11 @@ export class TransformInterceptor<T> implements NestInterceptor<
   ): Observable<SuccessResponseDto<T> | PaginatedResponseDto<T>> {
     return next.handle().pipe(
       map((data: unknown) => {
+        // 0. Si es un StreamableFile, no transformar (archivos binarios)
+        if (data instanceof StreamableFile) {
+          return data as any
+        }
+
         const ctx = context.switchToHttp()
         const response = ctx.getResponse<Response>()
         const request = ctx.getRequest<Request>()

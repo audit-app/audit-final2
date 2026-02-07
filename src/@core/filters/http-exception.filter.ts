@@ -5,6 +5,7 @@ import {
   HttpException,
   HttpStatus,
 } from '@nestjs/common'
+import { ThrottlerException } from '@nestjs/throttler'
 import { Request, Response } from 'express'
 import { LoggerService } from '../logger/logger.service'
 import { envs } from '../config'
@@ -35,6 +36,11 @@ interface DatabaseError extends Error {
   detail?: string
   table?: string
   constraint?: string
+  column?: string
+  driverError?: {
+    code?: string
+    detail?: string
+  }
 }
 
 // 3. Interfaz interna para el resultado del parsing
@@ -65,19 +71,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>()
     const request = ctx.getRequest<Request>()
 
-    // Determinar el status code y mensaje
     const parsed = this.parseException(exception)
-
-    // AQUI ESTA LA MEJORA PRINCIPAL:
-    // Ya no usamos 'as any'. TypeScript sabe que request.user es JwtPayload | undefined
-    // gracias a tu archivo de declaración.
     const user = request.user
 
     const userContext: UserContext | undefined = user
       ? {
-          userId: user.sub, // TypeScript ahora valida que 'sub' exista en JwtPayload
-          userEmail: user.email, // TypeScript valida 'email'
-          userName: user.username, // TypeScript valida 'username'
+          userId: user.sub,
+          userEmail: user.email,
+          userName: user.username,
         }
       : undefined
 
@@ -151,7 +152,17 @@ export class HttpExceptionFilter implements ExceptionFilter {
   }
 
   private parseException(exception: unknown): ParsedException {
-    // 1. HttpException de NestJS
+    // 1. ThrottlerException (Rate Limiting Global)
+    if (exception instanceof ThrottlerException) {
+      return {
+        statusCode: HttpStatus.TOO_MANY_REQUESTS,
+        message:
+          'Demasiadas solicitudes. Por favor, inténtalo de nuevo más tarde.',
+        error: 'Too Many Requests',
+      }
+    }
+
+    // 2. HttpException de NestJS (incluye TooManyAttemptsException)
     if (exception instanceof HttpException) {
       const status = exception.getStatus()
       const response = exception.getResponse()
@@ -209,12 +220,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    // 2. Error de Base de Datos
+    // 3. Error de Base de Datos (TypeORM/PostgreSQL)
     if (this.isDatabaseError(exception)) {
       return this.parseDatabaseError(exception)
     }
 
-    // 3. Error Genérico (Standard JS Error)
+    // 4. Error Genérico (Standard JS Error)
     if (exception instanceof Error) {
       return {
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
@@ -226,7 +237,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
       }
     }
 
-    // 4. Fallback absoluto
+    // 5. Fallback absoluto
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
@@ -237,52 +248,172 @@ export class HttpExceptionFilter implements ExceptionFilter {
   /**
    * Type Guard: Le dice a TypeScript que si esto devuelve true,
    * la variable es de tipo DatabaseError
+   *
+   * Detecta errores de TypeORM (QueryFailedError, EntityNotFoundError)
+   * y errores de base de datos que tienen código de error
    */
   private isDatabaseError(exception: unknown): exception is DatabaseError {
-    return (
-      exception instanceof Error &&
-      (exception.name === 'QueryFailedError' || 'code' in exception)
-    )
+    if (!(exception instanceof Error)) {
+      return false
+    }
+
+    // Errores específicos de TypeORM
+    if (
+      exception.name === 'QueryFailedError' ||
+      exception.name === 'EntityNotFoundError' ||
+      exception.name === 'EntityPropertyNotFoundError'
+    ) {
+      return true
+    }
+
+    // Errores con código de PostgreSQL
+    return 'code' in exception && typeof (exception as any).code === 'string'
   }
 
   private parseDatabaseError(exception: DatabaseError): ParsedException {
-    const code = exception.code
+    // Caso especial: EntityNotFoundError de TypeORM
+    if (exception.name === 'EntityNotFoundError') {
+      return {
+        statusCode: HttpStatus.NOT_FOUND,
+        message: 'El registro solicitado no fue encontrado.',
+        error: 'Not Found',
+        details: !envs.app.isProduction
+          ? { originalError: exception.message }
+          : undefined,
+      }
+    }
+
+    // Extraer código de error (puede estar en exception.code o exception.driverError.code)
+    const code = exception.code || exception.driverError?.code
 
     const baseError = {
       error: 'DatabaseError',
       details: !envs.app.isProduction
-        ? { originalError: exception.message, code, table: exception.table }
+        ? {
+            originalError: exception.message,
+            code,
+            table: exception.table,
+            column: exception.column,
+            constraint: exception.constraint,
+          }
         : undefined,
     }
 
+    // Códigos de error de PostgreSQL
+    // Referencia: https://www.postgresql.org/docs/current/errcodes-appendix.html
     switch (code) {
-      case '23505': // Unique constraint
+      // ============ INTEGRITY CONSTRAINT VIOLATIONS (23xxx) ============
+      case '23000': // integrity_constraint_violation
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Violación de restricción de integridad.',
+          error: 'IntegrityConstraintViolation',
+        }
+
+      case '23505': // unique_violation
         return {
           ...baseError,
           statusCode: HttpStatus.CONFLICT,
           message:
             'Ya existe un registro con los datos proporcionados (Duplicado).',
-          error: 'Conflict',
+          error: 'UniqueViolation',
         }
-      case '23503': // Foreign key
+
+      case '23503': // foreign_key_violation
         return {
           ...baseError,
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'El registro referenciado no existe o no es válido.',
           error: 'ForeignKeyViolation',
         }
-      case '23502': // Not null
+
+      case '23502': // not_null_violation
         return {
           ...baseError,
           statusCode: HttpStatus.BAD_REQUEST,
           message: 'Faltan datos obligatorios para completar la operación.',
           error: 'NotNullViolation',
         }
+
+      case '23514': // check_violation
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Los datos no cumplen con las reglas de validación.',
+          error: 'CheckViolation',
+        }
+
+      // ============ DATA EXCEPTIONS (22xxx) ============
+      case '22001': // string_data_right_truncation
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'El texto proporcionado es demasiado largo.',
+          error: 'StringTooLong',
+        }
+
+      case '22P02': // invalid_text_representation
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Formato de datos inválido.',
+          error: 'InvalidTextRepresentation',
+        }
+
+      case '22003': // numeric_value_out_of_range
+        return {
+          ...baseError,
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'El valor numérico está fuera de rango.',
+          error: 'NumericOutOfRange',
+        }
+
+      // ============ QUERY ERRORS (42xxx) ============
+      case '42P01': // undefined_table
+        return {
+          ...baseError,
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Error de configuración de base de datos.',
+          error: 'UndefinedTable',
+        }
+
+      case '42703': // undefined_column
+        return {
+          ...baseError,
+          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+          message: 'Error de configuración de base de datos.',
+          error: 'UndefinedColumn',
+        }
+
+      // ============ CONNECTION EXCEPTIONS (08xxx) ============
+      case '08000': // connection_exception
+      case '08003': // connection_does_not_exist
+      case '08006': // connection_failure
+        return {
+          ...baseError,
+          statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+          message: 'Error de conexión a la base de datos. Intenta nuevamente.',
+          error: 'DatabaseConnectionError',
+        }
+
+      // ============ TIMEOUT (57xxx) ============
+      case '57014': // query_canceled
+        return {
+          ...baseError,
+          statusCode: HttpStatus.REQUEST_TIMEOUT,
+          message: 'La operación tardó demasiado tiempo y fue cancelada.',
+          error: 'QueryTimeout',
+        }
+
+      // ============ FALLBACK ============
       default:
         return {
           ...baseError,
           statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Error interno de base de datos.',
+          message: envs.app.isProduction
+            ? 'Error interno de base de datos.'
+            : `Error de base de datos: ${exception.message}`,
         }
     }
   }

@@ -61,8 +61,6 @@ export abstract class BaseRepository<
   async save(data: DeepPartial<T>): Promise<T> {
     const createdEntity = this.create(data)
 
-    // Aplicar auditoría automática (createdBy para nuevas entidades)
-    // Solo aplica si la entidad no tiene ID (es nueva)
     const isNew = !createdEntity.id
     this.auditService.applyAudit(createdEntity, isNew)
 

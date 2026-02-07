@@ -1,10 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import type { PaginationMeta } from '../paginated-response.dto'
 
-/**
- * Clase de metadata de paginación para Swagger
- * (Re-implementada como clase para soportar decoradores)
- */
 export class PaginationMetaDto implements PaginationMeta {
   @ApiProperty({ description: 'Número total de registros', example: 100 })
   total: number
@@ -59,7 +55,7 @@ export class PaginationMetaDto implements PaginationMeta {
  * }
  * ```
  */
-export class PaginatedResponseDto<T = any> {
+export class PaginatedResponseDto<T> {
   @ApiProperty({
     description: 'Indica si la operación fue exitosa',
     example: true,

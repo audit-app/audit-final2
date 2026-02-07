@@ -23,15 +23,10 @@ export interface AuditUser {
 }
 
 /**
- * Servicio centralizado para manejar auditoría usando CLS
- *
- * Permite almacenar y recuperar información del usuario actual
- * sin tener que pasarla como parámetro en cada método.
- *
+ * Servicio centralizado de auditoria
  * Usado por:
  * - AuditInterceptor: Guarda el usuario de la petición HTTP
  * - BaseRepository: Lee el usuario para aplicar createdBy/updatedBy
- * - Cualquier servicio que necesite saber quién está ejecutando la operación
  *
  * @example
  * ```typescript

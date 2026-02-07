@@ -193,7 +193,6 @@ export abstract class AbstractUserSetRepository<T> {
     const exists = await this.cacheService.exists(key)
 
     if (!exists) {
-      // Inconsistencia detectada: Limpiar
       await this.cacheService.srem(setKey, itemId)
       return false
     }
